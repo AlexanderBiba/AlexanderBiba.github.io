@@ -1,0 +1,8 @@
+@mixin section {
+    display: flex;
+    padding: 30px 20px;
+
+    .content {
+        margin: 0 30px;
+    }
+}

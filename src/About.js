@@ -8,11 +8,13 @@ export default function About() {
                 src="images/avatar.jpeg"
                 alt="Alexander Biba Profile Pic"
             />
-            <div>
+            <div className="content">
                 <h2>About Me</h2>
-                <p>I'm a web developer from the New York area, looking for my next challenge</p>
+                <p>I love building cool software and developing web applications, if you have a cool project for me, don't hesitate to reach out!</p>
                 <h2>Contact Information:</h2>
-                <p>Email: alexbiba@gmail.com</p>
+                <p>GitHub: <a href="https://github.com/alex152">https://github.com/alex152</a></p>
+                <p>LinkedIn: <a href="https://www.linkedin.com/in/alexander-biba-b9794771/">https://www.linkedin.com/in/alexander-biba-b9794771/</a></p>
+                <p>Email: <a href="alexbiba@gmail.com">alexbiba@gmail.com</a></p>
             </div>
         </div>
     );

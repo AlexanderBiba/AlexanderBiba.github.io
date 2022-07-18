@@ -1,9 +1,14 @@
-.about {
-    display: flex;
-}
+@import "_section";
 
-.avatar {
-    border-radius: 50%;
-    height: 90px;
-    width: 90px;
+.about {
+    @include section;
+
+    .avatar {
+        border-radius: 50%;
+        height: 90px;
+        width: 90px;
+        margin: 30px 0;
+    }
+
+    background-color: indianred;
 }
