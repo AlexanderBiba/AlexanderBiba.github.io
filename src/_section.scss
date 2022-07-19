@@ -1,8 +1,11 @@
 @mixin section {
     display: flex;
     padding: 30px 20px;
-
+    border-bottom: 1px solid #E8E8E8;
     .content {
         margin: 0 30px;
     }
 }
+
+$bg_dark: #2B2B2B;
+$bg_light: #FFF;

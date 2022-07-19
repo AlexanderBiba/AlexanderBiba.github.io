@@ -3,5 +3,5 @@
 .works {
     @include section;
 
-    background-color: indianred;
+    background-color: $bg_light;
 }

@@ -3,5 +3,5 @@
 .education {
     @include section;
 
-    background-color: darkgray;
+    background-color: $bg_light;
 }

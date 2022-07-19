@@ -5,15 +5,15 @@ export default function Skills() {
         <div className="skills">
             <h2>Skills</h2>
             <div className="content">
-                <div>VUE.js</div>
-                <div>REACT.js</div>
+                <div>Vue.js</div>
+                <div>React.js</div>
+                <div>Node.js</div>
+                <div>SQL</div>
                 <div>Linux</div>
-                <div>NODE.js</div>
-                <div>Python</div>
                 <div>Java</div>
                 <div>Groovy</div>
+                <div>Python</div>
                 <div>C++</div>
-                <div>C</div>
             </div>
         </div>
     )

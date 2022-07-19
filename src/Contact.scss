@@ -1,0 +1,8 @@
+@import "_section";
+
+.contact {
+    @include section;
+
+    color: $bg_light;
+    background-color: $bg_dark;
+}
