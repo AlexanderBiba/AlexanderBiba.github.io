@@ -3,7 +3,7 @@ import "./Skills.scss";
 export default function Skills() {
     return (
         <div className="skills">
-            <h2>Skills</h2>
+            <h2 className="title">Skills</h2>
             <div className="content">
                 <div>Vue.js</div>
                 <div>React.js</div>

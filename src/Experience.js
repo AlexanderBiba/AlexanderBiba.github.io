@@ -3,7 +3,7 @@ import "./Experience.scss";
 export default function Experience() {
     return (
         <div className="experience">
-            <h2>Experience</h2>
+            <h2 className="title">Experience</h2>
             <div className="content">
                 <div>
                     <h3>Bloomberg L.P.</h3>
@@ -13,7 +13,7 @@ export default function Experience() {
                 <div>
                     <h3>Intel Corporation</h3>
                     <h4>2015-2016</h4>
-                    <p>Developing pre-silicon hardware verification enviroments for a video processing SoC</p>
+                    <p>Developing pre-silicon hardware verification enviroments for an image processing SoC</p>
                 </div>
                 <div>
                     <h3>CSR plc (acquired by Qualcomm)</h3>

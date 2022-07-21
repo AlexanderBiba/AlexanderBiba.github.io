@@ -2,14 +2,21 @@
 
 .about {
     @include section;
+    border: none;
+    justify-content: center;
+
+    .title {
+        display: flex;
+        justify-content: center;
+    }
 
     .avatar {
         border-radius: 50%;
         height: 90px;
-        width: 90px;
         margin: 30px 0;
     }
 
     color: $bg_light;
     background-color: $bg_dark;
+
 }
