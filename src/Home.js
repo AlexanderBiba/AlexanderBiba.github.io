@@ -1,10 +1,19 @@
 import "./Home.scss";
+import ContactButtons from "./ContactButtons";
 
 export default function Home() {
     return (
         <header className="home">
-            <h1>Hi there! 👋 I'm Alex Biba</h1>
-            <h2>I'm a New York based software engineer</h2>
+            <div className="greeting">
+                <h1>Hi there! 👋</h1>
+                <h1>I'm Alexander Biba</h1>
+            </div>
+            <h2>I'm a <span className="hilite">New York</span> based software engineer</h2>
+            <ContactButtons className="contact-buttons"/>
+            <a
+                className="fa fa-arrow-down scroll-down"
+                href="#navbar"
+            />
         </header>
     );
 }

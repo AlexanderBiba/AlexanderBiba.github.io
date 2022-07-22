@@ -1,19 +1,25 @@
 import "./About.scss";
+import resumePdf from "./assets/resume.pdf";
 
 export default function About() {
     return (
-        <div className="about">
-            <div className="title">
+        <section id="about">
+            <div className="avatar">
                 <img
-                    className="avatar"
                     src="images/avatar.jpeg"
                     alt="Alex Biba Profile Pic"
                 />
             </div>
             <div className="content">
                 <h2>About Me</h2>
-                <p>I love building cool software and developing web applications, if you have a cool project for me, don't hesitate to reach out!</p>
+                <p>I love building cool software and developing web applications, if you have an interesting project, feel free to reach out!</p>
+                <a
+                    className="download-cv"
+                    href={resumePdf}
+                    download="AlexanderBibaResume"
+                    color="transparent"
+                ><i className="fa fa-download"/> Download Resume</a>
             </div>
-        </div>
+        </section>
     );
 }

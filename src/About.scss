@@ -1,22 +1,43 @@
 @import "_section";
+@import "_colors";
 
-.about {
+#about {
     @include section;
     border: none;
-    justify-content: center;
-
-    .title {
-        display: flex;
-        justify-content: center;
-    }
+    justify-content: flex-start;
+    align-items: center;
+    flex-direction: row;
+    gap: 30px;
+    color: $light;
+    background-color: $dark;
 
     .avatar {
-        border-radius: 50%;
-        height: 90px;
-        margin: 30px 0;
+        display: flex;
+        justify-content: center;
+
+        img {
+            border-radius: 50%;
+            width: 90px;
+            height: 90px;
+        }
     }
 
-    color: $bg_light;
-    background-color: $bg_dark;
+    .download-cv {
+        padding: 10px;
+        margin: 20px 0;
+        border-radius: 3px;
+        background-color: #7A7A7A;
+        color: $light;
+        display: inline-block;
+        text-decoration: none;
 
+        &:hover {
+            background-color: $light;
+            color: $dark;
+        }
+    }
+
+    @media(max-width: 480px) {
+        flex-direction: column;
+    }
 }

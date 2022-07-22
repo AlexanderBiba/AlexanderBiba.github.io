@@ -2,7 +2,7 @@ import "./Experience.scss";
 
 export default function Experience() {
     return (
-        <div className="experience">
+        <section id="experience">
             <h2 className="title">Experience</h2>
             <div className="content">
                 <div>
@@ -21,6 +21,6 @@ export default function Experience() {
                     <p>Developing pre-silicon hardware verification enviroments for automotive SoCs</p>
                 </div>
             </div>
-        </div>
+        </section>
     )
 }

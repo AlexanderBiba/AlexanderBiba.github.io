@@ -1,0 +1,21 @@
+@import "_section";
+@import "_colors";
+
+.contact-buttons {
+    color: $light;
+    background-color: $dark;
+    display: flex;
+    justify-content: center;
+    padding: 0.5em;
+
+    a {
+        font-size: 1.5em;
+        color: $light;
+        text-decoration: none;
+        padding: 0.5em;
+
+        &:hover {
+            color: $hover;
+        }
+    }
+}

@@ -2,19 +2,21 @@ import "./Skills.scss";
 
 export default function Skills() {
     return (
-        <div className="skills">
+        <section id="skills">
             <h2 className="title">Skills</h2>
             <div className="content">
-                <div>Vue.js</div>
-                <div>React.js</div>
-                <div>Node.js</div>
-                <div>SQL</div>
-                <div>Linux</div>
-                <div>Java</div>
-                <div>Groovy</div>
-                <div>Python</div>
-                <div>C++</div>
+                <ul>
+                    <li><div>Vue.js</div></li>
+                    <li><div>React.js</div></li>
+                    <li><div>Node.js</div></li>
+                    <li><div>SQL</div></li>
+                    <li><div>Linux</div></li>
+                    <li><div>Java</div></li>
+                    <li><div>Groovy</div></li>
+                    <li><div>Python</div></li>
+                    <li><div>C++</div></li>
+                </ul>
             </div>
-        </div>
+        </section>
     )
 }

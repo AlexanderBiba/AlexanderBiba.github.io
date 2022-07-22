@@ -1,7 +1,8 @@
 @import "_section";
+@import "_colors";
 
-.skills {
+#skills {
     @include section;
 
-    background-color: $bg_light;
+    background-color: $light;
 }

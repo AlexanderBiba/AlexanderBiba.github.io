@@ -1,20 +1,7 @@
 @import "_section";
+@import "_colors";
 
-.contact {
+#contact {
     height: 50px;
-    color: $bg_light;
-    background-color: $bg_dark;
     padding: 20px;
-
-    .content {
-        display: flex;
-        justify-content: center;
-
-        a {
-            font-size: 30px;
-            color: white;
-            text-decoration: none;
-            padding: 10px
-        }
-    }
 }

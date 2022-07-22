@@ -1,3 +1,8 @@
+@import "_section";
+@import "_colors";
+
+$skew_heading: 12deg;
+
 .home {
     background: url("../public/images/background.jpg") no-repeat top center;
     background-size: cover;
@@ -6,7 +11,49 @@
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    h1, h2 {
-        margin: 30px;
+
+    > * {
+        background-color: $dark;
+        color: $light;
+        text-shadow: 1px 3px rgb(0 0 0 / 80%);
+        box-shadow: 1px 2px rgb(0 0 0 / 50%);
+        border-radius: 3px;
+        margin: 1em;
+    }
+
+    .greeting {
+        transform: skewX(-$skew_heading);
+        padding: 1em;
+    }
+
+    h2 {
+        color: $hilite;
+        padding: 0.5em;
+    }
+
+    .greeting, h2 {
+        text-align: center;
+        background-color: $dark;
+    }
+
+    .contact-buttons {
+        margin: 1em;
+    }
+
+    .scroll-down {
+        margin: 1em;
+        font-size: 2em;
+        color: $light;
+        background-color: $dark;
+        padding: 0.5em;
+        border-radius: 50%;
+        text-decoration: none;
+        &:hover {
+            color: $hover;
+        }
+    }
+
+    .hilite {
+        color: $light;
     }
 }
