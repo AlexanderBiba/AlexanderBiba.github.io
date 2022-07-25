@@ -1,1 +1,1 @@
-# Just my resume
+# Just my homepage - https://alex152.github.io/my-homepage

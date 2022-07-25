@@ -1,12 +1,13 @@
 import "./About.scss";
 import resumePdf from "./assets/resume.pdf";
+import avatar from "./assets/avatar.jpg";
 
 export default function About() {
     return (
         <section id="about">
             <div className="avatar">
                 <img
-                    src="images/avatar.jpeg"
+                    src={avatar}
                     alt="Alex Biba Profile Pic"
                 />
             </div>
