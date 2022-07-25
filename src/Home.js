@@ -3,7 +3,7 @@ import ContactButtons from "./ContactButtons";
 
 export default function Home() {
     return (
-        <header className="home">
+        <header id="home">
             <div className="greeting">
                 <h1>Hi there! 👋</h1>
                 <h1>I'm Alexander Biba</h1>

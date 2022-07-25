@@ -1,9 +1,7 @@
 @import "_section";
 @import "_colors";
 
-$skew_heading: 12deg;
-
-.home {
+#home {
     background: url("../public/images/background.jpg") no-repeat top center;
     background-size: cover;
     height: 100vh;
@@ -22,7 +20,7 @@ $skew_heading: 12deg;
     }
 
     .greeting {
-        transform: skewX(-$skew_heading);
+        transform: skewX(-12deg);
         padding: 1em;
     }
 
