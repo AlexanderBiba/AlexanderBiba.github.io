@@ -1,1 +1,3 @@
-# Just my homepage - https://alex152.github.io/my-homepage
+# Just my homepage
+
+On github pages: https://alex152.github.io/my-homepage
