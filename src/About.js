@@ -14,6 +14,7 @@ export default function About() {
             <div className="content">
                 <h2>About Me</h2>
                 <p>I love building cool software and developing web applications, if you have an interesting project, feel free to reach out!</p>
+                <p>I also love Video Games 🎮, Guitars 🎸, and Hiking 🥾</p>
                 <a
                     className="download-cv"
                     href={resumePdf}
