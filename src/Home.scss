@@ -20,8 +20,9 @@
     }
 
     .greeting {
-        transform: skewX(-12deg);
-        padding: 1em;
+        background-color: none;
+        text-shadow: 0 0 10px rgb(0 0 0 / 80%);
+        box-shadow: none;
     }
 
     h2 {
@@ -32,6 +33,7 @@
     .greeting, h2 {
         text-align: center;
         background-color: $dark;
+        border-radius: 5px;
     }
 
     .contact-buttons {

@@ -5,7 +5,7 @@ export default function Home() {
     return (
         <header id="home">
             <div className="greeting">
-                <h1>Hi there! 👋</h1>
+                <h1>Hi There! 👋</h1>
                 <h1>I'm Alexander Biba</h1>
             </div>
             <h2>I'm a <span className="hilite">New York</span> Based Software Engineer</h2>
