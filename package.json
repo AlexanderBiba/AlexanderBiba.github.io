@@ -1,7 +1,7 @@
 {
     "name": "my-homepage",
     "version": "0.1.0",
-    "homepage": "https://alex152.github.io/",
+    "homepage": "https://alex152.github.io",
     "private": true,
     "dependencies": {
         "font-awesome": "^4.7.0",
