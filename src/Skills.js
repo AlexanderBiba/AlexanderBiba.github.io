@@ -6,9 +6,9 @@ export default function Skills() {
             <h2 className="title">Skills</h2>
             <div className="content">
                 <h3>High Proficiency</h3>
-                <h4>JavaScript, Vue.js, Node.js, SQL, Linux, Groovy</h4>
+                <h4>JavaScript, Python, Vue.js, Node.js, SQL, Linux, Groovy</h4>
                 <h3>Fluent With</h3>
-                <h4>React.js, Java, C++/C, Python</h4>
+                <h4>React.js, Java, C++/C</h4>
             </div>
         </section>
     )
