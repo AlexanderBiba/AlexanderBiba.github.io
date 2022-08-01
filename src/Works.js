@@ -12,7 +12,7 @@ export default function Works() {
                 <h3><a className="project" href="https://github.com/AlexanderBiba/password-generator">Python Password Generator</a><a className="fa fa-github" href="https://github.com/AlexanderBiba/password-generator" target="_blank"/></h3>
                 <h4>A Password Generator using Python secrets, unit-tests with PyTest</h4>
                 <h3><a className="project" href="https://AlexanderBiba.github.io/">My Personal Homepage</a><a className="fa fa-github" href="https://github.com/AlexanderBiba/AlexanderBiba.github.io" target="_blank"/></h3>
-                <h4>You're already here, might as well check out the code, written in React.s</h4>
+                <h4>You're already here, might as well check out the code, written in React.js</h4>
             </div>
         </section>
     )

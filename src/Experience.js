@@ -9,7 +9,7 @@ export default function Experience() {
                     <h3>Bloomberg, Senior Software Engineer, New York</h3>
                     <h4>2018-2022</h4>
                     <p>Developing Equity Research Document Search Engine and a Collaborative Document Viewer Web Application</p>
-                    <h5>Tech Stack: vue.js, node.js, Groovy, Python, C++, Java, <a href="https://bloomberg.github.io/comdb2/overview_home.html">comdb2<a></a></a></h5>
+                    <h5>Tech Stack: Vue.js, Node.js, Groovy, Python, C++, Java, <a href="https://bloomberg.github.io/comdb2/overview_home.html">comdb2<a></a></a></h5>
                 </div>
                 <div>
                     <h3>Bloomberg, Software Engineer, Tel Aviv</h3>
