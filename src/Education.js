@@ -7,7 +7,7 @@ export default function Education() {
             <div className="content">
                 <h3>Technion</h3>
                 <h4>B.Sc. Computer Engineering</h4>
-                <p>During my studies at the Technion, I focused on Computer Architecture, Operating Systems, and Databases</p>
+                <p>During my studies at the Technion, I focused on Computer Architecture, Operating Systems, and Databases.</p>
             </div>
         </section>
     )
