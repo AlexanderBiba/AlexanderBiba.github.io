@@ -6,7 +6,7 @@ export default function Home() {
         <header id="home">
             <div className="greeting">
                 <h1>Hi There! 👋</h1>
-                <h1>I'm Alexander Biba</h1>
+                <h1>I'm Alex Biba</h1>
             </div>
             <h2 className="description">I'm a <span className="hilite">New York</span> Based Software Engineer</h2>
             <ContactButtons className="contact-buttons"/>
