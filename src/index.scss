@@ -15,6 +15,9 @@ section {
     flex-direction: column;
     padding: 2em 5em;
     border-bottom: 1px solid #E8E8E8;
+    @media(max-width: 480px) {
+		padding: 1.5em 2.5em;
+	}
 }
 
 button {
