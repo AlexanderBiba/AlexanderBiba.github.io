@@ -1,7 +1,20 @@
-@import "_section";
 @import "_colors";
 
 #contact {
-    @include section;
-    background-color: $light;
+    background-color: $dark;
+    color: $light;
+    border-bottom: 1px solid #1f1f1f;
+    #contact-form {
+        display: flex;
+        flex-direction: column;
+    }
+    #submit-button {
+        max-width: 150px;
+    }
+    .contact-field {
+        display: block;
+        margin: 1em 0;
+        padding: 0.2em;
+        max-width: 720px;
+    }
 }

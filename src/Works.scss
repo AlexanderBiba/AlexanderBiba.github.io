@@ -1,10 +1,7 @@
-@import "_section";
 @import "_colors";
 
 #works {
-    @include section;
     background-color: $light;
-
     .fa-github {
         margin: 0 0.5em;
         position: relative;

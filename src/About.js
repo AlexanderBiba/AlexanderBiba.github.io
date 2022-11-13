@@ -15,12 +15,12 @@ export default function About() {
                 <h2>About Me</h2>
                 <p>I love building cool software and developing web applications, if you have an interesting project, feel free to reach out!</p>
                 <p>I also love Video Games 🎮, Guitars 🎸, and Hiking 🥾</p>
-                <a
+                <button
                     className="download-cv"
                     href={resumePdf}
                     download="AlexanderBibaResume"
                     color="transparent"
-                ><i className="fa fa-download"/> Download Resume</a>
+                ><i className="fa fa-download"/> Download Resume</button>
             </div>
         </section>
     );

@@ -1,7 +1,5 @@
-@import "_section";
 @import "_colors";
 
 #experience {
-    @include section;
     background-color: $light;
 }

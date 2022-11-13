@@ -6,28 +6,14 @@ export default function Contact() {
         <section id="contact">
             <h2 className="title">Contact Me</h2>
             <div className="content">
-                <form onSubmit={async e => {
+                <form id="contact-form" onSubmit={e => {
                     e.preventDefault();
-                    try {
-                        const result = await emailjs.sendForm("service_htw55iu", "template_3a7hcft", e.target, "rdPzcQbDHawb-Tomt");
-                        console.log(result);
-                    } catch (err) {
-                        console.log(err);
-                    }
+                    emailjs.sendForm("service_htw55iu", "template_3a7hcft", e.target, "rdPzcQbDHawb-Tomt");
                 }}>
-                    <div>
-                        <h3>Name</h3>
-                        <input type="text" name="from_name" />
-                    </div>
-                    <div>
-                        <h3>Email</h3>
-                        <input type="email" name="reply_to" />
-                    </div>
-                    <div>
-                        <h3>Message</h3>
-                        <textarea name="message" />
-                    </div>
-                    <input type="submit" value="Submit" />
+                    <input className="contact-field" type="text" name="user_name" placeholder="Name" required />
+                    <input className="contact-field" type="email" name="user_email" placeholder="Email" required />
+                    <textarea className="contact-field" name="message" placeholder="Message" required />
+                    <button id="submit-button" type="submit" >Submit</button>
                 </form>
             </div>
         </section>
