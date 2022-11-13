@@ -1,5 +1,10 @@
 @import "_colors";
 
+@mixin cool-shadow {
+    text-shadow: 1px 3px rgb(0 0 0 / 80%);
+    box-shadow: 1px 2px rgb(0 0 0 / 50%);
+}
+
 #home {
     background: url("assets/background.jpg") no-repeat top center;
     background-size: cover;
@@ -20,17 +25,15 @@
         background-color: $dark;
         border-radius: 5px;
         text-align: center;
-        text-shadow: 1px 3px rgb(0 0 0 / 80%);
-        box-shadow: 1px 2px rgb(0 0 0 / 50%);
         .hilite {
             color: $light;
         }
+        @include cool-shadow();
     }
     .social-media-buttons {
         margin: 1em;
-        text-shadow: 1px 3px rgb(0 0 0 / 80%);
-        box-shadow: 1px 2px rgb(0 0 0 / 50%);
         border-radius: 5px;
+        @include cool-shadow();
     }
     .scroll-down {
         margin: 1em;
@@ -40,10 +43,9 @@
         padding: 0.5em;
         border-radius: 50%;
         text-decoration: none;
-        text-shadow: 1px 3px rgb(0 0 0 / 80%);
-        box-shadow: 1px 2px rgb(0 0 0 / 50%);
         &:hover {
             color: $hover;
         }
+        @include cool-shadow();
     }
 }
