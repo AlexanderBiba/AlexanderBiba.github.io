@@ -1,5 +1,5 @@
 import "./Home.scss";
-import ContactButtons from "./ContactButtons";
+import SocialMediaButtons from "./SocialMediaButtons";
 
 export default function Home() {
     return (
@@ -9,7 +9,7 @@ export default function Home() {
                 <h1>I'm Alex Biba</h1>
             </div>
             <h2 className="description">I'm a <span className="hilite">New York</span> Based Software Engineer</h2>
-            <ContactButtons className="contact-buttons"/>
+            <SocialMediaButtons className="social-media-buttons"/>
             <a
                 className="fa fa-arrow-down scroll-down"
                 href="#navbar"

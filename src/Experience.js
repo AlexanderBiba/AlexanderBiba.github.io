@@ -6,16 +6,22 @@ export default function Experience() {
             <h2 className="title">Experience</h2>
             <div className="content">
                 <div>
+                    <h3>Sigma Computing, Fullstack Software Engineer, New York</h3>
+                    <h4>2018-2022</h4>
+                    <p>Building the next generation of cloud analytics <a href="https://www.sigmacomputing.com/">sigmacomputing.com</a></p>
+                    <h5>Tech Stack: Node.js, React.js</h5>
+                </div>
+                <div>
                     <h3>Bloomberg, Senior Software Engineer, New York</h3>
                     <h4>2018-2022</h4>
                     <p>Developing Equity Research Document Search Engine and a Collaborative Document Viewer Web Application.</p>
-                    <h5>Tech Stack: Vue.js, Node.js, Groovy, Python, C++, Java, <a href="https://bloomberg.github.io/comdb2/overview_home.html">comdb2<a></a></a></h5>
+                    <h5>Tech Stack: Vue.js, Node.js, Groovy, Python, C++, Java, <a href="https://bloomberg.github.io/comdb2/overview_home.html">comdb2</a></h5>
                 </div>
                 <div>
                     <h3>Bloomberg, Software Engineer, Tel Aviv</h3>
                     <h4>2016-2018</h4>
                     <p>Developing Bloomberg's Transaction Cost Analysis (BTCA) Terminal Application.</p>
-                    <h5>Tech Stack: JavaScript, C++, Python, <a href="https://bloomberg.github.io/comdb2/overview_home.html">comdb2<a></a></a></h5>
+                    <h5>Tech Stack: JavaScript, C++, Python, <a href="https://bloomberg.github.io/comdb2/overview_home.html">comdb2</a></h5>
                 </div>
                 <div>
                     <h3>Intel, Hardware Engineer Intern, Haifa</h3>
