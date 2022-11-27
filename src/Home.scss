@@ -14,32 +14,29 @@
     justify-content: center;
     flex-direction: column;
     .greeting {
-        text-shadow: 0 0 10px rgb(0 0 0 / 100%);
-        text-align: center;
-        color: $light;
         margin: 1em;
-    }
-    .description {
-        color: $hilite;
-        padding: 0.5em;
-        background-color: $dark;
-        border-radius: 5px;
-        text-align: center;
-        .hilite {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        h1 {
+            padding: 0.3em;
             color: $light;
+            background-color: rgba($dark, 0.95);
+            border-radius: 5px;
+            @include cool-shadow();
         }
-        @include cool-shadow();
     }
     .social-media-buttons {
         margin: 1em;
         border-radius: 5px;
+        background-color: rgba($dark, 0.95);
         @include cool-shadow();
     }
     .scroll-down {
         margin: 1em;
         font-size: 2em;
         color: $light;
-        background-color: $dark;
+        background-color: rgba($dark, 0.95);
         padding: 0.5em;
         border-radius: 50%;
         text-decoration: none;

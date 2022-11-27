@@ -4,11 +4,11 @@ import 'font-awesome/css/font-awesome.min.css';
 export default function SocialMediaButtons() {
     return (
         <div className="social-media-buttons">
-            <a className="fa fa-envelope" href="mailto:alexbiba@gmail.com" />
-            <a className="fa fa-linkedin" href="https://www.linkedin.com/in/alexander-biba-b9794771" />
-            <a className="fa fa-github" href="https://github.com/AlexanderBiba" />
-            <a className="fa fa-facebook" href="https://www.facebook.com/alexbiba" />
-            <a className="fa fa-instagram" href="https://www.instagram.com/alexbiba" />
+            <a href="mailto:alexbiba@gmail.com" ><i className="fa fa-envelope" ></i></a>
+            <a href="https://www.linkedin.com/in/alexander-biba-b9794771" ><i className="fa fa-linkedin" ></i></a>
+            <a href="https://github.com/AlexanderBiba" ><i className="fa fa-github" ></i></a>
+            <a href="https://www.facebook.com/alexbiba" ><i className="fa fa-facebook" ></i></a>
+            <a href="https://www.instagram.com/alexbiba" ><i className="fa fa-instagram" ></i></a>
         </div>
     )
 }

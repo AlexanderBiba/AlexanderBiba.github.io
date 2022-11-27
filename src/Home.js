@@ -6,14 +6,11 @@ export default function Home() {
         <header id="home">
             <div className="greeting">
                 <h1>Hi There! 👋</h1>
-                <h1>I'm Alex Biba</h1>
+                <h1>I'm Alex</h1>
+                <h1>I'm a <span className="hilite">New York</span> Based Software Engineer</h1>
             </div>
-            <h2 className="description">I'm a <span className="hilite">New York</span> Based Software Engineer</h2>
             <SocialMediaButtons className="social-media-buttons"/>
-            <a
-                className="fa fa-arrow-down scroll-down"
-                href="#navbar"
-            />
+            <a href="#navbar"><i className="fa fa-arrow-down scroll-down"></i></a>
         </header>
     );
 }
