@@ -7,7 +7,7 @@ export default function Experience() {
             <div className="content">
                 <div>
                     <h3>Sigma Computing, Fullstack Software Engineer, New York</h3>
-                    <h4>2018-2022</h4>
+                    <h4>2022-today</h4>
                     <p>Building the next generation of cloud analytics <a href="https://www.sigmacomputing.com/">sigmacomputing.com</a></p>
                     <h5>Tech Stack: Node.js, React.js</h5>
                 </div>
