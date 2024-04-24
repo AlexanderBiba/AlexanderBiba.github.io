@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.8e561fc3.css",
-    "main.js": "/static/js/main.9c62a432.js",
+    "main.js": "/static/js/main.66f03565.js",
     "static/media/background.jpg": "/static/media/background.b4cda3b870cb216710e6.jpg",
     "static/media/fontawesome-webfont.svg?v=4.7.0": "/static/media/fontawesome-webfont.c1e38fd9e0e74ba58f7a.svg",
     "static/media/fontawesome-webfont.eot": "/static/media/fontawesome-webfont.8b43027f47b20503057d.eot",
@@ -11,10 +11,10 @@
     "static/media/avatar.jpg": "/static/media/avatar.6d69195b7e0abd917aff.jpg",
     "index.html": "/index.html",
     "main.8e561fc3.css.map": "/static/css/main.8e561fc3.css.map",
-    "main.9c62a432.js.map": "/static/js/main.9c62a432.js.map"
+    "main.66f03565.js.map": "/static/js/main.66f03565.js.map"
   },
   "entrypoints": [
     "static/css/main.8e561fc3.css",
-    "static/js/main.9c62a432.js"
+    "static/js/main.66f03565.js"
   ]
 }
