@@ -7,19 +7,19 @@ export default function Skills() {
             <div className="content">
                 <h3>High Proficiency</h3>
                 <ul>
-                    <li>JavaScript</li>
+                    <li>TypeScript</li>
+                    <li>Node.js</li>
                     <li>Python</li>
-                    <li>Groovy</li>
                     <li>SQL</li>
                     <li>Linux</li>
-                    <li>Vue.js</li>
-                    <li>Node.js</li>
                 </ul>
                 <h3>Fluent With</h3>
                 <ul>
+                    <li>React.js</li>
+                    <li>Vue.js</li>
+                    <li>Groovy</li>
                     <li>Java</li>
                     <li>C/C++</li>
-                    <li>React.js</li>
                 </ul>
                 <h3>Languages</h3>
                 <ul>

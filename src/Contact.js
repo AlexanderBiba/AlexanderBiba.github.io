@@ -14,7 +14,7 @@ export default function Contact() {
                     const submitButton = e.target.elements['submit-button'];
                     submitButton.disabled = true;
                     try {
-                        await emailjs.sendForm("service_htw55iu", "template_3a7hcft", e.target, "rdPzcQbDHawb-Tomt");
+                        await emailjs.sendForm("service_5osz36y", "template_3a7hcft", e.target, "rdPzcQbDHawb-Tomt");
                         setContactResponseMessage("Message sent successfully!");
                     } catch (err) {
                         console.log(err);

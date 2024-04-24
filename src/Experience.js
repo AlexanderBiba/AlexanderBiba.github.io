@@ -6,10 +6,10 @@ export default function Experience() {
             <h2 className="title">Experience</h2>
             <div className="content">
                 <div>
-                    <h3>Sigma Computing, Fullstack Software Engineer, New York</h3>
+                    <h3>Sigma Computing, Senior Fullstack Software Engineer, New York</h3>
                     <h4>2022-today</h4>
                     <p>Building the next generation of cloud analytics <a href="https://www.sigmacomputing.com/">sigmacomputing.com</a></p>
-                    <h5>Tech Stack: Node.js, React.js</h5>
+                    <h5>Tech Stack: Node.js, React.js, GraphQL, REST, MySQL</h5>
                 </div>
                 <div>
                     <h3>Bloomberg, Senior Software Engineer, New York</h3>
@@ -24,13 +24,13 @@ export default function Experience() {
                     <h5>Tech Stack: JavaScript, C++, Python, <a href="https://bloomberg.github.io/comdb2/overview_home.html">comdb2</a></h5>
                 </div>
                 <div>
-                    <h3>Intel, Hardware Engineer Intern, Haifa</h3>
+                    <h3>Intel, Hardware Engineer, Part Time 50%, Haifa</h3>
                     <h4>2015-2016</h4>
                     <p>Developing pre-silicon hardware verification enviroments for an image processing SoC.</p>
                     <h5>Tech Stack: System Verilog, Perl, Python</h5>
                 </div>
                 <div>
-                    <h3>CSR, Hardware Engineer Intern, Haifa</h3>
+                    <h3>CSR, Hardware Engineer, Part Time 50%, Haifa</h3>
                     <h4>2012-2015</h4>
                     <p>Developing pre-silicon hardware verification enviroments for automotive SoCs.</p>
                     <h5>Tech Stack: Specman, Perl, Python, C</h5>
