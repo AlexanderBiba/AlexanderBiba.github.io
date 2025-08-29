@@ -3,39 +3,64 @@ import "./Experience.scss";
 export default function Experience() {
     return (
         <section id="experience">
-            <h2 className="title">Experience</h2>
-            <div className="content">
-                <div>
-                    <h3>Sigma Computing, Senior Fullstack Software Engineer, New York</h3>
-                    <h4>2022-today</h4>
-                    <p>Building the next generation of cloud analytics <a href="https://www.sigmacomputing.com/">sigmacomputing.com</a></p>
-                    <h5>Tech Stack: Node.js, React.js, GraphQL, REST, MySQL</h5>
+            <h2>Experience</h2>
+            <div className="experience-list">
+                <div className="experience-item">
+                    <div className="company-logo">
+                        <div className="logo-placeholder">Σ</div>
+                    </div>
+                    <div className="experience-content">
+                        <div className="company-header">
+                            <h3>Sigma Computing</h3>
+                            <span className="role">Senior Software Engineer</span>
+                            <span className="period">2022 - Present</span>
+                            <span className="location">New York</span>
+                        </div>
+                        <ul>
+                            <li>Building cloud analytics platform with Node.js, React, GraphQL</li>
+                            <li>Developing scalable backend services and REST APIs</li>
+                            <li>Working with MySQL databases and cloud infrastructure</li>
+                        </ul>
+                    </div>
                 </div>
-                <div>
-                    <h3>Bloomberg, Senior Software Engineer, New York</h3>
-                    <h4>2018-2022</h4>
-                    <p>Developing Equity Research Document Search Engine and a Collaborative Document Viewer Web Application.</p>
-                    <h5>Tech Stack: Vue.js, Node.js, Groovy, Python, C++, Java, <a href="https://bloomberg.github.io/comdb2/overview_home.html">comdb2</a></h5>
+                
+                <div className="experience-item">
+                    <div className="company-logo">
+                        <div className="logo-placeholder">B</div>
+                    </div>
+                    <div className="experience-content">
+                        <div className="company-header">
+                            <h3>Bloomberg</h3>
+                            <span className="role">Senior Software Engineer</span>
+                            <span className="period">2016 - 2022</span>
+                            <span className="location">Tel Aviv → New York</span>
+                        </div>
+                        <ul>
+                            <li>Developed Bloomberg's Transaction Cost Analysis (BTCA) Terminal Application</li>
+                            <li>Built equity research document search engine and collaborative document viewer</li>
+                            <li>Worked with Vue.js, Node.js, Python, C++, and proprietary databases</li>
+                        </ul>
+                    </div>
                 </div>
-                <div>
-                    <h3>Bloomberg, Software Engineer, Tel Aviv</h3>
-                    <h4>2016-2018</h4>
-                    <p>Developing Bloomberg's Transaction Cost Analysis (BTCA) Terminal Application.</p>
-                    <h5>Tech Stack: JavaScript, C++, Python, <a href="https://bloomberg.github.io/comdb2/overview_home.html">comdb2</a></h5>
-                </div>
-                <div>
-                    <h3>Intel, Hardware Engineer, Part Time 50%, Haifa</h3>
-                    <h4>2015-2016</h4>
-                    <p>Developing pre-silicon hardware verification enviroments for an image processing SoC.</p>
-                    <h5>Tech Stack: System Verilog, Perl, Python</h5>
-                </div>
-                <div>
-                    <h3>CSR, Hardware Engineer, Part Time 50%, Haifa</h3>
-                    <h4>2012-2015</h4>
-                    <p>Developing pre-silicon hardware verification enviroments for automotive SoCs.</p>
-                    <h5>Tech Stack: Specman, Perl, Python, C</h5>
+                
+                <div className="experience-item">
+                    <div className="company-logo">
+                        <div className="logo-placeholder">I</div>
+                    </div>
+                    <div className="experience-content">
+                        <div className="company-header">
+                            <h3>Intel</h3>
+                            <span className="role">Hardware Engineer (Part Time)</span>
+                            <span className="period">2015 - 2016</span>
+                            <span className="location">Haifa</span>
+                        </div>
+                        <ul>
+                            <li>Developed pre-silicon hardware verification environments for image processing SoC</li>
+                            <li>Worked with System Verilog, Perl, and Python</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </section>
-    )
+    );
 }

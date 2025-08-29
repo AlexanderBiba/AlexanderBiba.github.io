@@ -3,28 +3,66 @@
 #navbar {
     position: sticky;
     top: 0;
-    background-color: $dark;
-    text-shadow: 1px 3px rgb(0 0 0 / 80%);
-
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #e9ecef;
+    z-index: 100;
+    transition: all 0.3s ease;
+    
     ul {
         display: flex;
         align-items: center;
-        justify-content: space-around;
+        justify-content: center;
         margin: 0;
         padding: 0;
+        list-style: none;
+        max-width: 600px;
+        margin: 0 auto;
+        
+        @media(max-width: 768px) {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
     }
-
+    
     li {
         display: inline;
     }
-
+    
     a {
         display: block;
-        padding: 10px;
+        padding: 1.5rem 1.5rem;
         text-decoration: none;
-        color: $light;
+        color: $dark;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        position: relative;
+        
         &:hover {
             color: $hover;
+            
+            &::after {
+                width: 100%;
+                opacity: 1;
+            }
+        }
+        
+        &::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: $hover;
+            transition: all 0.3s ease;
+            opacity: 0;
+        }
+        
+        @media(max-width: 768px) {
+            padding: 1rem 1rem;
+            font-size: 0.9rem;
         }
     }
 }

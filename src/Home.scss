@@ -1,49 +1,72 @@
 @import "_colors";
 
-@mixin cool-shadow {
-    text-shadow: 1px 3px rgb(0 0 0 / 80%);
-    box-shadow: 1px 2px rgb(0 0 0 / 50%);
-}
-
 #home {
-    background: url("assets/background.jpg") no-repeat top center;
-    background-size: cover;
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
-    .greeting {
-        margin: 1em;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    position: relative;
+    
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("assets/background.jpg") no-repeat center center;
+        background-size: cover;
+        opacity: 0.1;
+        z-index: 1;
+    }
+    
+    .hero {
+        text-align: center;
+        z-index: 2;
+        position: relative;
+        max-width: 800px;
+        padding: 2rem;
+        
         h1 {
-            text-align: center;
-            padding: 0.3em;
-            color: $light;
-            background-color: rgba($dark, 0.95);
-            border-radius: 5px;
-            @include cool-shadow();
+            font-size: 4rem;
+            font-weight: 700;
+            margin: 0 0 1rem 0;
+            color: $dark;
+            letter-spacing: -0.02em;
+            
+            @media(max-width: 768px) {
+                font-size: 3rem;
+            }
         }
-    }
-    .social-media-buttons {
-        margin: 1em;
-        border-radius: 5px;
-        background-color: rgba($dark, 0.95);
-        @include cool-shadow();
-    }
-    .scroll-down {
-        margin: 1em;
-        font-size: 2em;
-        color: $light;
-        background-color: rgba($dark, 0.95);
-        padding: 0.5em;
-        border-radius: 50%;
-        text-decoration: none;
-        &:hover {
-            color: $hover;
+        
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin: 0 0 1.5rem 0;
+            color: lighten($dark, 20%);
+            font-weight: 400;
         }
-        @include cool-shadow();
+        
+        p {
+            font-size: 1.2rem;
+            margin: 0 0 3rem 0;
+            color: lighten($dark, 30%);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            
+            @media(max-width: 768px) {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
     }
 }

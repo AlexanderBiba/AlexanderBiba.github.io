@@ -3,32 +3,37 @@ import "./Skills.scss";
 export default function Skills() {
   return (
     <section id="skills">
-      <h2 className="title">Skills</h2>
-      <div className="content">
-        <h3>High Proficiency</h3>
-        <ul>
-          <li>TypeScript</li>
-          <li>Node.js</li>
-          <li>REST</li>
-          <li>GraphQL</li>
-          <li>MySQL</li>
-          <li>Python</li>
-          <li>Linux</li>
-        </ul>
-        <h3>Fluent With</h3>
-        <ul>
-          <li>React.js</li>
-          <li>Vue.js</li>
-          <li>Groovy</li>
-          <li>Java</li>
-          <li>C/C++</li>
-        </ul>
-        <h3>Languages</h3>
-        <ul>
-          <li>English - Fluent</li>
-          <li>Hebrew - Native</li>
-          <li>Russian - Basic</li>
-        </ul>
+      <h2>Skills</h2>
+      <div className="skills-grid">
+        <div className="skill-category">
+          <h3>Core Technologies</h3>
+          <div className="skill-tags">
+            <span className="skill-tag">TypeScript</span>
+            <span className="skill-tag">Node.js</span>
+            <span className="skill-tag">React</span>
+            <span className="skill-tag">Python</span>
+            <span className="skill-tag">GraphQL</span>
+          </div>
+        </div>
+        
+        <div className="skill-category">
+          <h3>Databases & Infrastructure</h3>
+          <div className="skill-tags">
+            <span className="skill-tag">MySQL</span>
+            <span className="skill-tag">REST APIs</span>
+            <span className="skill-tag">Linux</span>
+            <span className="skill-tag">Cloud</span>
+          </div>
+        </div>
+        
+        <div className="skill-category">
+          <h3>Languages</h3>
+          <div className="skill-tags">
+            <span className="skill-tag">English (Fluent)</span>
+            <span className="skill-tag">Hebrew (Native)</span>
+            <span className="skill-tag">Russian (Basic)</span>
+          </div>
+        </div>
       </div>
     </section>
   );

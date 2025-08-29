@@ -1,21 +1,91 @@
 @import "_colors";
 
 #works {
-    background-color: $light;
-    .fa-github {
-        margin: 0 0.5em;
-        position: relative;
-        text-decoration: none;
+    background: #f8f9fa;
+    
+    .projects-list {
+        max-width: 800px;
+        margin: 0 auto 2rem auto;
+        
+        .project-item {
+            background: $light;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid $hover;
+            margin-bottom: 1.5rem;
+            transition: all 0.2s ease;
+            
+            &:hover {
+                border-left-color: darken($hover, 10%);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+            
+            &:last-child {
+                margin-bottom: 0;
+            }
+            
+            .project-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 0.75rem;
+                flex-wrap: wrap;
+                gap: 1rem;
+                
+                @media(max-width: 768px) {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+                
+                h3 {
+                    font-size: 1.2rem;
+                    font-weight: 600;
+                    color: $dark;
+                    margin: 0;
+                }
+                
+                .project-links {
+                    display: flex;
+                    gap: 1rem;
+                    flex-wrap: wrap;
+                    
+                    a {
+                        color: $hover;
+                        text-decoration: none;
+                        font-weight: 500;
+                        font-size: 0.85rem;
+                        transition: all 0.2s ease;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        
+                        &:hover {
+                            color: darken($hover, 10%);
+                        }
+                        
+                        i {
+                            font-size: 0.9rem;
+                        }
+                    }
+                }
+            }
+            
+            p {
+                color: lighten($dark, 20%);
+                line-height: 1.5;
+                margin: 0;
+                font-size: 0.9rem;
+            }
+        }
     }
-    .fa-github:after {
-        content: '';
-        width: 0;
-        height: 0;
-        border-style: solid;
-        border-width: 0 0.2em 0.2em 0;
-        border-color: transparent black transparent transparent;
-        right: 0;
-        top: 0;
-        position: absolute;
+    
+    .github-cta {
+        text-align: center;
+        
+        .btn-github {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
     }
 }
