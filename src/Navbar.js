@@ -1,9 +1,10 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import "./Navbar.scss";
 
 export default function Navbar() {
     const location = useLocation();
+    const navigate = useNavigate();
     const isBlogPage = location.pathname.startsWith("/blog");
     const scrollContainerRef = useRef(null);
     const [showLeftShadow, setShowLeftShadow] = useState(false);
@@ -32,6 +33,16 @@ export default function Navbar() {
         };
     }, []);
 
+    const handleHashNavigation = (e, hash) => {
+        e.preventDefault();
+        // Navigate to home first
+        navigate("/");
+        // Set hash after a brief delay to ensure route has changed
+        setTimeout(() => {
+            window.location.hash = hash;
+        }, 50);
+    };
+
     return (
         <div id="navbar">
             <div className={`shadow-indicator left ${showLeftShadow ? "visible" : ""}`}></div>
@@ -42,14 +53,14 @@ export default function Navbar() {
                 <ul>
                     <li>
                         {isBlogPage ? (
-                            <Link to="/#home">Home</Link>
+                            <a href="#home" onClick={(e) => handleHashNavigation(e, "#home")}>Home</a>
                         ) : (
                             <a href="#home">Home</a>
                         )}
                     </li>
                     <li>
                         {isBlogPage ? (
-                            <Link to="/#about">About</Link>
+                            <a href="#about" onClick={(e) => handleHashNavigation(e, "#about")}>About</a>
                         ) : (
                             <a href="#about">About</a>
                         )}
@@ -59,14 +70,14 @@ export default function Navbar() {
                     </li>
                     <li>
                         {isBlogPage ? (
-                            <Link to="/#experience">Experience</Link>
+                            <a href="#experience" onClick={(e) => handleHashNavigation(e, "#experience")}>Experience</a>
                         ) : (
                             <a href="#experience">Experience</a>
                         )}
                     </li>
                     <li>
                         {isBlogPage ? (
-                            <Link to="/#works">Projects</Link>
+                            <a href="#works" onClick={(e) => handleHashNavigation(e, "#works")}>Projects</a>
                         ) : (
                             <a href="#works">Projects</a>
                         )}

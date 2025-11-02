@@ -3,7 +3,7 @@ title: "My Honest Experience with Cursor"
 date: "2025-11-02"
 ---
 
-I’ve been writing code since I was a kid. Autocompletion has been a constant companion, and I was genuinely impressed when GitHub Copilot arrived, offering context-aware, AI-driven suggestions.
+I’ve been writing code since I was a teen. Autocompletion has been a constant companion, and I was genuinely impressed when GitHub Copilot arrived, offering context-aware, AI-driven suggestions.
 
 To be honest, I was a latecomer to the "vibe coding" hype train. When my workplace provided us with Cursor licenses, I was initially skeptical. I felt more productive sticking to my traditional, "old-fashioned" way of writing code, and, frankly, I didn't want to risk my project deadlines on a new tool.
 
