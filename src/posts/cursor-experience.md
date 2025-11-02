@@ -11,7 +11,7 @@ However, things changed during my paternity leave. I decided to dedicate some ti
 
 ## Project 1: Personal Website (React/GitHub Pages)
 
-My first task was improving my personal website, a small React application hosted on GitHub Pages. I was hooked from the very first prompt:
+My first task was improving my [personal website](https://alexanderbiba.github.io/), a small React application hosted on GitHub Pages. I was hooked from the very first prompt:
 
 > “This is my personal website; it looks a bit dated. Can we make it look modern and cool? Specifically, I would like a retro-futuristic theme and a dark mode/light mode button.”
 
@@ -27,14 +27,15 @@ I followed up with more specific requests:
 
 After several rounds of back-and-forth, I reached an outcome I was satisfied with. Crucially, the process itself was fun, allowing me to experiment with different styles, prompts, and ideas.
 
-**Before / After Screenshots:**  
-![](mysite-before.png) ![](mysite-after.png)
+|         Before         |         After         |
+| :--------------------: | :-------------------: |
+| ![](mysite-before.png) | ![](mysite-after.png) |
 
 ---
 
 ## Project 2: Wordle Clone (React/Firebase)
 
-The next project was a slightly more complex React/Firebase application, a Wordle clone. Here, I moved beyond just style updates (though it definitely got a facelift) to adding substantial new features. The basic app was bare-bones: a daily word, five attempts, all stored in browser cache. With the AI agent, I was able to implement:
+The next project was a slightly more complex React/Firebase application, a [Wordle clone](https://alexanderbiba.github.io/wordle/). Here, I moved beyond just style updates (though it definitely got a facelift) to adding substantial new features. The basic app was bare-bones: a daily word, five attempts, all stored in browser cache. With the AI agent, I was able to implement:
 
 - **Profiles:** Sign-in functionality using a Google account.
 - **End-of-Game Statistics:** Metrics like games played, current streak, win percentage, and guess distribution.
@@ -43,8 +44,9 @@ The next project was a slightly more complex React/Firebase application, a Wordl
 
 The agent was even helpful with backend configuration, guiding me on which Firebase settings needed updating to support the new login flow.
 
-**Before / After Screenshots:**  
-![](wordle-before.png) ![](wordle-after.png)
+|         Before         |         After         |
+| :--------------------: | :-------------------: |
+| ![](wordle-before.png) | ![](wordle-after.png) |
 
 Despite these awesome features, this is where I started encountering quirks:
 
@@ -60,7 +62,7 @@ It seemed every new feature required iterative back-and-forth to get exactly wha
 
 ## Project 3: ESP32 Embedded Wi-Fi Clock (C++/PlatformIO)
 
-My final test was an ESP32 embedded Wi-Fi clock project. This C++ application, built using PlatformIO, drives a dot matrix display and runs a configuration web page in pure HTML/JS.
+My final test was an [ESP32 embedded Wi-Fi clock project](https://github.com/AlexanderBiba/esp32-dotmatrix-wifi-clock). This C++ application, built using PlatformIO, drives a dot matrix display and runs a configuration web page in pure HTML/JS.
 
 Using the AI agent here was significantly more challenging. Most feature additions caused breakages requiring manual debugging:
 
@@ -76,8 +78,9 @@ Despite hurdles, I added some cool features:
 - **Display Customization:** Screen order/duration, flip display
 - **System Features:** MDNS configuration, timezone/weather via Open-Meteo API, system info, reboot/factory reset
 
-**Before / After Screenshots:**  
-![](esp32-before.png) ![](esp32-after.png)
+|        Before         |        After         |
+| :-------------------: | :------------------: |
+| ![](esp32-before.png) | ![](esp32-after.png) |
 
 ---
 
@@ -107,4 +110,4 @@ Despite hurdles, I added some cool features:
 - **Enjoy the Process:** Mastering the tool takes experimentation, but it’s rewarding.
 
 **Bottom line:**  
-Tools like Cursor aren’t just the future of development — they’re already reshaping the present. They amplify developers rather than replace them. Stay specific, stay consistent, and enjoy the ride!
+Tools like Cursor aren’t just the future of development, they’re already reshaping the present. They amplify developers rather than replace them. Stay specific, stay consistent, and enjoy the ride!
