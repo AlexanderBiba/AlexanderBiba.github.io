@@ -21,7 +21,7 @@ export default function Works() {
                     <div className="project-header">
                         <h3>Wordle Game</h3>
                         <div className="project-links">
-                            <a href="https://AlexanderBiba.github.io/wordle" target="_blank" rel="noreferrer">Live Demo</a>
+                            <a href="https://AlexanderBiba.github.io/wordle" target="_blank" rel="noreferrer">Live Version</a>
                             <a href="https://github.com/AlexanderBiba/wordle" target="_blank" rel="noreferrer">
                                 <i className="fa fa-github"></i> Code
                             </a>
@@ -34,7 +34,7 @@ export default function Works() {
                     <div className="project-header">
                         <h3>Goal Keeper</h3>
                         <div className="project-links">
-                            <a href="https://AlexanderBiba.github.io/goal-keeper" target="_blank" rel="noreferrer">Live Demo</a>
+                            <a href="https://AlexanderBiba.github.io/goal-keeper" target="_blank" rel="noreferrer">Live Version</a>
                             <a href="https://github.com/AlexanderBiba/goal-keeper" target="_blank" rel="noreferrer">
                                 <i className="fa fa-github"></i> Code
                             </a>

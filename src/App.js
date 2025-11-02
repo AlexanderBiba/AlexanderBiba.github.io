@@ -8,6 +8,7 @@ import Navbar from "./Navbar";
 import BlogList from "./BlogList";
 import BlogPost from "./BlogPost";
 import BlogPreview from "./BlogPreview";
+import ScrollToTop from "./ScrollToTop";
 
 function HomePage() {
     return (
@@ -26,6 +27,7 @@ function App() {
     return (
         <BrowserRouter>
             <div className="App">
+                <ScrollToTop />
                 <Navbar/>
                 <Routes>
                     <Route path="/" element={<HomePage />} />
