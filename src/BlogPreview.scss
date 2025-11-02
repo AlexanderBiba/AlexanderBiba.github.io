@@ -1,0 +1,83 @@
+@import "_colors";
+
+#blog-preview {
+    background: #f8f9fa;
+    
+    .blog-posts-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        max-width: 800px;
+        margin: 0 auto 2rem auto;
+    }
+    
+    .blog-post-card {
+        background: $light;
+        padding: 1.5rem;
+        border-radius: 8px;
+        border-left: 4px solid $hover;
+        transition: all 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        
+        &:hover {
+            border-left-color: darken($hover, 10%);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        a {
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: $dark;
+            margin: 0 0 0.5rem 0;
+            transition: color 0.2s ease;
+        }
+        
+        time {
+            display: block;
+            color: lighten($dark, 30%);
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        p {
+            color: lighten($dark, 20%);
+            line-height: 1.6;
+            margin: 0 0 1rem 0;
+            font-size: 0.9rem;
+            flex-grow: 1;
+        }
+        
+        .read-more {
+            color: $hover;
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-top: auto;
+            transition: color 0.2s ease;
+        }
+        
+        &:hover {
+            h3 {
+                color: $hover;
+            }
+            
+            .read-more {
+                color: darken($hover, 10%);
+            }
+        }
+    }
+    
+    .blog-cta {
+        text-align: center;
+    }
+}
+
