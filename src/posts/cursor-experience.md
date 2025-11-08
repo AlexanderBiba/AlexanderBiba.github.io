@@ -1,5 +1,5 @@
 ---
-title: "My Honest Experience with Cursor"
+title: "My Experience with Cursor"
 date: "2025-11-02"
 ---
 
@@ -14,6 +14,8 @@ However, things changed during my paternity leave. I decided to dedicate some ti
 My first task was improving my [personal website](https://alexanderbiba.github.io/), a small React application hosted on GitHub Pages. I was hooked from the very first prompt:
 
 > “This is my personal website; it looks a bit dated. Can we make it look modern and cool? Specifically, I would like a retro-futuristic theme and a dark mode/light mode button.”
+
+![](mysite-futuristic.png)
 
 The initial result was... okay. A little infantile, perhaps, as "retro-futuristic" wasn't quite my style. But in that moment, I understood the agent's potential. My next prompt was:
 
@@ -64,6 +66,8 @@ It seemed every new feature required iterative back-and-forth to get exactly wha
 
 My final test was an [ESP32 embedded Wi-Fi clock project](https://github.com/AlexanderBiba/esp32-dotmatrix-wifi-clock). This C++ application, built using PlatformIO, drives a dot matrix display and runs a configuration web page in pure HTML/JS.
 
+![](esp32-clock.jpg)
+
 Using the AI agent here was significantly more challenging. Most feature additions caused breakages requiring manual debugging:
 
 - Incompatible web page changes breaking server configurations.
@@ -90,9 +94,9 @@ Despite hurdles, I added some cool features:
 
 **Where it excels:**
 
-- **General Cleanup:** Safely removes code and dependencies.
-- **Small, Precise Enhancements:** Handles minor, targeted improvements.
 - **Cold Starts:** Excellent for bootstrapping new projects.
+- **Small, Precise Enhancements:** Handles minor, targeted improvements.
+- **General Cleanup:** Safely removes code and dependencies.
 
 **Where it falls short:**
 
@@ -108,6 +112,3 @@ Despite hurdles, I added some cool features:
 - **Be Extremely Specific:** Clarity directly improves output quality.
 - **Leverage Project Rules:** Use `.cursor/rules` for project-wide consistency.
 - **Enjoy the Process:** Mastering the tool takes experimentation, but it’s rewarding.
-
-**Bottom line:**  
-Tools like Cursor aren’t just the future of development, they’re already reshaping the present. They amplify developers rather than replace them. Stay specific, stay consistent, and enjoy the ride!
