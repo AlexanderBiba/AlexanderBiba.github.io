@@ -10,6 +10,7 @@ import BlogPost from "./BlogPost";
 import BlogPreview from "./BlogPreview";
 import ScrollToTop from "./ScrollToTop";
 import MetaTags from "./MetaTags";
+import { usePageTracking } from "./hooks/usePageTracking";
 
 function HomePage() {
     return (
@@ -29,18 +30,26 @@ function HomePage() {
     );
 }
 
+function AppContent() {
+    usePageTracking();
+    
+    return (
+        <div className="App">
+            <ScrollToTop />
+            <Navbar/>
+            <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/blog" element={<BlogList />} />
+                <Route path="/blog/:slug" element={<BlogPost />} />
+            </Routes>
+        </div>
+    );
+}
+
 function App() {
     return (
         <BrowserRouter>
-            <div className="App">
-                <ScrollToTop />
-                <Navbar/>
-                <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/blog" element={<BlogList />} />
-                    <Route path="/blog/:slug" element={<BlogPost />} />
-                </Routes>
-            </div>
+            <AppContent />
         </BrowserRouter>
     );
 }
