@@ -24,6 +24,8 @@ files.forEach(file => {
         slug,
         title: data.title || 'Untitled',
         date: data.date || new Date().toISOString(),
+        description: data.description || '',
+        ogImage: data.ogImage || null,
         content
     });
 });

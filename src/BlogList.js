@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { getAllPosts } from "./posts/posts";
+import MetaTags from "./MetaTags";
 import "./Blog.scss";
 
 export default function BlogList() {
@@ -21,26 +22,33 @@ export default function BlogList() {
     };
 
     return (
-        <div className="blog-list">
-            <div className="blog-container">
-                <h1>Blog</h1>
-                {posts.length === 0 ? (
-                    <p>No posts available yet.</p>
-                ) : (
-                    <div className="posts-grid">
-                        {posts.map((post) => (
-                            <article key={post.slug} className="post-card">
-                                <Link to={`/blog/${post.slug}`}>
-                                    <h2>{post.title}</h2>
-                                    <time>{formatDate(post.date)}</time>
-                                    <p>{post.excerpt}</p>
-                                </Link>
-                            </article>
-                        ))}
-                    </div>
-                )}
+        <>
+            <MetaTags
+                title="Blog | Alex Biba"
+                description="Software development, coding experiments, 3D printing, and other projects I enjoy exploring."
+                url="/blog"
+            />
+            <div className="blog-list">
+                <div className="blog-container">
+                    <h1>Blog</h1>
+                    {posts.length === 0 ? (
+                        <p>No posts available yet.</p>
+                    ) : (
+                        <div className="posts-grid">
+                            {posts.map((post) => (
+                                <article key={post.slug} className="post-card">
+                                    <Link to={`/blog/${post.slug}`}>
+                                        <h2>{post.title}</h2>
+                                        <time>{formatDate(post.date)}</time>
+                                        <p>{post.excerpt}</p>
+                                    </Link>
+                                </article>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+        </>
     );
 }
 

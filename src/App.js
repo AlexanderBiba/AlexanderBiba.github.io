@@ -9,10 +9,16 @@ import BlogList from "./BlogList";
 import BlogPost from "./BlogPost";
 import BlogPreview from "./BlogPreview";
 import ScrollToTop from "./ScrollToTop";
+import MetaTags from "./MetaTags";
 
 function HomePage() {
     return (
         <>
+            <MetaTags
+                title="Alex Biba - Senior Software Engineer"
+                description="Senior Software Engineer with over 10 years of experience building scalable solutions with modern technologies. Specializing in full-stack development with Node.js, React, and cloud technologies."
+                url="/"
+            />
             <Home/>
             <About/>
             <BlogPreview/>

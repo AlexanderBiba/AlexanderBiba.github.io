@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { getPostBySlug } from "./posts/posts";
+import MetaTags from "./MetaTags";
 import "./Blog.scss";
 
 export default function BlogPost() {
@@ -57,28 +58,42 @@ export default function BlogPost() {
         );
     };
 
+    // Generate description from content if not in frontmatter
+    const description = post.description || post.content.substring(0, 160).replace(/\n/g, ' ').trim() + '...';
+    const ogImage = post.ogImage || null;
+    const postUrl = `/blog/${post.slug}`;
+
     return (
-        <div className="blog-post">
-            <div className="blog-container">
-                <Link to="/blog" className="back-link">← Back to posts</Link>
-                <article>
-                    <header>
-                        <h1>{post.title}</h1>
-                        <time>{formatDate(post.date)}</time>
-                    </header>
-                    <div className="markdown-content">
-                        <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            components={{
-                                img: imageRenderer,
-                            }}
-                        >
-                            {post.content}
-                        </ReactMarkdown>
-                    </div>
-                </article>
+        <>
+            <MetaTags
+                title={`${post.title} | Alex Biba`}
+                description={description}
+                image={ogImage}
+                url={postUrl}
+                type="article"
+            />
+            <div className="blog-post">
+                <div className="blog-container">
+                    <Link to="/blog" className="back-link">← Back to posts</Link>
+                    <article>
+                        <header>
+                            <h1>{post.title}</h1>
+                            <time>{formatDate(post.date)}</time>
+                        </header>
+                        <div className="markdown-content">
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                    img: imageRenderer,
+                                }}
+                            >
+                                {post.content}
+                            </ReactMarkdown>
+                        </div>
+                    </article>
+                </div>
             </div>
-        </div>
+        </>
     );
 }
 
