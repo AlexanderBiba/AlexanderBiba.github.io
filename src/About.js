@@ -11,9 +11,11 @@ export default function About() {
         <div className="content">
           <h2>About Me</h2>
           <p>
-            Senior Software Engineer with over 10 years of experience building scalable solutions 
-            across multiple domains. I specialize in full-stack development with a focus on 
-            Node.js, React, and cloud technologies.
+            I’m a hands-on engineer who enjoys turning complex ideas into
+            simple, scalable products. I work across the stack with Node.js,
+            React, and cloud technologies, always aiming to write code that’s
+            clean, maintainable, and purposeful. I care about building things
+            that actually make an impact — not just ship fast, but last.{" "}
           </p>
           <div className="passions">
             <h3>Passions</h3>
