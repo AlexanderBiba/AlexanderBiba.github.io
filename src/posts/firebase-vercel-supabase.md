@@ -67,7 +67,7 @@ The free tier lets you launch two projects with storage and a proper Postgres in
 
 ## Migration Experience
 
-Migrating my client apps was straightforward. Most of their data involved media files (images, audio, videos), which mapped cleanly into Supabase buckets. Postgres made relational data, backups, and exports easier using standard tools like `pg_dump`.
+Migrating my client apps was straightforward. Most of the data involved media files (images, audio, videos), which mapped cleanly into Supabase buckets. And in the future, postgres makes relational data, backups, and exports easier using standard tools like `pg_dump`.
 
 You do need to design schemas and think relationally—but that’s part of what makes the system more robust long-term.
 
