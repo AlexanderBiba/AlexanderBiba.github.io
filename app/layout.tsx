@@ -4,6 +4,7 @@ import PageTracking from '../src/components/PageTracking'
 import Script from 'next/script'
 import { ReactNode } from 'react'
 import { Metadata } from 'next'
+import { Analytics } from '@vercel/analytics/react'
 
 export const metadata: Metadata = {
   title: 'Alex Biba - Senior Software Engineer',
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <Navbar />
           {children}
         </div>
+        <Analytics />
       </body>
     </html>
   )
