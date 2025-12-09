@@ -238,21 +238,89 @@ $text-light: $light;
                 }
             }
 
+            // Table wrapper for mobile scrolling
+            .table-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin: 1.5rem 0;
+                border-radius: 5px;
+                
+                // Add a subtle shadow to indicate scrollability on mobile
+                @media(max-width: 768px) {
+                    box-shadow: inset -10px 0 10px -10px rgba(0, 0, 0, 0.1),
+                                inset 10px 0 10px -10px rgba(0, 0, 0, 0.1);
+                }
+            }
+
             table {
                 width: 100%;
                 border-collapse: collapse;
-                margin: 1.5rem 0;
+                margin: 0;
+                min-width: 600px; // Ensure table doesn't get too compressed
 
                 th,
                 td {
                     padding: 0.75rem;
                     border: 1px solid #ddd;
+                    text-align: left;
+                    
+                    // Reduce padding on mobile for better space usage
+                    @media(max-width: 768px) {
+                        padding: 0.5rem;
+                        font-size: 0.9em;
+                    }
                 }
 
                 th {
                     background: $primary-light;
                     color: $text-light;
                     font-weight: bold;
+                    
+                    // Keep first column sticky on mobile for better UX
+                    @media(max-width: 768px) {
+                        &:first-child {
+                            position: sticky;
+                            left: 0;
+                            background: $primary-light;
+                            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+                            z-index: 1;
+                        }
+                    }
+                }
+                
+                // Alternate row colors for better readability
+                tbody tr:nth-child(even) {
+                    background: #f9f9f9;
+                }
+                
+                // Responsive adjustments
+                @media(max-width: 768px) {
+                    font-size: 0.9em;
+                    
+                    // Make sure table cells don't wrap awkwardly
+                    td, th {
+                        white-space: nowrap;
+                        
+                        // Allow wrapping for long text in specific cases
+                        &:last-child {
+                            white-space: normal;
+                            min-width: 120px;
+                        }
+                    }
+                    
+                    // Make first column sticky for better mobile UX
+                    td:first-child {
+                        position: sticky;
+                        left: 0;
+                        background: #fff;
+                        z-index: 1;
+                        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+                    }
+                    
+                    // Handle alternating row colors with sticky column
+                    tbody tr:nth-child(even) td:first-child {
+                        background: #f9f9f9;
+                    }
                 }
             }
         }

@@ -66,6 +66,15 @@ export default function BlogPost({ post }: BlogPostProps) {
         )
     }
 
+    // Custom renderer for tables to wrap them in a scrollable container
+    const tableRenderer = ({ children }: { children?: React.ReactNode }) => {
+        return (
+            <div className="table-wrapper">
+                <table>{children}</table>
+            </div>
+        )
+    }
+
     return (
         <div className="blog-post">
             <div className="blog-container">
@@ -80,6 +89,7 @@ export default function BlogPost({ post }: BlogPostProps) {
                             remarkPlugins={[remarkGfm]}
                             components={{
                                 img: imageRenderer,
+                                table: tableRenderer,
                             }}
                         >
                             {post.content}
