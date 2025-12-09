@@ -4,12 +4,20 @@ On github pages: https://AlexanderBiba.github.io/
 
 ## Running
 
+```bash
+npm run dev
 ```
-npm start
+
+## Building
+
+```bash
+npm run build
 ```
 
 ## Deploying
 
+```bash
+npm run deploy
 ```
-npm deploy
-```
+
+This will build the site and deploy it to GitHub Pages using the `out` directory.
