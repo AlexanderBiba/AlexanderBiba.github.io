@@ -1,7 +1,8 @@
 ---
-title: "My Experience with Cursor"
-date: "2025-11-02"
+date: 2025-11-02
 ---
+
+# My Experience with Cursor
 
 I’ve been writing code since I was a teen. Autocompletion has been a constant companion, and I was genuinely impressed when GitHub Copilot arrived, offering context-aware, AI-driven suggestions.
 

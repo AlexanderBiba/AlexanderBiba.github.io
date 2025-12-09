@@ -1,3 +1,7 @@
+---
+date: 2025-12-09
+---
+
 # Moving from Firebase to Vercel + Supabase
 
 I’ve been using Firebase for a few years, building several web apps on top of it. Firebase is excellent for moving fast: it gives you a backend, auth, storage, and hosting in one place so you can focus on the product. What I’ve valued most:

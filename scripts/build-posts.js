@@ -7,6 +7,23 @@ const outputFile = path.join(__dirname, '../src/posts/posts.ts');
 const srcImagesDir = path.join(__dirname, '../src/assets/blog-images');
 const publicImagesDir = path.join(__dirname, '../public/blog-images');
 
+// Format date as YYYY-MM-DD
+function formatDate(date) {
+    if (!date) {
+        const now = new Date();
+        return now.toISOString().split('T')[0];
+    }
+    
+    // If it's already in YYYY-MM-DD format, return as is
+    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return date;
+    }
+    
+    // Otherwise, parse and format
+    const dateObj = new Date(date);
+    return dateObj.toISOString().split('T')[0];
+}
+
 // Get all markdown files from posts directory (exclude README.md)
 const files = fs.readdirSync(postsDir).filter(file => 
     file.endsWith('.md') && !file.toLowerCase().includes('readme')
@@ -19,14 +36,36 @@ files.forEach(file => {
     const fileContent = fs.readFileSync(filePath, 'utf-8');
     const { data, content } = matter(fileContent);
     
+    // Extract title from first line starting with single '#'
+    let title = data.title || 'Untitled';
+    let processedContent = content;
+    
+    // Find first line that starts with exactly '# ' (single hash followed by space)
+    const lines = content.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.trim().startsWith('# ')) {
+            // Extract title (remove '# ' prefix and trim)
+            title = line.trim().substring(2).trim();
+            // Remove the title line from content
+            lines.splice(i, 1);
+            // If there's an empty line after the title, remove it too
+            if (i < lines.length && lines[i].trim() === '') {
+                lines.splice(i, 1);
+            }
+            processedContent = lines.join('\n');
+            break;
+        }
+    }
+    
     const slug = file.replace('.md', '');
     posts.push({
         slug,
-        title: data.title || 'Untitled',
-        date: data.date || new Date().toISOString(),
+        title,
+        date: formatDate(data.date),
         description: data.description || '',
         ogImage: data.ogImage || null,
-        content
+        content: processedContent
     });
 });
 
