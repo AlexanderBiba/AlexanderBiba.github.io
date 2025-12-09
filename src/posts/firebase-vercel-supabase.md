@@ -23,7 +23,7 @@ Firebase is amazing for side projects, prototypes, and internal tools. The issue
 **The biggest issue: Firebase has no hard billing cap.**
 
 - On the Blaze (pay-as-you-go) plan, you can set budget alerts, but alerts do *not* stop usage.  
-- A traffic spike, infinite loop, misconfigured client, or DDOS attack can push your bill up with no automatic safeguard.  
+- A traffic spike, infinite loop, misconfigured client, or [DDOS attack](https://www.reddit.com/r/googlecloud/comments/1jzoi8v/ddos_attack_facing_100000_bill/?utm_source=chatgpt.com) can push your bill up with no automatic safeguard.  
 - This is a long-standing limitation across Firebase and Google Cloud.
 
 There are workaround scripts that attempt to shut down billing accounts when alerts trigger, but they’re unreliable and can break production systems. For client apps, that level of financial risk is hard to justify.
