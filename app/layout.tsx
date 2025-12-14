@@ -28,18 +28,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-TSRMJ7J8LH"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-TSRMJ7J8LH');
-          `}
-        </Script>
-        <Script
           data-domain="alexanderbiba.github.io"
           src="https://plausible.io/js/script.js"
           strategy="afterInteractive"
