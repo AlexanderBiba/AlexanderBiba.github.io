@@ -2,6 +2,7 @@ import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { BlogPost as BlogPostType } from '../posts/types'
+import '../Blog.scss'
 
 interface BlogPostProps {
     post: BlogPostType | null | undefined
@@ -53,16 +54,6 @@ export default function BlogPost({ post }: BlogPostProps) {
         )
     }
 
-    const tableRenderer = ({ children }: { children?: React.ReactNode }) => {
-        return (
-            <div style={{ overflowX: 'auto', margin: '1.5rem 0' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    {children}
-                </table>
-            </div>
-        )
-    }
-
     return (
         <div className="content-container">
             <p>
@@ -78,7 +69,6 @@ export default function BlogPost({ post }: BlogPostProps) {
                         remarkPlugins={[remarkGfm]}
                         components={{
                             img: imageRenderer,
-                            table: tableRenderer,
                             a: ({ href, children }) => (
                                 <a href={href} style={{ color: '#0066cc' }}>
                                     {children}
