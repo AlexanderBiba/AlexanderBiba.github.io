@@ -5,7 +5,7 @@ export function generatePersonSchema() {
     name: 'Alex Biba',
     jobTitle: 'Senior Software Engineer',
     description: 'Senior Software Engineer with over 10 years of experience building scalable solutions with modern technologies.',
-    url: 'https://alexanderbiba.github.io',
+    url: 'https://alexbiba.com',
     sameAs: [
       'https://github.com/AlexanderBiba',
       'https://www.linkedin.com/in/alexander-biba-b9794771',
@@ -22,14 +22,14 @@ export function generateBlogPostingSchema(post: {
   slug: string
   ogImage?: string | { url: string } | null
 }) {
-  const baseUrl = 'https://alexanderbiba.github.io'
-  const postUrl = `${baseUrl}/blog/${post.slug}`
+  const baseUrl = 'https://alexbiba.com'
+  const postUrl = `${baseUrl}/blog/${post.slug}/`
   
   // Format date for schema.org (ISO 8601)
   const publishedDate = new Date(post.date).toISOString()
   
   // Get image URL
-  let imageUrl = `${baseUrl}/preview.png`
+  let imageUrl = `${baseUrl}/avatar.png`
   if (post.ogImage) {
     if (typeof post.ogImage === 'string') {
       imageUrl = post.ogImage.startsWith('http') 
@@ -74,7 +74,7 @@ export function generateCollectionPageSchema() {
     '@type': 'CollectionPage',
     name: 'Blog | Alex Biba',
     description: 'Software development, coding experiments, 3D printing, and other projects I enjoy exploring.',
-    url: 'https://alexanderbiba.github.io/blog',
+    url: 'https://alexbiba.com/blog/',
   }
 }
 

@@ -3,6 +3,17 @@ import 'easymde/dist/easymde.min.css'
 
 export const metadata: Metadata = {
   title: 'Sanity Studio | Alex Biba',
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
+  alternates: {
+    canonical: 'https://alexbiba.com/studio/',
+  },
 }
 
 export default function StudioLayout({

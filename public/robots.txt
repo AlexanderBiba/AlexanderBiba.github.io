@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://alexanderbiba.github.io/sitemap.xml
+Disallow: /studio/
+
+Sitemap: https://alexbiba.com/sitemap.xml
 

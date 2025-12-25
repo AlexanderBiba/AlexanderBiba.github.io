@@ -1,6 +1,6 @@
 # Sanity CMS Setup
 
-This site is now powered by Sanity CMS. All content (blog posts, about section, experience, education, projects, skills, and home) is managed through Sanity.
+This site is powered by Sanity CMS for blog content. The Sanity Studio is available at `/studio`.
 
 ## Setup
 
@@ -19,19 +19,11 @@ This site is now powered by Sanity CMS. All content (blog posts, about section, 
      ```env
      NEXT_PUBLIC_SANITY_PROJECT_ID=your-project-id
      NEXT_PUBLIC_SANITY_DATASET=production
-     SANITY_API_TOKEN=your-api-token
      ```
    - Get your Sanity Project ID from your project settings
-   - Get your API token from https://sanity.io/manage (needed for the migration script)
    - **Note:** `.env.local` is automatically ignored by git and loaded by Next.js
 
-4. **Run the migration script:**
-   ```bash
-   npm run migrate-sanity
-   ```
-   This will backfill all existing content from local files into Sanity.
-
-5. **Start the development server:**
+4. **Start the development server:**
    ```bash
    npm run dev
    ```
@@ -60,10 +52,5 @@ The following content types are available in Sanity:
 
 ## Migration Notes
 
-The migration script (`scripts/migrate-to-sanity.js`) will:
-- Migrate all blog posts from `src/posts/*.md`
-- Create initial content for About, Experience, Education, Projects, Skills, and Home sections
-- Skip existing documents to allow re-running safely
-
-After migration, you can manage all content through the Sanity Studio interface.
+If you previously used local markdown posts + a migration script, those were removed after the content was migrated into Sanity.
 

@@ -1,3 +1,31 @@
+.post-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.post-list-item {
+    margin-bottom: 2rem;
+}
+
+.post-title-link {
+    color: #1a1a1a;
+}
+
+.post-title {
+    margin: 0 0 0.5rem 0;
+}
+
+.post-date {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.post-date--block {
+    display: block;
+    margin-bottom: 2rem;
+}
+
 .markdown-content {
     h1, h2, h3, h4, h5, h6 {
         margin-top: 2rem;
@@ -27,6 +55,65 @@
     
     li {
         margin-bottom: 0.5rem;
+    }
+
+    img {
+        max-width: 100%;
+        height: auto;
+        margin: 1.5rem 0;
+        display: block;
+    }
+
+    code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 0.9em;
+    }
+
+    :not(pre) > code {
+        background: #f5f5f5;
+        padding: 0.2em 0.4em;
+        border-radius: 4px;
+    }
+
+    pre {
+        background: #f5f5f5;
+        padding: 1rem;
+        overflow: auto;
+        margin: 1.5rem 0;
+        border-radius: 6px;
+    }
+
+    blockquote {
+        border-left: 3px solid #ccc;
+        padding-left: 1rem;
+        margin: 1.5rem 0;
+        color: #666;
+        font-style: italic;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid #ddd;
+        margin: 1.5rem 0;
+    }
+
+    th, td {
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    th {
+        background: #f5f5f5;
+        font-weight: 600;
+    }
+
+    // Horizontal scroll for wide tables
+    .table-wrapper {
+        overflow-x: auto;
+        margin: 1.5rem 0;
     }
 }
 

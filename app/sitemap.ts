@@ -4,7 +4,7 @@ import { getAllPosts } from '../src/lib/sanity'
 export const dynamic = 'force-static'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://alexanderbiba.github.io'
+  const baseUrl = 'https://alexbiba.com'
   
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [

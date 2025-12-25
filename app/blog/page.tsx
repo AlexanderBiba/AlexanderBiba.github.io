@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: 'Writing | Alex Biba',
   description: 'Writing about software and other projects.',
   alternates: {
-    canonical: 'https://alexanderbiba.github.io/blog/',
+    canonical: 'https://alexbiba.com/blog/',
   },
 }
 

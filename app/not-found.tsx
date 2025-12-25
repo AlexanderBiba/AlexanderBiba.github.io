@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: '404 - Page Not Found | Alex Biba',
   description: 'The page you are looking for does not exist.',
   alternates: {
-    canonical: 'https://alexanderbiba.github.io/404',
+    canonical: 'https://alexbiba.com/404/',
   },
   robots: {
     index: false,

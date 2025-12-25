@@ -23,11 +23,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 
   const description = post.description || post.content.substring(0, 160).replace(/\n/g, ' ').trim() + '...'
-  const ogImage = (typeof post.ogImage === 'object' && post.ogImage !== null ? post.ogImage.url : post.ogImage) || '/preview.png'
+  const ogImage = (typeof post.ogImage === 'object' && post.ogImage !== null ? post.ogImage.url : post.ogImage) || '/avatar.png'
   const ogImageUrl = ogImage.startsWith('http') 
     ? ogImage 
-    : `https://alexanderbiba.github.io${ogImage.startsWith('/') ? ogImage : `/${ogImage}`}`
-  const postUrl = `https://alexanderbiba.github.io/blog/${post.slug}`
+    : `https://alexbiba.com${ogImage.startsWith('/') ? ogImage : `/${ogImage}`}`
+  const postUrl = `https://alexbiba.com/blog/${post.slug}/`
   
   // Format date for article metadata (ISO 8601)
   const publishedDate = new Date(post.date).toISOString()

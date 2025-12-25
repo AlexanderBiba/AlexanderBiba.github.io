@@ -4,7 +4,7 @@ import {
   allBlogPostsQuery,
   latestBlogPostsQuery,
 } from '../../sanity/lib/queries'
-import { BlogPost } from '../posts/types'
+import { BlogPost } from '../types/blog'
 
 // Blog Post functions
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
