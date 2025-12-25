@@ -75,7 +75,7 @@ export default function BlogPost({ post }: BlogPostProps) {
                 <article>
                     <header>
                         <h1>{post.title}</h1>
-                        <time>{formatDate(post.date)}</time>
+                        <time dateTime={post.date}>{formatDate(post.date)}</time>
                     </header>
                     <div className="markdown-content">
                         <ReactMarkdown

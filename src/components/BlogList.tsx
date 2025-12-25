@@ -35,7 +35,7 @@ export default function BlogList({ posts }: BlogListProps) {
                             <article key={post.slug} className="post-card">
                                 <Link href={`/blog/${post.slug}`}>
                                     <h2>{post.title}</h2>
-                                    <time>{formatDate(post.date)}</time>
+                                    <time dateTime={post.date}>{formatDate(post.date)}</time>
                                     <p>{post.excerpt}</p>
                                 </Link>
                             </article>

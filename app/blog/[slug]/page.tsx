@@ -2,6 +2,8 @@ import { getPostBySlug, getAllPosts } from '../../../src/lib/sanity'
 import BlogPost from '../../../src/components/BlogPost'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
+import Script from 'next/script'
+import { generateBlogPostingSchema } from '../../../src/lib/seo'
 
 export async function generateStaticParams() {
   const posts = await getAllPosts()
@@ -26,6 +28,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     ? ogImage 
     : `https://alexanderbiba.github.io${ogImage.startsWith('/') ? ogImage : `/${ogImage}`}`
   const postUrl = `https://alexanderbiba.github.io/blog/${post.slug}`
+  
+  // Format date for article metadata (ISO 8601)
+  const publishedDate = new Date(post.date).toISOString()
 
   return {
     title: `${post.title} | Alex Biba`,
@@ -39,12 +44,20 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       url: postUrl,
       type: 'article',
       images: [ogImageUrl],
+      publishedTime: publishedDate,
+      modifiedTime: publishedDate,
+      authors: ['Alex Biba'],
     },
     twitter: {
       card: 'summary_large_image',
       title: `${post.title} | Alex Biba`,
       description,
       images: [ogImageUrl],
+    },
+    other: {
+      'article:author': 'Alex Biba',
+      'article:published_time': publishedDate,
+      'article:modified_time': publishedDate,
     },
   }
 }
@@ -57,6 +70,17 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     notFound()
   }
 
-  return <BlogPost post={post} />
+  const schema = generateBlogPostingSchema(post)
+
+  return (
+    <>
+      <Script
+        id="blog-posting-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      />
+      <BlogPost post={post} />
+    </>
+  )
 }
 

@@ -9,7 +9,7 @@ export default function Home() {
                 <p>Building scalable solutions with modern technologies</p>
                 <div className="cta-buttons">
                     <a href="#experience" className="btn-primary">View Experience</a>
-                    <a href="https://github.com/AlexanderBiba" target="_blank" rel="noreferrer" className="btn-secondary">
+                    <a href="https://github.com/AlexanderBiba" target="_blank" rel="noreferrer noopener" className="btn-secondary">
                         <i className="fa fa-github"></i> GitHub
                     </a>
                 </div>

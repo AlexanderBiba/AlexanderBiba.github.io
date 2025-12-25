@@ -35,7 +35,7 @@ export default function BlogPreview({ posts }: BlogPreviewProps) {
                     <article key={post.slug} className="blog-post-card">
                         <Link href={`/blog/${post.slug}`}>
                             <h3>{post.title}</h3>
-                            <time>{formatDate(post.date)}</time>
+                            <time dateTime={post.date}>{formatDate(post.date)}</time>
                             <p>{post.excerpt}</p>
                             <span className="read-more">Read more →</span>
                         </Link>

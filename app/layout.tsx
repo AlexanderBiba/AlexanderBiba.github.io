@@ -5,6 +5,7 @@ import Script from 'next/script'
 import { ReactNode } from 'react'
 import { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/react'
+import { generatePersonSchema } from '../src/lib/seo'
 
 export const metadata: Metadata = {
   title: 'Alex Biba - Senior Software Engineer',
@@ -37,6 +38,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body>
+        <Script
+          id="person-schema"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(generatePersonSchema()) }}
+        />
         <PageTracking />
         <div className="App">
           <ConditionalNavbar />

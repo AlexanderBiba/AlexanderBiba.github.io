@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next'
 import { getAllPosts } from '../src/lib/sanity'
 
+export const dynamic = 'force-static'
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://alexanderbiba.github.io'
   
