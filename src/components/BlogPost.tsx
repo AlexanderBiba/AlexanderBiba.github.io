@@ -1,5 +1,3 @@
-'use client'
-
 import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -57,11 +55,6 @@ export default function BlogPost({ post }: BlogPostProps) {
                 src={imageSrc} 
                 alt={alt || ''} 
                 title={title || alt || ''}
-                onError={(e) => {
-                    console.error(`Failed to load image: ${imageSrc}`)
-                    const target = e.target as HTMLImageElement
-                    target.style.display = 'none'
-                }}
             />
         )
     }

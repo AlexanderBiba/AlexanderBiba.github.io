@@ -1,25 +1,12 @@
-'use client'
-
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import { getLatestPosts } from '../lib/sanity'
 import { BlogPost } from '../posts/types'
 import '../BlogPreview.scss'
 
-export default function BlogPreview() {
-    const [posts, setPosts] = useState<Array<BlogPost & { excerpt: string }>>([])
+interface BlogPreviewProps {
+    posts: BlogPost[]
+}
 
-    useEffect(() => {
-        async function fetchPosts() {
-            const fetchedPosts = await getLatestPosts(3)
-            setPosts(fetchedPosts.map(post => ({
-                ...post,
-                excerpt: post.content.substring(0, 100) + '...',
-            })))
-        }
-        fetchPosts()
-    }, [])
-
+export default function BlogPreview({ posts }: BlogPreviewProps) {
     const formatDate = (dateString: string): string => {
         // Parse date as local date to avoid timezone issues
         const [year, month, day] = dateString.split('-').map(Number)
@@ -35,11 +22,16 @@ export default function BlogPreview() {
         return null // Don't render if no posts
     }
 
+    const postsWithExcerpt = posts.map(post => ({
+        ...post,
+        excerpt: post.content.substring(0, 100) + '...',
+    }))
+
     return (
         <section id="blog-preview">
             <h2>Latest Blog Posts</h2>
             <div className="blog-posts-grid">
-                {posts.map((post) => (
+                {postsWithExcerpt.map((post) => (
                     <article key={post.slug} className="blog-post-card">
                         <Link href={`/blog/${post.slug}`}>
                             <h3>{post.title}</h3>

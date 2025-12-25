@@ -9,6 +9,9 @@ import { Analytics } from '@vercel/analytics/react'
 export const metadata: Metadata = {
   title: 'Alex Biba - Senior Software Engineer',
   description: 'Senior Software Engineer with over 10 years of experience building scalable solutions with modern technologies. Specializing in full-stack development with Node.js, React, and cloud technologies.',
+  alternates: {
+    canonical: 'https://alexanderbiba.github.io/',
+  },
   openGraph: {
     title: 'Alex Biba - Senior Software Engineer',
     description: 'Senior Software Engineer with over 10 years of experience building scalable solutions with modern technologies.',
