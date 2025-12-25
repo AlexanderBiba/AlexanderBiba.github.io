@@ -6,15 +6,6 @@
     text-align: center;
     
     h2 {
-        margin-bottom: 1rem;
-    }
-    
-    p {
-        font-size: 1.1rem;
-        color: color.adjust($dark, $lightness: 20%);
         margin-bottom: 2rem;
-        max-width: 500px;
-        margin-left: auto;
-        margin-right: auto;
     }
 }

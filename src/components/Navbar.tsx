@@ -35,16 +35,6 @@ export default function Navbar() {
         }
     }, [])
 
-    const handleHashNavigation = (e: React.MouseEvent<HTMLAnchorElement>, hash: string) => {
-        e.preventDefault()
-        // Navigate to home first
-        window.location.href = '/'
-        // Set hash after a brief delay to ensure route has changed
-        setTimeout(() => {
-            window.location.hash = hash
-        }, 50)
-    }
-
     return (
         <div id="navbar">
             <div className={`shadow-indicator left ${showLeftShadow ? 'visible' : ''}`}></div>
@@ -54,11 +44,7 @@ export default function Navbar() {
             >
                 <ul>
                     <li>
-                        {isBlogPage ? (
-                            <a href="#about" onClick={(e) => handleHashNavigation(e, '#about')}>About</a>
-                        ) : (
-                            <a href="#about">About</a>
-                        )}
+                        <Link href="/">Home</Link>
                     </li>
                     <li>
                         <Link href="/blog">Blog</Link>
