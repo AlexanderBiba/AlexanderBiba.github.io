@@ -6,9 +6,6 @@ export const dynamic = 'force-static'
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://alexanderbiba.github.io'
   
-  // Get all blog posts
-  const posts = await getAllPosts()
-  
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
     {
@@ -24,6 +21,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
   ]
+  
+  // Get all blog posts (returns empty array if Sanity is not configured)
+  const posts = await getAllPosts()
   
   // Blog post pages
   const blogPages: MetadataRoute.Sitemap = posts.map((post) => {

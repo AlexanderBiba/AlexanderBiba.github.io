@@ -22,7 +22,6 @@
         "sass": "^1.52.3"
     },
     "scripts": {
-        "build-posts": "node scripts/build-posts.js",
         "migrate-sanity": "node scripts/migrate-to-sanity.js",
         "dev": "next dev",
         "build": "next build",
