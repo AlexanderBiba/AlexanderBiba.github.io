@@ -1,5 +1,5 @@
 import '../src/index.scss'
-import Navbar from '../src/components/Navbar'
+import ConditionalNavbar from '../src/components/ConditionalNavbar'
 import PageTracking from '../src/components/PageTracking'
 import Script from 'next/script'
 import { ReactNode } from 'react'
@@ -36,7 +36,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <PageTracking />
         <div className="App">
-          <Navbar />
+          <ConditionalNavbar />
           {children}
         </div>
         <Analytics />

@@ -1,14 +1,24 @@
 'use client'
 
 import Link from 'next/link'
-import { getLatestPosts } from '../posts/posts'
+import { useEffect, useState } from 'react'
+import { getLatestPosts } from '../lib/sanity'
+import { BlogPost } from '../posts/types'
 import '../BlogPreview.scss'
 
 export default function BlogPreview() {
-    const posts = getLatestPosts(3).map(post => ({
-        ...post,
-        excerpt: post.content.substring(0, 100) + '...',
-    }))
+    const [posts, setPosts] = useState<Array<BlogPost & { excerpt: string }>>([])
+
+    useEffect(() => {
+        async function fetchPosts() {
+            const fetchedPosts = await getLatestPosts(3)
+            setPosts(fetchedPosts.map(post => ({
+                ...post,
+                excerpt: post.content.substring(0, 100) + '...',
+            })))
+        }
+        fetchPosts()
+    }, [])
 
     const formatDate = (dateString: string): string => {
         // Parse date as local date to avoid timezone issues

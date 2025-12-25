@@ -1,14 +1,24 @@
 'use client'
 
 import Link from 'next/link'
-import { getAllPosts } from '../posts/posts'
+import { useEffect, useState } from 'react'
+import { getAllPosts } from '../lib/sanity'
+import { BlogPost } from '../posts/types'
 import '../Blog.scss'
 
 export default function BlogList() {
-    const posts = getAllPosts().map(post => ({
-        ...post,
-        excerpt: post.content.substring(0, 150) + '...',
-    }))
+    const [posts, setPosts] = useState<Array<BlogPost & { excerpt: string }>>([])
+
+    useEffect(() => {
+        async function fetchPosts() {
+            const fetchedPosts = await getAllPosts()
+            setPosts(fetchedPosts.map(post => ({
+                ...post,
+                excerpt: post.content.substring(0, 150) + '...',
+            })))
+        }
+        fetchPosts()
+    }, [])
 
     const formatDate = (dateString: string): string => {
         // Parse date as local date to avoid timezone issues

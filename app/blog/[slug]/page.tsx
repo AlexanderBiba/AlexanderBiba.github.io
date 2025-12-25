@@ -1,17 +1,18 @@
-import { getPostBySlug, getAllPosts } from '../../../src/posts/posts'
+import { getPostBySlug, getAllPosts } from '../../../src/lib/sanity'
 import BlogPost from '../../../src/components/BlogPost'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
 
 export async function generateStaticParams() {
-  const posts = getAllPosts()
+  const posts = await getAllPosts()
   return posts.map((post) => ({
     slug: post.slug,
   }))
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const post = getPostBySlug(params.slug)
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const post = await getPostBySlug(slug)
   
   if (!post) {
     return {
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 
   const description = post.description || post.content.substring(0, 160).replace(/\n/g, ' ').trim() + '...'
-  const ogImage = post.ogImage || '/preview.png'
+  const ogImage = post.ogImage?.asset?.url || post.ogImage || '/preview.png'
   const ogImageUrl = ogImage.startsWith('http') 
     ? ogImage 
     : `https://alexanderbiba.github.io${ogImage.startsWith('/') ? ogImage : `/${ogImage}`}`
@@ -45,8 +46,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 }
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = getPostBySlug(params.slug)
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const post = await getPostBySlug(slug)
   
   if (!post) {
     notFound()

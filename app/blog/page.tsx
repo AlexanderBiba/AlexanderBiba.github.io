@@ -1,4 +1,3 @@
-import { getAllPosts } from '../../src/posts/posts'
 import BlogList from '../../src/components/BlogList'
 import { Metadata } from 'next'
 
