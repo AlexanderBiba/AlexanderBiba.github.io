@@ -55,13 +55,6 @@ export default function Navbar() {
                 <ul>
                     <li>
                         {isBlogPage ? (
-                            <a href="#home" onClick={(e) => handleHashNavigation(e, '#home')}>Home</a>
-                        ) : (
-                            <a href="#home">Home</a>
-                        )}
-                    </li>
-                    <li>
-                        {isBlogPage ? (
                             <a href="#about" onClick={(e) => handleHashNavigation(e, '#about')}>About</a>
                         ) : (
                             <a href="#about">About</a>
@@ -69,20 +62,6 @@ export default function Navbar() {
                     </li>
                     <li>
                         <Link href="/blog">Blog</Link>
-                    </li>
-                    <li>
-                        {isBlogPage ? (
-                            <a href="#experience" onClick={(e) => handleHashNavigation(e, '#experience')}>Experience</a>
-                        ) : (
-                            <a href="#experience">Experience</a>
-                        )}
-                    </li>
-                    <li>
-                        {isBlogPage ? (
-                            <a href="#works" onClick={(e) => handleHashNavigation(e, '#works')}>Projects</a>
-                        ) : (
-                            <a href="#works">Projects</a>
-                        )}
                     </li>
                 </ul>
             </div>
