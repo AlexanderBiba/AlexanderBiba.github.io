@@ -1,29 +1,27 @@
 'use client'
 
-import emailjs from '@emailjs/browser'
 import { useState, FormEvent } from 'react'
 import '../Contact.scss'
 
 export default function Contact() {
     const [contactResponseMessage, setContactResponseMessage] = useState('')
     
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         const form = e.currentTarget
-        const submitButton = form.elements.namedItem('submit-button') as HTMLButtonElement
+        const formData = new FormData(form)
+        const name = formData.get('user_name') as string
+        const email = formData.get('user_email') as string
+        const message = formData.get('message') as string
         
-        if (!submitButton) return
+        // Create mailto link
+        const subject = encodeURIComponent(`Contact from ${name}`)
+        const body = encodeURIComponent(`From: ${name} (${email})\n\n${message}`)
+        window.location.href = `mailto:?subject=${subject}&body=${body}`
         
-        submitButton.disabled = true
-        try {
-            await emailjs.sendForm('service_5osz36y', 'template_3a7hcft', form, 'rdPzcQbDHawb-Tomt')
-            setContactResponseMessage('Message sent successfully!')
-        } catch (err) {
-            console.log(err)
-            setContactResponseMessage('Something went wrong, could not send message.')
-        }
-        submitButton.disabled = false
+        setContactResponseMessage('Opening your email client...')
         setTimeout(() => setContactResponseMessage(''), 5000)
+        form.reset()
     }
     
     return (

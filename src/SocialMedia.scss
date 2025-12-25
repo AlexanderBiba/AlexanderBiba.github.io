@@ -1,4 +1,5 @@
-@import "_colors";
+@use "sass:color";
+@use "_colors" as *;
 
 #social-media {
     background: $light;
@@ -10,7 +11,7 @@
     
     p {
         font-size: 1.1rem;
-        color: lighten($dark, 20%);
+        color: color.adjust($dark, $lightness: 20%);
         margin-bottom: 2rem;
         max-width: 500px;
         margin-left: auto;

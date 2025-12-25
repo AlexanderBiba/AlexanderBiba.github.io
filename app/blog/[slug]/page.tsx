@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 
   const description = post.description || post.content.substring(0, 160).replace(/\n/g, ' ').trim() + '...'
-  const ogImage = post.ogImage?.asset?.url || post.ogImage || '/preview.png'
+  const ogImage = (typeof post.ogImage === 'object' && post.ogImage !== null ? post.ogImage.url : post.ogImage) || '/preview.png'
   const ogImageUrl = ogImage.startsWith('http') 
     ? ogImage 
     : `https://alexanderbiba.github.io${ogImage.startsWith('/') ? ogImage : `/${ogImage}`}`

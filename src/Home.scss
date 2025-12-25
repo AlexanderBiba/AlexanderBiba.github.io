@@ -1,4 +1,5 @@
-@import "_colors";
+@use "sass:color";
+@use "_colors" as *;
 
 #home {
     min-height: 100vh;
@@ -44,14 +45,14 @@
             font-size: 1.5rem;
             font-weight: 500;
             margin: 0 0 1.5rem 0;
-            color: lighten($dark, 20%);
+            color: color.adjust($dark, $lightness: 20%);
             font-weight: 400;
         }
         
         p {
             font-size: 1.2rem;
             margin: 0 0 3rem 0;
-            color: lighten($dark, 30%);
+            color: color.adjust($dark, $lightness: 30%);
             max-width: 600px;
             margin-left: auto;
             margin-right: auto;

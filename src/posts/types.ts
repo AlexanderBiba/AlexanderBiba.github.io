@@ -3,7 +3,7 @@ export interface BlogPost {
   title: string
   date: string
   description: string
-  ogImage: string | null
+  ogImage: { _id: string; url: string } | string | null
   content: string
 }
 
