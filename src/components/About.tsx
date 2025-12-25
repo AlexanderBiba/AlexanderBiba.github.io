@@ -6,7 +6,7 @@ export default function About() {
     <section id="about">
       <div className="about-content">
         <div className="avatar">
-          <Image src="/avatar.jpg" alt="Alex Biba Profile Pic" width={200} height={200} />
+          <Image src="/avatar.png" alt="Alex Biba Profile Pic" width={200} height={200} />
         </div>
         <div className="content">
           <h2>About Me</h2>
