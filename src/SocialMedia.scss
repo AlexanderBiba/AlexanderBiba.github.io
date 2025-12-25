@@ -1,11 +1,1 @@
-@use "sass:color";
-@use "_colors" as *;
-
-#social-media {
-    background: $light;
-    text-align: center;
-    
-    h2 {
-        margin-bottom: 2rem;
-    }
-}
+// SocialMedia now uses global styles only

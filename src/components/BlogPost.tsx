@@ -2,7 +2,6 @@ import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { BlogPost as BlogPostType } from '../posts/types'
-import '../Blog.scss'
 
 interface BlogPostProps {
     post: BlogPostType | null | undefined
@@ -16,9 +15,8 @@ interface ImageProps {
 
 export default function BlogPost({ post }: BlogPostProps) {
     const formatDate = (dateString: string): string => {
-        // Parse date as local date to avoid timezone issues
         const [year, month, day] = dateString.split('-').map(Number)
-        const date = new Date(year, month - 1, day) // month is 0-indexed
+        const date = new Date(year, month - 1, day)
         return date.toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
@@ -28,25 +26,20 @@ export default function BlogPost({ post }: BlogPostProps) {
 
     if (!post) {
         return (
-            <div className="blog-post">
-                <div className="blog-container">
-                    <h1>Post Not Found</h1>
-                    <p>The blog post you're looking for doesn't exist.</p>
-                    <Link href="/blog">← Back to Blog</Link>
-                </div>
+            <div className="content-container">
+                <h1>Post Not Found</h1>
+                <p>The blog post you're looking for doesn't exist.</p>
+                <p>
+                    <Link href="/blog">← Back to posts</Link>
+                </p>
             </div>
         )
     }
 
-    // Custom renderer for images to handle paths correctly
     const imageRenderer = ({ src, alt, title }: ImageProps) => {
-        // Normalize the src path
         let imageSrc = src || ''
         
-        // If the image path is relative (doesn't start with http or /), resolve it from blog-images
         if (src && !src.startsWith('http') && !src.startsWith('/')) {
-            // Images from src/assets/blog-images/ are copied to public/blog-images/ during build
-            // In markdown, reference images by filename only, e.g., ![Alt](image.jpg)
             imageSrc = `/blog-images/${src}`
         }
         
@@ -55,41 +48,122 @@ export default function BlogPost({ post }: BlogPostProps) {
                 src={imageSrc} 
                 alt={alt || ''} 
                 title={title || alt || ''}
+                style={{ maxWidth: '100%', height: 'auto', margin: '1.5rem 0' }}
             />
         )
     }
 
-    // Custom renderer for tables to wrap them in a scrollable container
     const tableRenderer = ({ children }: { children?: React.ReactNode }) => {
         return (
-            <div className="table-wrapper">
-                <table>{children}</table>
+            <div style={{ overflowX: 'auto', margin: '1.5rem 0' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    {children}
+                </table>
             </div>
         )
     }
 
     return (
-        <div className="blog-post">
-            <div className="blog-container">
-                <Link href="/blog" className="back-link">← Back to posts</Link>
-                <article>
-                    <header>
-                        <h1>{post.title}</h1>
-                        <time dateTime={post.date}>{formatDate(post.date)}</time>
-                    </header>
-                    <div className="markdown-content">
-                        <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            components={{
-                                img: imageRenderer,
-                                table: tableRenderer,
-                            }}
-                        >
-                            {post.content}
-                        </ReactMarkdown>
-                    </div>
-                </article>
-            </div>
+        <div className="content-container">
+            <p>
+                <Link href="/blog">← Back to posts</Link>
+            </p>
+            <article>
+                <h1>{post.title}</h1>
+                <time dateTime={post.date} style={{ color: '#666', fontSize: '0.9em', display: 'block', marginBottom: '2rem' }}>
+                    {formatDate(post.date)}
+                </time>
+                <div className="markdown-content">
+                    <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                            img: imageRenderer,
+                            table: tableRenderer,
+                            a: ({ href, children }) => (
+                                <a href={href} style={{ color: '#0066cc' }}>
+                                    {children}
+                                </a>
+                            ),
+                            code: ({ inline, children, className }) => {
+                                if (inline) {
+                                    return (
+                                        <code style={{ 
+                                            background: '#f5f5f5', 
+                                            padding: '0.2em 0.4em',
+                                            fontFamily: 'monospace',
+                                            fontSize: '0.9em'
+                                        }}>
+                                            {children}
+                                        </code>
+                                    )
+                                }
+                                // For code blocks, return simple code element
+                                // ReactMarkdown wraps it in <pre>
+                                return (
+                                    <code className={className} style={{ fontFamily: 'monospace', fontSize: '0.9em' }}>
+                                        {children}
+                                    </code>
+                                )
+                            },
+                            pre: ({ children }) => {
+                                return (
+                                    <pre style={{ 
+                                        background: '#f5f5f5', 
+                                        padding: '1rem',
+                                        overflow: 'auto',
+                                        margin: '1.5rem 0'
+                                    }}>
+                                        {children}
+                                    </pre>
+                                )
+                            },
+                            blockquote: ({ children }) => (
+                                <blockquote style={{ 
+                                    borderLeft: '3px solid #ccc',
+                                    paddingLeft: '1rem',
+                                    margin: '1.5rem 0',
+                                    color: '#666',
+                                    fontStyle: 'italic'
+                                }}>
+                                    {children}
+                                </blockquote>
+                            ),
+                            table: ({ children }) => (
+                                <div style={{ overflowX: 'auto', margin: '1.5rem 0' }}>
+                                    <table style={{ 
+                                        width: '100%', 
+                                        borderCollapse: 'collapse',
+                                        border: '1px solid #ddd'
+                                    }}>
+                                        {children}
+                                    </table>
+                                </div>
+                            ),
+                            th: ({ children }) => (
+                                <th style={{ 
+                                    padding: '0.75rem',
+                                    border: '1px solid #ddd',
+                                    textAlign: 'left',
+                                    background: '#f5f5f5',
+                                    fontWeight: '600'
+                                }}>
+                                    {children}
+                                </th>
+                            ),
+                            td: ({ children }) => (
+                                <td style={{ 
+                                    padding: '0.75rem',
+                                    border: '1px solid #ddd'
+                                }}>
+                                    {children}
+                                </td>
+                            ),
+                        }}
+                    >
+                        {post.content}
+                    </ReactMarkdown>
+                </div>
+            </article>
         </div>
     )
 }

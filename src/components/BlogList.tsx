@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { BlogPost } from '../posts/types'
-import '../Blog.scss'
 
 interface BlogListProps {
     posts: BlogPost[]
@@ -8,9 +7,8 @@ interface BlogListProps {
 
 export default function BlogList({ posts }: BlogListProps) {
     const formatDate = (dateString: string): string => {
-        // Parse date as local date to avoid timezone issues
         const [year, month, day] = dateString.split('-').map(Number)
-        const date = new Date(year, month - 1, day) // month is 0-indexed
+        const date = new Date(year, month - 1, day)
         return date.toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
@@ -18,31 +16,25 @@ export default function BlogList({ posts }: BlogListProps) {
         })
     }
 
-    const postsWithExcerpt = posts.map(post => ({
-        ...post,
-        excerpt: post.content.substring(0, 150) + '...',
-    }))
-
     return (
-        <div className="blog-list">
-            <div className="blog-container">
-                <h1>Blog</h1>
-                {postsWithExcerpt.length === 0 ? (
-                    <p>No posts available yet.</p>
-                ) : (
-                    <div className="posts-grid">
-                        {postsWithExcerpt.map((post) => (
-                            <article key={post.slug} className="post-card">
-                                <Link href={`/blog/${post.slug}`}>
-                                    <h2>{post.title}</h2>
-                                    <time dateTime={post.date}>{formatDate(post.date)}</time>
-                                    <p>{post.excerpt}</p>
-                                </Link>
-                            </article>
-                        ))}
-                    </div>
-                )}
-            </div>
+        <div className="content-container">
+            <h1>Writing</h1>
+            {posts.length === 0 ? (
+                <p>No posts available yet.</p>
+            ) : (
+                <ul style={{ listStyle: 'none', padding: 0 }}>
+                    {posts.map((post) => (
+                        <li key={post.slug} style={{ marginBottom: '2rem' }}>
+                            <Link href={`/blog/${post.slug}`} style={{ color: '#1a1a1a' }}>
+                                <h2 style={{ margin: '0 0 0.5rem 0' }}>{post.title}</h2>
+                            </Link>
+                            <time dateTime={post.date} style={{ color: '#666', fontSize: '0.9em' }}>
+                                {formatDate(post.date)}
+                            </time>
+                        </li>
+                    ))}
+                </ul>
+            )}
         </div>
     )
 }

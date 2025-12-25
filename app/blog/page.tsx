@@ -5,16 +5,10 @@ import Script from 'next/script'
 import { generateCollectionPageSchema } from '../../src/lib/seo'
 
 export const metadata: Metadata = {
-  title: 'Blog | Alex Biba',
-  description: 'Software development, coding experiments, 3D printing, and other projects I enjoy exploring.',
+  title: 'Writing | Alex Biba',
+  description: 'Writing about software and other projects.',
   alternates: {
     canonical: 'https://alexanderbiba.github.io/blog/',
-  },
-  openGraph: {
-    title: 'Blog | Alex Biba',
-    description: 'Software development, coding experiments, 3D printing, and other projects I enjoy exploring.',
-    url: 'https://alexanderbiba.github.io/blog',
-    type: 'website',
   },
 }
 

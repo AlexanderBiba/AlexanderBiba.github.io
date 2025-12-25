@@ -1,12 +1,11 @@
 import SocialMediaButtons from './SocialMediaButtons'
-import '../SocialMedia.scss'
 
 export default function SocialMedia() {
     return (
-        <section id="social-media">
-            <h2>Connect</h2>
+        <div className="content-container">
+            <h2>Contact</h2>
             <SocialMediaButtons/>
-        </section>
+        </div>
     )
 }
 
