@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { BlogPost } from '../types/blog'
 import { formatPostDate } from '../lib/date'
+import { extractDescription } from '../lib/description'
 import '../Blog.scss'
 
 interface BlogListProps {
@@ -23,6 +24,7 @@ export default function BlogList({ posts }: BlogListProps) {
               <time dateTime={post.date} className="post-date">
                 {formatPostDate(post.date)}
               </time>
+              <p className="post-excerpt">{extractDescription(post.content)}</p>
             </li>
           ))}
         </ul>

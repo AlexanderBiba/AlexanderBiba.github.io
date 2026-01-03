@@ -15,9 +15,11 @@ export function generatePersonSchema() {
   }
 }
 
+import { extractDescription } from './description'
+
 export function generateBlogPostingSchema(post: {
   title: string
-  description?: string
+  content: string
   date: string
   slug: string
   ogImage?: string | { url: string } | null
@@ -42,11 +44,14 @@ export function generateBlogPostingSchema(post: {
     }
   }
 
+  // Extract description from content
+  const description = extractDescription(post.content)
+
   return {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: post.title,
-    description: post.description || post.title,
+    description: description || post.title,
     image: imageUrl,
     datePublished: publishedDate,
     dateModified: publishedDate,

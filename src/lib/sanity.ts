@@ -19,7 +19,6 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
     slug: post.slug.current,
     title: post.title,
     date: post.date,
-    description: post.description || '',
     ogImage: post.ogImage?.asset || post.ogImage || null,
     content: post.content || '',
   }
@@ -35,7 +34,6 @@ export async function getAllPosts(): Promise<BlogPost[]> {
     slug: post.slug.current,
     title: post.title,
     date: post.date,
-    description: post.description || '',
     ogImage: post.ogImage?.asset || post.ogImage || null,
     content: post.content || '',
   }))
@@ -51,7 +49,6 @@ export async function getLatestPosts(limit: number = 3): Promise<BlogPost[]> {
     slug: post.slug.current,
     title: post.title,
     date: post.date,
-    description: post.description || '',
     ogImage: post.ogImage?.asset || post.ogImage || null,
     content: post.content || '',
   }))

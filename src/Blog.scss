@@ -19,11 +19,20 @@
 .post-date {
     color: #666;
     font-size: 0.9em;
+    display: block;
+    margin-bottom: 0.5rem;
 }
 
 .post-date--block {
     display: block;
     margin-bottom: 2rem;
+}
+
+.post-excerpt {
+    color: #666;
+    font-size: 0.95em;
+    line-height: 1.5;
+    margin: 0;
 }
 
 .markdown-content {

@@ -1,9 +1,10 @@
-import { getPostBySlug, getAllPosts } from '../../../src/lib/sanity'
-import BlogPost from '../../../src/components/BlogPost'
+import { getPostBySlug, getAllPosts } from '../../../../src/lib/sanity'
+import BlogPost from '../../../../src/components/BlogPost'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
 import Script from 'next/script'
-import { generateBlogPostingSchema } from '../../../src/lib/seo'
+import { generateBlogPostingSchema } from '../../../../src/lib/seo'
+import { extractDescription } from '../../../../src/lib/description'
 
 export async function generateStaticParams() {
   const posts = await getAllPosts()
@@ -12,23 +13,29 @@ export async function generateStaticParams() {
   }))
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
   const { slug } = await params
   const post = await getPostBySlug(slug)
-  
+
   if (!post) {
     return {
       title: 'Post Not Found | Alex Biba',
     }
   }
 
-  const description = post.description || post.content.substring(0, 160).replace(/\n/g, ' ').trim() + '...'
-  const ogImage = (typeof post.ogImage === 'object' && post.ogImage !== null ? post.ogImage.url : post.ogImage) || '/avatar.png'
-  const ogImageUrl = ogImage.startsWith('http') 
-    ? ogImage 
+  const description = extractDescription(post.content)
+  const ogImage =
+    (typeof post.ogImage === 'object' && post.ogImage !== null ? post.ogImage.url : post.ogImage) ||
+    '/avatar.png'
+  const ogImageUrl = ogImage.startsWith('http')
+    ? ogImage
     : `https://alexbiba.com${ogImage.startsWith('/') ? ogImage : `/${ogImage}`}`
   const postUrl = `https://alexbiba.com/blog/${post.slug}/`
-  
+
   // Format date for article metadata (ISO 8601)
   const publishedDate = new Date(post.date).toISOString()
 
@@ -65,7 +72,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const post = await getPostBySlug(slug)
-  
+
   if (!post) {
     notFound()
   }
@@ -83,4 +90,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     </>
   )
 }
+
+
 
