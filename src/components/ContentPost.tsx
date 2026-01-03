@@ -40,21 +40,11 @@ export default function ContentPost({
 
   return (
     <div className="content-container">
-      <p>
-        <Link href={backLink.href}>← {backLink.label}</Link>
-      </p>
       <article>
         <h1>{title}</h1>
         <time dateTime={date} className="post-date post-date--block">
           {formatPostDate(date)}
         </time>
-        {externalLink && (
-          <p className="project-link-block">
-            <a href={externalLink} target="_blank" rel="noopener noreferrer">
-              View Project →
-            </a>
-          </p>
-        )}
         {coverImage && typeof coverImage !== 'string' && (
           <div className="project-cover-image">
             <Image
@@ -67,12 +57,22 @@ export default function ContentPost({
             />
           </div>
         )}
+        {externalLink && (
+          <p className="project-link-block">
+            <a href={externalLink} target="_blank" rel="noopener noreferrer">
+              View Project →
+            </a>
+          </p>
+        )}
         <div className="markdown-content">
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ img: imageRenderer }}>
             {content}
           </ReactMarkdown>
         </div>
       </article>
+      <p>
+        <Link href={backLink.href}>← {backLink.label}</Link>
+      </p>
     </div>
   )
 }
