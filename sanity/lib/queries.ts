@@ -1,3 +1,19 @@
+// Site Settings query (singleton)
+export const siteSettingsQuery = `*[_type == "siteSettings" && _id == "siteSettings"][0]{
+  name,
+  aboutBlurb,
+  email,
+  github,
+  linkedin,
+  twitter,
+  avatar{
+    asset->{
+      _id,
+      url
+    }
+  }
+}`
+
 // Blog Posts queries
 export const blogPostQuery = `*[_type == "blogPosts" && slug.current == $slug][0]{
   ...,

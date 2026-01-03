@@ -3,8 +3,9 @@ import {
   blogPostQuery,
   allBlogPostsQuery,
   latestBlogPostsQuery,
+  siteSettingsQuery,
 } from '../../sanity/lib/queries'
-import { BlogPost } from '../types/blog'
+import { BlogPost, SiteSettings } from '../types/blog'
 
 // Blog Post functions
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
@@ -52,5 +53,25 @@ export async function getLatestPosts(limit: number = 3): Promise<BlogPost[]> {
     ogImage: post.ogImage?.asset || post.ogImage || null,
     content: post.content || '',
   }))
+}
+
+// Site Settings function
+export async function getSiteSettings(): Promise<SiteSettings | null> {
+  if (!isSanityConfigured() || !client) {
+    return null
+  }
+  
+  const settings = await client.fetch(siteSettingsQuery)
+  if (!settings) return null
+  
+  return {
+    name: settings.name || '',
+    aboutBlurb: settings.aboutBlurb || '',
+    email: settings.email,
+    github: settings.github,
+    linkedin: settings.linkedin,
+    twitter: settings.twitter,
+    avatar: settings.avatar?.asset || null,
+  }
 }
 

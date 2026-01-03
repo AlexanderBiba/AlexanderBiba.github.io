@@ -1,14 +1,16 @@
-export default function About() {
+import { SiteSettings } from '../types/blog'
+
+interface AboutProps {
+  settings?: SiteSettings | null
+}
+
+export default function About({ settings }: AboutProps) {
+  if (!settings) return null
+
   return (
     <div className="content-container">
-      <h1>Alex Biba</h1>
-      <p>
-        I'm a hands-on engineer who enjoys turning complex ideas into
-        simple, scalable products. I work across the stack with Node.js,
-        React, and cloud technologies, always aiming to write code that's
-        clean, maintainable, and purposeful. I care about building things
-        that actually make an impact — not just ship fast, but last.
-      </p>
+      <h1>{settings.name}</h1>
+      <p>{settings.aboutBlurb}</p>
     </div>
   )
 }

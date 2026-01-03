@@ -1,16 +1,19 @@
 import About from '../../src/components/About'
 import BlogPreview from '../../src/components/BlogPreview'
 import SocialMedia from '../../src/components/SocialMedia'
-import { getLatestPosts } from '../../src/lib/sanity'
+import { getLatestPosts, getSiteSettings } from '../../src/lib/sanity'
 
 export default async function HomePage() {
-  const posts = await getLatestPosts(3)
+  const [posts, siteSettings] = await Promise.all([
+    getLatestPosts(3),
+    getSiteSettings(),
+  ])
 
   return (
     <>
-      <About />
+      <About settings={siteSettings} />
       <BlogPreview posts={posts} />
-      <SocialMedia />
+      <SocialMedia settings={siteSettings} />
     </>
   )
 }
