@@ -126,3 +126,29 @@
     }
 }
 
+// Project-specific styles
+.project-image,
+.project-cover-image {
+    margin: 1.5rem 0;
+    border-radius: 8px;
+    overflow: hidden;
+    
+    img {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+}
+
+.project-link-block a {
+    color: #0070f3;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+    
+    &:hover {
+        color: #0051cc;
+        text-decoration: underline;
+    }
+}
+

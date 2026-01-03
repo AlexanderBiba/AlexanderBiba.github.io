@@ -5,6 +5,7 @@ import { markdownSchema } from 'sanity-plugin-markdown'
 
 // Import schemas
 import blogPosts from './sanity/schemas/blogPosts'
+import portfolioProjects from './sanity/schemas/portfolioProjects'
 import siteSettings from './sanity/schemas/siteSettings'
 
 export default defineConfig({
@@ -46,6 +47,7 @@ export default defineConfig({
   schema: {
     types: [
       blogPosts,
+      portfolioProjects,
       siteSettings,
     ],
   },

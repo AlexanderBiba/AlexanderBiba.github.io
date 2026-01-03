@@ -7,6 +7,7 @@ export default function Navbar() {
             <div className="content-container">
                 <Link href="/">Home</Link>
                 <Link href="/blog">Blog</Link>
+                <Link href="/portfolio">Portfolio</Link>
             </div>
         </nav>
     )

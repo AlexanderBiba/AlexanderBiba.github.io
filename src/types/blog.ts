@@ -6,6 +6,15 @@ export interface BlogPost {
   content: string
 }
 
+export interface PortfolioProject {
+  slug: string
+  title: string
+  date: string
+  image: { _id: string; url: string } | string | null
+  url?: string
+  content: string
+}
+
 export interface SiteSettings {
   name: string
   aboutBlurb: string

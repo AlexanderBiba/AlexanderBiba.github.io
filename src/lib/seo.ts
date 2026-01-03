@@ -1,85 +1,109 @@
-export function generatePersonSchema() {
+import { SiteSettings } from '../types/blog'
+
+export function generatePersonSchema(settings?: SiteSettings | null) {
+  if (!settings) return null
+
+  const sameAs = [
+    settings.github,
+    settings.linkedin,
+    settings.twitter,
+  ].filter(Boolean) as string[]
+
   return {
     '@context': 'https://schema.org',
     '@type': 'Person',
-    name: 'Alex Biba',
+    name: settings.name,
     jobTitle: 'Senior Software Engineer',
-    description: 'Senior Software Engineer with over 10 years of experience building scalable solutions with modern technologies.',
+    description: settings.aboutBlurb,
     url: 'https://alexbiba.com',
-    sameAs: [
-      'https://github.com/AlexanderBiba',
-      'https://www.linkedin.com/in/alexander-biba-b9794771',
-      'https://www.facebook.com/alexbiba',
-      'https://www.instagram.com/alexbiba',
-    ],
+    ...(sameAs.length > 0 && { sameAs }),
   }
 }
 
 import { extractDescription } from './description'
 
-export function generateBlogPostingSchema(post: {
-  title: string
-  content: string
-  date: string
-  slug: string
-  ogImage?: string | { url: string } | null
-}) {
+export function generateContentSchema(
+  content: {
+    title: string
+    content: string
+    date: string
+    slug: string
+    image?: string | { url: string } | null
+  },
+  settings: SiteSettings | null,
+  baseRoute: 'blog' | 'portfolio'
+) {
   const baseUrl = 'https://alexbiba.com'
-  const postUrl = `${baseUrl}/blog/${post.slug}/`
-  
-  // Format date for schema.org (ISO 8601)
-  const publishedDate = new Date(post.date).toISOString()
-  
+  const contentUrl = `${baseUrl}/${baseRoute}/${content.slug}/`
+  const publishedDate = new Date(content.date).toISOString()
+
   // Get image URL
   let imageUrl = `${baseUrl}/avatar.png`
-  if (post.ogImage) {
-    if (typeof post.ogImage === 'string') {
-      imageUrl = post.ogImage.startsWith('http') 
-        ? post.ogImage 
-        : `${baseUrl}${post.ogImage.startsWith('/') ? post.ogImage : `/${post.ogImage}`}`
-    } else if (post.ogImage && typeof post.ogImage === 'object' && 'url' in post.ogImage) {
-      imageUrl = post.ogImage.url.startsWith('http')
-        ? post.ogImage.url
-        : `${baseUrl}${post.ogImage.url.startsWith('/') ? post.ogImage.url : `/${post.ogImage.url}`}`
-    }
+  if (content.image) {
+    const img = typeof content.image === 'string' ? content.image : content.image.url
+    imageUrl = img.startsWith('http') ? img : `${baseUrl}${img.startsWith('/') ? img : `/${img}`}`
   }
 
-  // Extract description from content
-  const description = extractDescription(post.content)
+  const description = extractDescription(content.content)
 
   return {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
-    headline: post.title,
-    description: description || post.title,
+    headline: content.title,
+    description: description || content.title,
     image: imageUrl,
     datePublished: publishedDate,
     dateModified: publishedDate,
-    author: {
-      '@type': 'Person',
-      name: 'Alex Biba',
-      url: baseUrl,
-    },
-    publisher: {
-      '@type': 'Person',
-      name: 'Alex Biba',
-      url: baseUrl,
-    },
+    ...(settings && {
+      author: {
+        '@type': 'Person',
+        name: settings.name,
+        url: baseUrl,
+      },
+      publisher: {
+        '@type': 'Person',
+        name: settings.name,
+        url: baseUrl,
+      },
+    }),
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': postUrl,
+      '@id': contentUrl,
     },
-    url: postUrl,
+    url: contentUrl,
   }
 }
 
-export function generateCollectionPageSchema() {
+// Alias for backwards compatibility
+export const generateBlogPostingSchema = (
+  post: { title: string; content: string; date: string; slug: string; ogImage?: string | { url: string } | null },
+  settings?: SiteSettings | null
+) => generateContentSchema({ ...post, image: post.ogImage }, settings, 'blog')
+
+export function generateCollectionPageSchema(
+  settings: SiteSettings | null,
+  type: 'blog' | 'portfolio' = 'blog'
+) {
+  if (!settings) return null
+
+  const config = {
+    blog: {
+      name: `Writing | ${settings.name}`,
+      description:
+        'Software development, coding experiments, 3D printing, and other projects I enjoy exploring.',
+      url: 'https://alexbiba.com/blog/',
+    },
+    portfolio: {
+      name: `Portfolio | ${settings.name}`,
+      description: 'A showcase of projects I\'ve built and worked on.',
+      url: 'https://alexbiba.com/portfolio/',
+    },
+  }
+
   return {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: 'Blog | Alex Biba',
-    description: 'Software development, coding experiments, 3D printing, and other projects I enjoy exploring.',
-    url: 'https://alexbiba.com/blog/',
+    ...config[type],
   }
 }
 

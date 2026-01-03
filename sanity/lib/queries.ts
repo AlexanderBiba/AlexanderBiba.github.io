@@ -43,4 +43,24 @@ export const latestBlogPostsQuery = `*[_type == "blogPosts"] | order(date desc)[
   }
 }`
 
+// Portfolio Projects queries
+export const portfolioProjectQuery = `*[_type == "portfolioProjects" && slug.current == $slug][0]{
+  ...,
+  image{
+    asset->{
+      _id,
+      url
+    }
+  }
+}`
+export const allPortfolioProjectsQuery = `*[_type == "portfolioProjects"] | order(date desc){
+  ...,
+  image{
+    asset->{
+      _id,
+      url
+    }
+  }
+}`
+
 

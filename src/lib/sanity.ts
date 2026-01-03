@@ -3,9 +3,11 @@ import {
   blogPostQuery,
   allBlogPostsQuery,
   latestBlogPostsQuery,
+  portfolioProjectQuery,
+  allPortfolioProjectsQuery,
   siteSettingsQuery,
 } from '../../sanity/lib/queries'
-import { BlogPost, SiteSettings } from '../types/blog'
+import { BlogPost, PortfolioProject, SiteSettings } from '../types/blog'
 
 // Blog Post functions
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
@@ -52,6 +54,41 @@ export async function getLatestPosts(limit: number = 3): Promise<BlogPost[]> {
     date: post.date,
     ogImage: post.ogImage?.asset || post.ogImage || null,
     content: post.content || '',
+  }))
+}
+
+// Portfolio Project functions
+export async function getProjectBySlug(slug: string): Promise<PortfolioProject | null> {
+  if (!isSanityConfigured() || !client) {
+    return null
+  }
+  
+  const project = await client.fetch(portfolioProjectQuery, { slug })
+  if (!project) return null
+  
+  return {
+    slug: project.slug.current,
+    title: project.title,
+    date: project.date,
+    image: project.image?.asset || project.image || null,
+    url: project.url,
+    content: project.content || '',
+  }
+}
+
+export async function getAllProjects(): Promise<PortfolioProject[]> {
+  if (!isSanityConfigured() || !client) {
+    return []
+  }
+  
+  const projects = await client.fetch(allPortfolioProjectsQuery)
+  return projects.map((project: any) => ({
+    slug: project.slug.current,
+    title: project.title,
+    date: project.date,
+    image: project.image?.asset || project.image || null,
+    url: project.url,
+    content: project.content || '',
   }))
 }
 

@@ -1,4 +1,4 @@
-import { getPostBySlug, getAllPosts } from '../../../../src/lib/sanity'
+import { getPostBySlug, getAllPosts, getSiteSettings } from '../../../../src/lib/sanity'
 import BlogPost from '../../../../src/components/BlogPost'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
@@ -19,11 +19,11 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const post = await getPostBySlug(slug)
+  const [post, settings] = await Promise.all([getPostBySlug(slug), getSiteSettings()])
 
   if (!post) {
     return {
-      title: 'Post Not Found | Alex Biba',
+      title: settings ? `Post Not Found | ${settings.name}` : 'Post Not Found',
     }
   }
 
@@ -35,49 +35,52 @@ export async function generateMetadata({
     ? ogImage
     : `https://alexbiba.com${ogImage.startsWith('/') ? ogImage : `/${ogImage}`}`
   const postUrl = `https://alexbiba.com/blog/${post.slug}/`
-
-  // Format date for article metadata (ISO 8601)
   const publishedDate = new Date(post.date).toISOString()
 
-  return {
-    title: `${post.title} | Alex Biba`,
+  const baseMetadata: Metadata = {
+    title: settings ? `${post.title} | ${settings.name}` : post.title,
     description,
     alternates: {
       canonical: postUrl,
     },
     openGraph: {
-      title: `${post.title} | Alex Biba`,
+      title: settings ? `${post.title} | ${settings.name}` : post.title,
       description,
       url: postUrl,
       type: 'article',
       images: [ogImageUrl],
       publishedTime: publishedDate,
       modifiedTime: publishedDate,
-      authors: ['Alex Biba'],
+      ...(settings && { authors: [settings.name] }),
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${post.title} | Alex Biba`,
+      title: settings ? `${post.title} | ${settings.name}` : post.title,
       description,
       images: [ogImageUrl],
     },
-    other: {
-      'article:author': 'Alex Biba',
+  }
+
+  if (settings) {
+    baseMetadata.other = {
+      'article:author': settings.name,
       'article:published_time': publishedDate,
       'article:modified_time': publishedDate,
-    },
+    }
   }
+
+  return baseMetadata
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const post = await getPostBySlug(slug)
+  const [post, settings] = await Promise.all([getPostBySlug(slug), getSiteSettings()])
 
   if (!post) {
     notFound()
   }
 
-  const schema = generateBlogPostingSchema(post)
+  const schema = generateBlogPostingSchema(post, settings)
 
   return (
     <>
