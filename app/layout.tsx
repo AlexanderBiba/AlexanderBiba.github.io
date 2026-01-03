@@ -3,6 +3,8 @@ import { ReactNode } from 'react'
 import { Metadata } from 'next'
 import { getSiteSettings } from '../src/lib/sanity'
 
+export const revalidate = 300
+
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings()
   
