@@ -8,7 +8,7 @@ export const client = projectId
   ? createClient({
       projectId,
       dataset,
-      useCdn: process.env.NODE_ENV === 'production',
+      useCdn: false,
       apiVersion: '2024-01-01',
     })
   : null
