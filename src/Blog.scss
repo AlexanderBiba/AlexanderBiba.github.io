@@ -36,6 +36,10 @@
 }
 
 .markdown-content {
+    // Prevent long words / URLs from forcing the page to scroll horizontally.
+    overflow-wrap: break-word;
+    word-break: break-word;
+
     h1, h2, h3, h4, h5, h6 {
         margin-top: 2rem;
         margin-bottom: 1rem;
@@ -66,6 +70,10 @@
         margin-bottom: 0.5rem;
     }
 
+    a img {
+        cursor: zoom-in;
+    }
+
     img {
         max-width: 100%;
         height: auto;
@@ -82,14 +90,28 @@
         background: #f5f5f5;
         padding: 0.2em 0.4em;
         border-radius: 4px;
+        // Allow long inline tokens (URLs, env vars, etc.) to wrap instead of
+        // pushing the page wider than the viewport.
+        overflow-wrap: break-word;
+        word-break: break-word;
     }
 
     pre {
         background: #f5f5f5;
         padding: 1rem;
-        overflow: auto;
+        // Keep code on its own lines and let the block scroll horizontally,
+        // rather than stretching the page.
+        max-width: 100%;
+        overflow-x: auto;
         margin: 1.5rem 0;
         border-radius: 6px;
+
+        code {
+            // Don't break code-block contents; the <pre> scrolls instead.
+            white-space: pre;
+            word-break: normal;
+            overflow-wrap: normal;
+        }
     }
 
     blockquote {
@@ -132,7 +154,12 @@
     margin: 1.5rem 0;
     border-radius: 8px;
     overflow: hidden;
-    
+
+    a {
+        display: block;
+        cursor: zoom-in;
+    }
+
     img {
         width: 100%;
         height: auto;

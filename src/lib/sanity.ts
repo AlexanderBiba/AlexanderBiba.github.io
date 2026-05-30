@@ -8,6 +8,7 @@ import {
   siteSettingsQuery,
 } from '../../sanity/lib/queries'
 import { BlogPost, PortfolioProject, SiteSettings } from '../types/blog'
+import { fetchOgImage } from './ogImage'
 
 // Blog Post functions
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
@@ -58,38 +59,50 @@ export async function getLatestPosts(limit: number = 3): Promise<BlogPost[]> {
 }
 
 // Portfolio Project functions
-export async function getProjectBySlug(slug: string): Promise<PortfolioProject | null> {
-  if (!isSanityConfigured() || !client) {
-    return null
+async function mapProject(project: any): Promise<PortfolioProject> {
+  const image = project.image?.asset || project.image || null
+
+  // When no image is set in the Studio, illustrate the project with the
+  // og:image of its linked site (if it has a URL).
+  let previewImage: string | null = null
+  if (!image && project.url) {
+    previewImage = await fetchOgImage(project.url)
   }
-  
-  const project = await client.fetch(portfolioProjectQuery, { slug })
-  if (!project) return null
-  
+
   return {
     slug: project.slug.current,
     title: project.title,
     date: project.date,
-    image: project.image?.asset || project.image || null,
+    image,
     url: project.url,
     content: project.content || '',
+    previewImage,
   }
+}
+
+export async function getProjectBySlug(slug: string): Promise<PortfolioProject | null> {
+  if (!isSanityConfigured() || !client) {
+    return null
+  }
+
+  const project = await client.fetch(portfolioProjectQuery, { slug })
+  if (!project) return null
+
+  return mapProject(project)
 }
 
 export async function getAllProjects(): Promise<PortfolioProject[]> {
   if (!isSanityConfigured() || !client) {
     return []
   }
-  
+
   const projects = await client.fetch(allPortfolioProjectsQuery)
-  return projects.map((project: any) => ({
-    slug: project.slug.current,
-    title: project.title,
-    date: project.date,
-    image: project.image?.asset || project.image || null,
-    url: project.url,
-    content: project.content || '',
-  }))
+  return Promise.all(projects.map(mapProject))
+}
+
+export async function getLatestProjects(limit: number = 3): Promise<PortfolioProject[]> {
+  const projects = await getAllProjects()
+  return projects.slice(0, limit)
 }
 
 // Site Settings function

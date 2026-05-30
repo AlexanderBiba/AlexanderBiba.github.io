@@ -26,9 +26,9 @@ export async function generateMetadata({
     content: project.content,
     date: project.date,
     slug: project.slug,
-    image: project.image,
+    image: project.image || project.previewImage,
     settings,
-    baseRoute: 'portfolio',
+    baseRoute: 'projects',
   })
 }
 
@@ -42,12 +42,16 @@ export default async function PortfolioProjectPage({
 
   if (!project) notFound()
 
-  const schema = generateContentSchema(project, settings, 'portfolio')
+  const schema = generateContentSchema(
+    { ...project, image: project.image || project.previewImage },
+    settings,
+    'projects'
+  )
 
   return (
     <>
       <Script
-        id="portfolio-schema"
+        id="project-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
