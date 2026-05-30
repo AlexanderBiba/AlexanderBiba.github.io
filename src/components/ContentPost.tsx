@@ -17,6 +17,7 @@ interface ContentPostProps {
   content: string
   backLink: { href: string; label: string }
   coverImage?: { url: string } | string | null
+  coverImageFallback?: string | null
   externalLink?: string
   imageFolder?: string
 }
@@ -27,6 +28,7 @@ export default function ContentPost({
   content,
   backLink,
   coverImage,
+  coverImageFallback,
   externalLink,
   imageFolder = 'images',
 }: ContentPostProps) {
@@ -35,8 +37,16 @@ export default function ContentPost({
     if (src && !src.startsWith('http') && !src.startsWith('/')) {
       imageSrc = `/${imageFolder}/${src}`
     }
-    return <img src={imageSrc} alt={alt || ''} title={title || alt || ''} />
+    // Wrap in a link so clicking opens the full-size image in a new tab.
+    return (
+      <a href={imageSrc} target="_blank" rel="noopener noreferrer">
+        <img src={imageSrc} alt={alt || ''} title={title || alt || ''} />
+      </a>
+    )
   }
+
+  const sanityCover = coverImage && typeof coverImage !== 'string' ? coverImage : null
+  const fallbackCover = !sanityCover ? coverImageFallback : null
 
   return (
     <div className="content-container">
@@ -45,16 +55,26 @@ export default function ContentPost({
         <time dateTime={date} className="post-date post-date--block">
           {formatPostDate(date)}
         </time>
-        {coverImage && typeof coverImage !== 'string' && (
+        {sanityCover && (
           <div className="project-cover-image">
-            <Image
-              src={coverImage.url}
-              alt={title}
-              width={1200}
-              height={675}
-              style={{ width: '100%', height: 'auto' }}
-              priority
-            />
+            <a href={sanityCover.url} target="_blank" rel="noopener noreferrer">
+              <Image
+                src={sanityCover.url}
+                alt={title}
+                width={1200}
+                height={675}
+                style={{ width: '100%', height: 'auto' }}
+                priority
+              />
+            </a>
+          </div>
+        )}
+        {fallbackCover && (
+          <div className="project-cover-image">
+            <a href={fallbackCover} target="_blank" rel="noopener noreferrer">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={fallbackCover} alt={title} />
+            </a>
           </div>
         )}
         {externalLink && (

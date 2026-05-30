@@ -13,6 +13,9 @@ export interface PortfolioProject {
   image: { _id: string; url: string } | string | null
   url?: string
   content: string
+  // Fallback illustration (e.g. the og:image of the linked site) used when no
+  // image is provided in the Studio. Always an absolute URL or null.
+  previewImage?: string | null
 }
 
 export interface SiteSettings {

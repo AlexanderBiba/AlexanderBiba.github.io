@@ -12,36 +12,51 @@ interface PortfolioListProps {
 export default function PortfolioList({ projects }: PortfolioListProps) {
   return (
     <div className="content-container">
-      <h1>Portfolio</h1>
+      <h1>Projects</h1>
       {projects.length === 0 ? (
         <p>No projects available yet.</p>
       ) : (
         <ul className="post-list">
-          {projects.map((project) => (
-            <li key={project.slug} className="post-list-item">
-              <Link href={`/portfolio/${project.slug}`} className="post-title-link">
-                <h2 className="post-title">{project.title}</h2>
-              </Link>
-              <time dateTime={project.date} className="post-date">
-                {formatPostDate(project.date)}
-              </time>
-              {project.image && typeof project.image !== 'string' && (
-                <div className="project-image">
-                  <Image
-                    src={project.image.url}
-                    alt={project.title}
-                    width={800}
-                    height={450}
-                    style={{ width: '100%', height: 'auto' }}
-                  />
-                </div>
-              )}
-              <p className="post-excerpt">{extractDescription(project.content)}</p>
-            </li>
-          ))}
+          {projects.map((project) => {
+            const sanityImage =
+              project.image && typeof project.image !== 'string' ? project.image : null
+            const fallbackImage = !sanityImage ? project.previewImage : null
+
+            return (
+              <li key={project.slug} className="post-list-item">
+                <Link href={`/projects/${project.slug}`} className="post-title-link">
+                  <h2 className="post-title">{project.title}</h2>
+                </Link>
+                <time dateTime={project.date} className="post-date">
+                  {formatPostDate(project.date)}
+                </time>
+                {sanityImage && (
+                  <div className="project-image">
+                    <a href={sanityImage.url} target="_blank" rel="noopener noreferrer">
+                      <Image
+                        src={sanityImage.url}
+                        alt={project.title}
+                        width={800}
+                        height={450}
+                        style={{ width: '100%', height: 'auto' }}
+                      />
+                    </a>
+                  </div>
+                )}
+                {fallbackImage && (
+                  <div className="project-image">
+                    <a href={fallbackImage} target="_blank" rel="noopener noreferrer">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={fallbackImage} alt={project.title} loading="lazy" />
+                    </a>
+                  </div>
+                )}
+                <p className="post-excerpt">{extractDescription(project.content)}</p>
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>
   )
 }
-

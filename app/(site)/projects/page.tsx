@@ -6,19 +6,19 @@ import { generateCollectionPageSchema } from '../../../src/lib/seo'
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings()
-  const title = settings ? `Portfolio | ${settings.name}` : 'Portfolio'
+  const title = settings ? `Projects | ${settings.name}` : 'Projects'
   const description = 'A showcase of projects I\'ve built and worked on.'
 
   return {
     title,
     description,
     alternates: {
-      canonical: 'https://alexbiba.com/portfolio/',
+      canonical: 'https://alexbiba.com/projects/',
     },
     openGraph: {
       title,
       description,
-      url: 'https://alexbiba.com/portfolio/',
+      url: 'https://alexbiba.com/projects/',
       type: 'website',
     },
     twitter: {
@@ -29,15 +29,15 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default async function PortfolioPage() {
+export default async function ProjectsPage() {
   const [projects, settings] = await Promise.all([getAllProjects(), getSiteSettings()])
-  const schema = generateCollectionPageSchema(settings, 'portfolio')
+  const schema = generateCollectionPageSchema(settings, 'projects')
 
   return (
     <>
       {schema && (
         <Script
-          id="portfolio-schema"
+          id="projects-schema"
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
         />
@@ -46,4 +46,3 @@ export default async function PortfolioPage() {
     </>
   )
 }
-

@@ -21,7 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/portfolio/`,
+      url: `${baseUrl}/projects/`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,
@@ -42,17 +42,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   })
   
-  // Portfolio project pages
-  const portfolioPages: MetadataRoute.Sitemap = projects.map((project) => {
+  // Project pages
+  const projectPages: MetadataRoute.Sitemap = projects.map((project) => {
     const projectDate = new Date(project.date)
     return {
-      url: `${baseUrl}/portfolio/${project.slug}/`,
+      url: `${baseUrl}/projects/${project.slug}/`,
       lastModified: projectDate,
       changeFrequency: 'monthly' as const,
       priority: 0.7,
     }
   })
-  
-  return [...staticPages, ...blogPages, ...portfolioPages]
+
+  return [...staticPages, ...blogPages, ...projectPages]
 }
 

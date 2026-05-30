@@ -31,7 +31,7 @@ export function generateContentSchema(
     image?: string | { url: string } | null
   },
   settings: SiteSettings | null,
-  baseRoute: 'blog' | 'portfolio'
+  baseRoute: 'blog' | 'projects'
 ) {
   const baseUrl = 'https://alexbiba.com'
   const contentUrl = `${baseUrl}/${baseRoute}/${content.slug}/`
@@ -82,7 +82,7 @@ export const generateBlogPostingSchema = (
 
 export function generateCollectionPageSchema(
   settings: SiteSettings | null,
-  type: 'blog' | 'portfolio' = 'blog'
+  type: 'blog' | 'projects' = 'blog'
 ) {
   if (!settings) return null
 
@@ -93,10 +93,10 @@ export function generateCollectionPageSchema(
         'Software development, coding experiments, 3D printing, and other projects I enjoy exploring.',
       url: 'https://alexbiba.com/blog/',
     },
-    portfolio: {
-      name: `Portfolio | ${settings.name}`,
+    projects: {
+      name: `Projects | ${settings.name}`,
       description: 'A showcase of projects I\'ve built and worked on.',
-      url: 'https://alexbiba.com/portfolio/',
+      url: 'https://alexbiba.com/projects/',
     },
   }
 

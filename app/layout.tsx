@@ -10,8 +10,8 @@ export async function generateMetadata(): Promise<Metadata> {
   
   if (!settings) {
     return {
-      title: 'Portfolio',
-      description: 'Personal portfolio and blog',
+      title: 'Projects',
+      description: 'Personal projects and writing',
       metadataBase: new URL('https://alexbiba.com'),
     }
   }
