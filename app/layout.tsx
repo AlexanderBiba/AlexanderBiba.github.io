@@ -1,6 +1,7 @@
 import '../src/index.scss'
 import { ReactNode } from 'react'
 import { Metadata } from 'next'
+import { Analytics } from '@vercel/analytics/next'
 import { getSiteSettings } from '../src/lib/sanity'
 
 export const revalidate = 60
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         {children}
+        <Analytics />
       </body>
     </html>
   )
