@@ -2,43 +2,11 @@ import '../src/index.scss'
 import { ReactNode } from 'react'
 import { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/next'
-import { getSiteSettings } from '../src/lib/sanity'
 
-export const revalidate = 60
-
-export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getSiteSettings()
-  
-  if (!settings) {
-    return {
-      title: 'Projects',
-      description: 'Personal projects and writing',
-      metadataBase: new URL('https://alexbiba.com'),
-    }
-  }
-  
-  return {
-    title: settings.name,
-    description: settings.aboutBlurb,
-    metadataBase: new URL('https://alexbiba.com'),
-    alternates: {
-      canonical: 'https://alexbiba.com/',
-    },
-    openGraph: {
-      title: settings.name,
-      description: settings.aboutBlurb,
-      url: 'https://alexbiba.com/',
-      siteName: settings.name,
-      type: 'website',
-      images: ['/avatar.png'],
-    },
-    twitter: {
-      card: 'summary',
-      title: settings.name,
-      description: settings.aboutBlurb,
-      images: ['/avatar.png'],
-    },
-  }
+export const metadata: Metadata = {
+  title: 'Alex Biba',
+  description: 'Personal projects and writing by Alex Biba',
+  metadataBase: new URL('https://alexbiba.com'),
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {

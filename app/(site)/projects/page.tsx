@@ -1,6 +1,6 @@
 import PortfolioList from '../../../src/components/PortfolioList'
 import { Metadata } from 'next'
-import { getAllProjects, getSiteSettings } from '../../../src/lib/sanity'
+import { getAllProjects, getSiteSettings } from '../../../src/lib/content'
 import Script from 'next/script'
 import { generateCollectionPageSchema } from '../../../src/lib/seo'
 

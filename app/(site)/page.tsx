@@ -2,7 +2,7 @@ import About from '../../src/components/About'
 import BlogPreview from '../../src/components/BlogPreview'
 import ProjectsPreview from '../../src/components/ProjectsPreview'
 import SocialMedia from '../../src/components/SocialMedia'
-import { getLatestPosts, getLatestProjects, getSiteSettings } from '../../src/lib/sanity'
+import { getLatestPosts, getLatestProjects, getSiteSettings } from '../../src/lib/content'
 
 export default async function HomePage() {
   const [posts, projects, siteSettings] = await Promise.all([

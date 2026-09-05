@@ -45,8 +45,8 @@ export default function ContentPost({
     )
   }
 
-  const sanityCover = coverImage && typeof coverImage !== 'string' ? coverImage : null
-  const fallbackCover = !sanityCover ? coverImageFallback : null
+  const primaryCover = coverImage && typeof coverImage !== 'string' ? coverImage : null
+  const fallbackCover = !primaryCover ? coverImageFallback : null
 
   return (
     <div className="content-container">
@@ -55,11 +55,11 @@ export default function ContentPost({
         <time dateTime={date} className="post-date post-date--block">
           {formatPostDate(date)}
         </time>
-        {sanityCover && (
+        {primaryCover && (
           <div className="project-cover-image">
-            <a href={sanityCover.url} target="_blank" rel="noopener noreferrer">
+            <a href={primaryCover.url} target="_blank" rel="noopener noreferrer">
               <Image
-                src={sanityCover.url}
+                src={primaryCover.url}
                 alt={title}
                 width={1200}
                 height={675}

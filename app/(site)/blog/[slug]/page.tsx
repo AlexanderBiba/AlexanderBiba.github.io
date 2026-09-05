@@ -1,4 +1,4 @@
-import { getPostBySlug, getAllPosts, getSiteSettings } from '../../../../src/lib/sanity'
+import { getPostBySlug, getAllPosts, getSiteSettings } from '../../../../src/lib/content'
 import BlogPost from '../../../../src/components/BlogPost'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'

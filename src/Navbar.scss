@@ -17,3 +17,15 @@
         }
     }
 }
+.navbar .explore-link {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .navbar .content-container { gap: 1rem; }
+}

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Metadata } from 'next'
-import { getSiteSettings } from '../src/lib/sanity'
+import { getSiteSettings } from '../src/lib/content'
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings()

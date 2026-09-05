@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next'
-import { getAllPosts, getAllProjects } from '../src/lib/sanity'
+import { getAllPosts, getAllProjects } from '../src/lib/content'
 
 export const dynamic = 'force-static'
 
@@ -8,6 +8,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
+    { url: `${baseUrl}/explore/`, changeFrequency: 'monthly', priority: 0.8 },
     {
       url: baseUrl,
       lastModified: new Date(),
@@ -28,7 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
   
-  // Get all blog posts and portfolio projects (returns empty arrays if Sanity is not configured)
+  // Get all blog posts and portfolio projects
   const [posts, projects] = await Promise.all([getAllPosts(), getAllProjects()])
   
   // Blog post pages

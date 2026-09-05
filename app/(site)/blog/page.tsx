@@ -1,6 +1,6 @@
 import BlogList from '../../../src/components/BlogList'
 import { Metadata } from 'next'
-import { getAllPosts, getSiteSettings } from '../../../src/lib/sanity'
+import { getAllPosts, getSiteSettings } from '../../../src/lib/content'
 import Script from 'next/script'
 import { generateCollectionPageSchema } from '../../../src/lib/seo'
 

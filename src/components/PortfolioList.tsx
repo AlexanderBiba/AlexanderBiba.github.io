@@ -18,9 +18,9 @@ export default function PortfolioList({ projects }: PortfolioListProps) {
       ) : (
         <ul className="post-list">
           {projects.map((project) => {
-            const sanityImage =
+            const projectImage =
               project.image && typeof project.image !== 'string' ? project.image : null
-            const fallbackImage = !sanityImage ? project.previewImage : null
+            const fallbackImage = !projectImage ? project.previewImage : null
 
             return (
               <li key={project.slug} className="post-list-item">
@@ -30,11 +30,11 @@ export default function PortfolioList({ projects }: PortfolioListProps) {
                 <time dateTime={project.date} className="post-date">
                   {formatPostDate(project.date)}
                 </time>
-                {sanityImage && (
+                {projectImage && (
                   <div className="project-image">
-                    <a href={sanityImage.url} target="_blank" rel="noopener noreferrer">
+                    <a href={projectImage.url} target="_blank" rel="noopener noreferrer">
                       <Image
-                        src={sanityImage.url}
+                        src={projectImage.url}
                         alt={project.title}
                         width={800}
                         height={450}

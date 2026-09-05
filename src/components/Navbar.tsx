@@ -8,6 +8,7 @@ export default function Navbar() {
                 <Link href="/">Home</Link>
                 <Link href="/blog">Blog</Link>
                 <Link href="/projects">Projects</Link>
+                <Link href="/explore/" className="explore-link" aria-label="Enter 3D mode"><span aria-hidden="true">🎮</span></Link>
             </div>
         </nav>
     )

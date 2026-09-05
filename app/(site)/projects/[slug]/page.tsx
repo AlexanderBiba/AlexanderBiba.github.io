@@ -1,4 +1,4 @@
-import { getProjectBySlug, getAllProjects, getSiteSettings } from '../../../../src/lib/sanity'
+import { getProjectBySlug, getAllProjects, getSiteSettings } from '../../../../src/lib/content'
 import PortfolioProject from '../../../../src/components/PortfolioProject'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'

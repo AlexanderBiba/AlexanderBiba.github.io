@@ -1,0 +1,135 @@
+@font-face { font-family: 'House Pixel'; src: url('/fonts/VT323-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+.house { --ink: #30384d; --paper: #fffbea; --edge: #49536c; --field: #b6cea3; position: relative; width: 100%; height: 100svh; min-height: 620px; overflow: hidden; background: var(--field); color: var(--ink); font: 24px/1.2 'House Pixel', monospace; isolation: isolate; }
+.house * { box-sizing: border-box; }
+/* Include the clickable Three.js canvas, not just links and buttons. */
+.house, .house * { -webkit-tap-highlight-color: transparent; }
+.house button { font: inherit; cursor: pointer; color: inherit; }
+.house button:focus-visible, .house a:focus-visible { outline: 3px solid #c74b4a; outline-offset: -3px; }
+.house canvas:focus-visible { outline: none; }
+.house button:disabled { opacity: .4; cursor: default; }
+.house a, .house a:visited { color: inherit; text-decoration: none; }
+.house a:hover { text-decoration: none; }
+.header { position: absolute; z-index: 5; top: 0; left: 0; width: 100%; height: 74px; padding: 17px 28px; display: flex; justify-content: space-between; align-items: center; }
+.brand { font-size: 30px; letter-spacing: 1px; text-shadow: 2px 2px #dde9c8; }
+.headerActions { display: flex; align-items: center; gap: 18px; font-size: 20px; }
+.soundButton { display: flex; align-items: center; gap: 8px; border: 0; background: none; padding: 5px; }
+.classicLink { padding: 5px 11px; border: 2px solid var(--edge); background: #edf3da; box-shadow: 2px 2px var(--edge); }
+.chapter { position: absolute; z-index: 2; top: 87px; left: 30px; pointer-events: none; }
+.chapter h1 { font: inherit; font-size: 26px; color: var(--ink); margin: 0; padding: 9px 15px; background: var(--paper); border: 3px solid var(--edge); box-shadow: inset 0 0 0 2px #cad1d0, 3px 3px #67776a; }
+.chapter h1 span { margin-left: 24px; color: #687589; }
+.world { position: absolute; inset: 120px 0 134px; }
+.world canvas { display: block; width: 100%; height: 100%; touch-action: none; image-rendering: pixelated; }
+.world.transition { visibility: hidden; }
+.tooltip { position: absolute; z-index: 6; transform: translateX(-50%); white-space: nowrap; pointer-events: none; color: var(--ink); background: var(--paper); padding: 4px 10px; border: 2px solid var(--edge); box-shadow: 2px 2px var(--edge); font-size: 21px; }
+.tooltip span { color: #a97431; font-size: 13px; }
+.floors { position: absolute; z-index: 3; right: 28px; top: 90px; display: flex; flex-direction: column; gap: 6px; padding: 8px; border: 3px solid var(--edge); background: var(--paper); box-shadow: inset 0 0 0 2px #c3cbd0, 3px 3px #67776a; }
+.floors button { display: grid; grid-template-columns: 16px 1fr auto; align-items: center; gap: 12px; border: 0; background: none; padding: 5px 9px; font-size: 19px; position: relative; }
+.floorNumber { color: #737d8b; font-size: 18px; min-width: 28px; text-align: right; }
+.menuArrow { display: grid; place-items: center; width: 16px; height: 22px; font-size: 13px; line-height: 1; flex-shrink: 0; }
+.floors .menuArrow, .storyLinks .menuArrow { opacity: 0; }
+.floors .activeFloor .menuArrow, .floors button:hover .menuArrow, .floors button:focus-visible .menuArrow { opacity: 1; }
+.floors .activeFloor { color: #993c3b; }
+.zoom { position: absolute; z-index: 3; left: 28px; bottom: 81px; display: flex; gap: 6px; }
+.zoom button { width: 33px; height: 33px; padding: 0; border: 2px solid var(--edge); background: #edf3da; box-shadow: 2px 2px var(--edge); font-size: 26px; }
+.welcome { position: absolute; z-index: 5; bottom: 81px; left: 50%; transform: translateX(-50%); width: min(820px, calc(100% - 230px)); padding: 25px 27px 16px; background: var(--paper); border: 4px solid var(--ink); box-shadow: inset 0 0 0 3px #a9b6c1, inset 0 0 0 6px var(--paper), 4px 4px #536353; }
+.speaker { position: absolute; top: -19px; left: 20px; margin: 0 !important; padding: 2px 12px; border: 3px solid var(--ink); background: var(--paper); color: var(--ink) !important; font: 24px/1 'House Pixel', monospace !important; letter-spacing: 1px; }
+.welcome p { margin: 0 0 9px; font-size: 26px; }
+.continueButton { border: 0; background: none; display: flex; align-items: center; gap: 15px; margin-left: auto; padding: 3px 0 0 12px; font-size: 19px !important; }
+.continueButton span { display: grid; place-items: center; width: 16px; height: 22px; font-size: 13px; line-height: 1; animation: blink 1s steps(2, end) infinite; }
+@keyframes blink { 50% { opacity: .2; } }
+.interact { position: absolute; z-index: 5; bottom: 90px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 7px 14px 7px 8px; border: 3px solid var(--edge); background: var(--paper); box-shadow: 3px 3px var(--edge); font-size: 23px !important; }
+.house kbd { display: inline-grid; place-items: center; min-width: 24px; height: 25px; padding: 0 4px; background: #edf3da; border: 2px solid #6c7b70; box-shadow: 1px 1px #6c7b70; color: var(--ink); font: 19px/1 'House Pixel', monospace; }
+.footer { position: absolute; z-index: 5; bottom: 0; left: 28px; right: 28px; height: 61px; border-top: 2px solid #8fa780; display: flex; align-items: center; justify-content: space-between; }
+.keyboardHints { display: flex; align-items: center; gap: 24px; font-size: 18px; }
+.keyboardHints > span { display: flex; align-items: center; gap: 3px; }
+.keyboardHints > span > span { margin-left: 7px; }
+.clickHint { color: #556b54; }
+.footerActions { display: flex; align-items: center; gap: 16px; }
+.footerActions button { border: 0; background: none; padding: 5px 0; font-size: 22px; }
+.footerActions .help { border: 2px solid var(--edge); width: 25px; height: 25px; padding: 0; font-size: 20px; }
+.mobileHint { display: none; }
+.loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 26px; }
+.loadingHouse { font-size: 36px; }
+.fallback { position: absolute; z-index: 6; width: min(90%, 450px); top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; padding: 24px; border: 4px solid var(--edge); box-shadow: inset 0 0 0 3px #bac8c8; background: var(--paper); }
+.fallback h2 { font: 28px/1.2 'House Pixel', monospace; margin: 12px 0; }
+.fallback p { font-size: 23px; }
+.dialog { color: var(--ink); padding: 0; border: 4px solid var(--ink); border-radius: 0; background: var(--paper); box-shadow: inset 0 0 0 3px #a9b6c1, inset 0 0 0 6px var(--paper), 4px 4px #30384d; max-height: calc(100svh - 80px); overflow: visible; }
+.dialog::backdrop { background: transparent; }
+.dialogContent { position: relative; padding: 27px 28px 17px; }
+.storyDialog { position: fixed; top: auto; bottom: 78px; left: 0; right: 0; width: min(960px, calc(100vw - 72px)); margin: 0 auto; }
+.menuDialog { width: min(520px, calc(100vw - 36px)); overflow: auto; }
+.menuDialog::backdrop { background: #30384d26; }
+.dialogClose { position: absolute; top: 6px; right: 8px; width: 26px; height: 26px; padding: 0; border: 0; background: none; font-size: 26px !important; z-index: 1; }
+.dialog h2 { font: 30px/1.1 'House Pixel', monospace; color: var(--ink); margin: 0 0 21px; }
+.dialog p { font-size: 27px; line-height: 1.25; margin: 0; }
+.storyBody { display: flex; align-items: flex-start; gap: 30px; min-height: 66px; }
+.storyBody > p { flex: 1; min-width: 0; padding-top: 5px; }
+.storyLinks { flex: 0 1 47%; display: flex; flex-direction: column; max-height: min(250px, 36svh); overflow-y: auto; min-width: 0; padding: 4px 6px 4px 14px; border-left: 2px solid #b6bfbe; }
+.storyLinks a { position: relative; font-size: 22px; line-height: 1.2; display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: start; gap: 8px; padding: 7px 8px; border: 2px solid transparent; }
+.choiceText { min-width: 0; overflow-wrap: anywhere; }
+.house .storyLinks a:focus-visible { outline: none; border-color: #c74b4a; }
+.house .floors button:focus-visible { outline-offset: -2px; }
+
+.storyLinks a:hover, .storyLinks a:focus-visible { color: #a04442; }
+.storyLinks a:hover .menuArrow, .storyLinks a:focus .menuArrow { opacity: 1; }
+.dialogFooter { display: flex; justify-content: flex-end; margin-top: 12px; }
+.cursor { color: #8f9d9c; }
+.primary { display: inline-flex; align-items: center; gap: 14px; background: var(--paper); border: 2px solid var(--edge); box-shadow: 2px 2px var(--edge); padding: 7px 17px; font-size: 22px !important; }
+.primary:hover { color: #a04442; }
+.guideRooms { display: flex; flex-direction: column; gap: 22px; }
+.guideRoomTitle { border: 0; border-bottom: 2px solid #adb8b2; background: none; display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 0 0 5px; font-size: 24px !important; }
+.guideRoomTitle > span:first-child { color: #707e87; min-width: 35px; }
+.guideRoomTitle > span:last-child { margin-left: auto; }
+.guideObjects { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; padding-top: 5px; }
+.guideObjects button { border: 0; background: none; text-align: left; padding: 4px 0; font-size: 21px; }
+.guideObjects button:hover { color: #a04442; }
+.guideObjects button span { display: inline-block; width: 23px; color: #a69861; }
+.guideObjects button span.found { color: #518451; }
+.guideProgress { font-size: 19px; border-top: 2px solid #adb8b2; padding-top: 12px; margin-top: 22px; }
+.guideProgress progress { display: block; margin-top: 6px; width: 100%; height: 8px; accent-color: #63925b; border: 1px solid #768675; }
+.guideProgress progress::-webkit-progress-bar { background: #dce5cc; }
+.guideProgress progress::-webkit-progress-value { background: #63925b; }
+.helpRows strong { display: block; color: #667b68; }
+.helpRows p { font-size: 23px; margin-bottom: 17px; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@media (min-width: 1500px) { .world { inset: 115px 6% 143px; } }
+@media (max-width: 900px) { .floorLabel { display: none; } .floors { gap: 3px; } .floors button { grid-template-columns: 16px auto; padding: 4px 6px; gap: 6px; } .world { inset: 135px 0 154px; } .clickHint { display: none !important; } .welcome { width: calc(100% - 230px); } }
+@media (max-width: 700px) {
+  .house { min-height: 620px; }
+  .header { height: 60px; padding: 13px 16px; }
+  .brand { font-size: 25px; letter-spacing: 0; }
+  .headerActions { gap: 9px; font-size: 19px; }
+  .soundButton { gap: 0; padding: 4px; }
+  .soundButton span:first-child { display: none; }
+  .classicLink { padding: 3px 7px; }
+  .classicLink span { display: none; }
+  .chapter { top: 77px; left: 18px; }
+  .chapter h1 { font-size: 22px; padding: 6px 10px; }
+  .chapter h1 span { margin-left: 14px; }
+  .world { inset: 130px -4px 140px; }
+  .floors { top: 77px; right: 18px; padding: 4px; }
+  .floorNumber { font-size: 16px; min-width: 25px; }
+  .floors button { padding: 3px 4px; }
+  .zoom { left: auto; right: 18px; bottom: 84px; }
+  .zoom button { width: 29px; height: 29px; }
+  .welcome { width: calc(100% - 36px); bottom: 85px; padding: 24px 21px 13px; }
+  .welcome p { font-size: 25px; }
+  .footer { height: 59px; left: 18px; right: 18px; }
+  .keyboardHints { display: none; }
+  .mobileHint { display: block; font-size: 17px; max-width: 180px; }
+  .footerActions { gap: 12px; }
+  .footerActions button { font-size: 21px; }
+  .interact { bottom: 84px; padding: 5px 10px 5px 6px; gap: 7px; font-size: 20px !important; }
+  .storyDialog { bottom: 78px; width: calc(100vw - 36px); max-height: calc(100svh - 145px); }
+  .dialogContent { padding: 23px 20px 13px; }
+  .storyBody { flex-direction: column; gap: 12px; }
+  .dialog p { font-size: 25px; }
+  .storyLinks { border-left: 0; border-top: 2px solid #b6bfbe; padding: 8px 0 0; width: 100%; flex-basis: auto; max-height: 27svh; }
+  .storyLinks a { font-size: 22px; padding: 6px; }
+  .dialog h2.speaker { font-size: 23px !important; }
+  .guideObjects { column-gap: 5px; }
+  .guideObjects button { font-size: 20px; }
+  .tooltip { display: none; }
+}
+@media (max-height: 680px) and (min-width: 701px) { .house { min-height: 540px; } .world { inset: 112px 0 109px; } .welcome { bottom: 77px; padding: 20px 23px 9px; } .chapter { top: 76px; } .floors { top: 76px; } }
+@media (prefers-reduced-motion: reduce) { .house *, .house *::before, .house *::after { animation: none !important; transition: none !important; } }
