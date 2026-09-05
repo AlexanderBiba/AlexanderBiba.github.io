@@ -1,10 +1,10 @@
 # Alex’s house
 
-An experimental Three.js route at `/explore/`. The classic homepage, blog, and projects remain in place. All content lives in the repository.
+An experimental Three.js route at `/play/`. The classic homepage, blog, and projects remain in place. All content lives in the repository.
 
 ## Run
 
-Run `npm run dev`, then open `http://localhost:3000/explore/` (use the port printed by Next.js).
+Run `npm run dev`, then open `http://localhost:3000/play/` (use the port printed by Next.js).
 
 - Arrow keys: walk in screen directions.
 - Click or tap the floor: walk to a point, routing around furniture. Mobile uses tapping, with no directional pad or action button. The nearby E popover is also tappable.

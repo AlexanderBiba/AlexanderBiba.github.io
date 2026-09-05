@@ -35,4 +35,4 @@ node --test tests/*.test.mjs
 npm run build
 ```
 
-The experimental game is at `/explore/`; see `src/house/README.md` for controls.
+The experimental game is at `/play/`; see `src/house/README.md` for controls.
