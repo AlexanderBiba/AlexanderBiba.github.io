@@ -111,6 +111,7 @@ export default function House() {
       {welcome && !failed && <aside className={styles.welcome}>
         <span className={styles.speaker}>ALEX</span>
         <p>Hey, I’m Alex. Take a look around.</p>
+        <p className={styles.welcomeHint}>Tap to walk, tap on an object to discover.</p>
         <button className={styles.continueButton} onClick={() => { setWelcome(false); container.current?.querySelector('canvas')?.focus() }}>LET’S GO <span aria-hidden="true">▼</span></button>
       </aside>}
 
