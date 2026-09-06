@@ -1,10 +1,11 @@
 import * as THREE from 'three'
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import type { RoomId } from './content'
 import type { Obstacle, Point } from './navigation'
 
 export type Hotspot = { id: string; group: THREE.Group; approach: Point; marker: THREE.Mesh; zone?: { w: number; d: number } }
 export type World = { root: THREE.Group; obstacles: Obstacle[]; hotspots: Hotspot[]; animated: ((time: number) => void)[]; spawn: Point; update?: (dt: number, time: number, player: Point, target: string | null) => void }
-const C = { wood: '#b47c4f', edge: '#855b43', lightWood: '#e4b984', cream: '#fff1d2', wall: '#f3dfaa', green: '#65a279', darkGreen: '#365f50', blue: '#769fad', dark: '#364850', terra: '#c47450', yellow: '#efbc5b', white: '#fff8e9' }
+const C = { wood: '#b47c4f', edge: '#855b43', lightWood: '#e4b984', cream: '#fff1d2', wall: '#8faebf', green: '#65a279', darkGreen: '#365f50', blue: '#769fad', dark: '#364850', terra: '#c47450', yellow: '#efbc5b', white: '#fff8e9' }
 const materials = new Map<string, THREE.MeshStandardMaterial>()
 function material(color: string) {
   if (!materials.has(color)) materials.set(color, new THREE.MeshStandardMaterial({ color, roughness: 0.86, flatShading: true }))
@@ -50,8 +51,8 @@ function picture(parent: THREE.Object3D, x: number, y: number, z: number, w: num
       if (long) box(figure, 0, .12, 0, .39, .48, .025, hair)
       box(figure, 0, -.22, .025, .36, .42, .025, shirt)
       box(figure, 0, .14, .04, .31, .32, .025, '#edbd96')
-      box(figure, 0, .32, .055, .35, .09, .025, hair)
-      box(figure, -.135, .25, .055, .08, .14, .025, hair)
+      if (hair === '#563e33') box(figure, 0, .015, .065, .29, .12, .035, '#644332')
+      else { box(figure, 0, .32, .055, .35, .09, .025, hair); box(figure, -.135, .25, .055, .08, .14, .025, hair) }
       for (const side of [-1, 1]) { box(figure, side * .075, .14, .065, .035, .04, .015, '#354050'); box(figure, side * .105, -.46, .035, .13, .13, .025, '#536e80') }
       box(figure, 0, .045, .065, .07, .018, .015, '#a56852')
     }
@@ -90,17 +91,32 @@ function table(parent: THREE.Object3D, x: number, z: number, w: number, d: numbe
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(g, sx * (w / 2 - .15), height / 2, sz * (d / 2 - .13), .14, height, .14, C.edge)
   return g
 }
-export function person(parent: THREE.Object3D, x: number, z: number, shirt = '#d78652', hair = '#563e33') {
+export function person(parent: THREE.Object3D, x: number, z: number, shirt = '#d78652', hair: string | null = null) {
   const g = group(parent, x, z), body = group(g), leftLeg = group(body, -.15), rightLeg = group(body, .15)
   box(leftLeg, 0, .26, 0, .24, .45, .26, '#435967'); box(rightLeg, 0, .26, 0, .24, .45, .26, '#435967')
   box(leftLeg, 0, .08, .08, .27, .16, .39, C.white); box(rightLeg, 0, .08, .08, .27, .16, .39, C.white)
   box(body, 0, .75, 0, .58, .58, .35, shirt)
   const arms = [-1, 1].map(s => { const a = group(body, s * .39); a.position.y = .91; box(a, 0, -.15, 0, .19, .33, .27, shirt); box(a, 0, -.36, 0, .18, .18, .23, '#e5b68e'); return a })
-  box(body, 0, 1.19, 0, .49, .48, .43, '#e5b68e'); box(body, 0, 1.46, -.025, .55, .15, .49, hair)
-  box(body, 0, 1.31, -.22, .52, .24, .1, hair); box(body, -.23, 1.38, .12, .12, .15, .24, hair)
+  const head = box(body, 0, 1.19, 0, .49, .48, .43, '#e5b68e'); head.name = hair ? 'head' : 'alex-bald-head'
+  if (hair) {
+    box(body, 0, 1.46, -.025, .55, .15, .49, hair)
+    box(body, 0, 1.31, -.22, .52, .24, .1, hair); box(body, -.23, 1.38, .12, .12, .15, .24, hair)
+  } else {
+    const beard = box(body, 0, 1.015, .14, .46, .2, .24, '#644332'); beard.name = 'alex-brown-beard'
+    for (const side of [-1, 1]) box(body, side * .21, 1.105, .19, .075, .2, .1, '#644332')
+    box(body, 0, 1.105, .24, .21, .055, .035, '#644332')
+  }
   for (const s of [-1, 1]) box(body, s * .12, 1.22, .222, .052, .065, .02, C.dark)
   box(body, 0, 1.1, .228, .09, .025, .018, '#a46449')
-  return { group: g, animate: (t: number, walking: boolean) => { const stride = walking ? Math.sin(t * 12) * .5 : 0; leftLeg.rotation.x = stride; rightLeg.rotation.x = -stride; arms[0].rotation.x = -stride; arms[1].rotation.x = stride; body.position.y = walking ? Math.abs(Math.sin(t * 12)) * .065 : Math.sin(t * 2) * .015 } }
+  let phase = 0, blend = 0
+  return { group: g, animate: (t: number, walking: boolean, dt = 1 / 60) => {
+    blend += ((walking ? 1 : 0) - blend) * (1 - Math.exp(-dt * 18))
+    if (walking) phase += dt * 12
+    const stride = Math.sin(phase) * .5 * blend
+    leftLeg.rotation.x = stride; rightLeg.rotation.x = -stride; arms[0].rotation.x = -stride; arms[1].rotation.x = stride
+    body.position.y = Math.abs(Math.sin(phase)) * .065 * blend + Math.sin(t * 2) * .015 * (1 - blend)
+  } }
+
 }
 export function buildWorld(room: RoomId): World {
   const root = new THREE.Group(), obstacles: Obstacle[] = [], hotspots: Hotspot[] = [], animated: World['animated'] = []
@@ -134,7 +150,7 @@ export function buildWorld(room: RoomId): World {
       const shades = ['#dcb386', '#dfb98b', '#d5aa7c', '#e5bf90']
       floorBox(-5 + col * 2, -.001, -4.75 + row * .5, 1.98, .022, .482, shades[(row * 7 + col * 3) % shades.length])
     }
-    box(root, -6.05, 1.48, 0, .18, 3.05, 10.2, room === 'upstairs' ? '#a5b9ad' : '#dbd0ad')
+    box(root, -6.05, 1.48, 0, .18, 3.05, 10.2, C.wall)
     if (room === 'downstairs') {
       box(root, -4.2, 1.48, -5.05, 3.6, 3.05, .18, C.wall)
       box(root, 2.5, 1.48, -5.05, 7, 3.05, .18, C.wall)
@@ -146,7 +162,13 @@ export function buildWorld(room: RoomId): World {
     box(root, 6.04, .2, -5.04, .22, .5, .22, C.cream); box(root, -6.04, .2, 5.04, .22, .5, .22, C.cream)
   }
   if (room === 'upstairs') {
-    windowFrame(root, -3.8, -4.89); picture(root, .1, 2.18, -4.85, 1.2, 1.2, 'code'); picture(root, 3.62, 2.45, -4.85, 1.1, .9, 'dog')
+    windowFrame(root, -3.8, -4.89); picture(root, .1, 2.18, -4.85, 1.2, 1.2, 'code')
+    const bedsideGallery = group(root, -5.89, -2.3); bedsideGallery.rotation.y = Math.PI / 2; bedsideGallery.name = 'bedside-gallery'
+    picture(bedsideGallery, 0, 2.13, 0, 1.5, 1.05, 'landscape')
+    picture(bedsideGallery, 1.42, 2.13, 0, .85, 1.05, 'couple')
+    box(bedsideGallery, .3, 1.4, .18, 2.65, .09, .43, C.lightWood)
+    plant(bedsideGallery, -.63, 1.45, .2, .48)
+    for (let i = 0; i < 3; i++) box(bedsideGallery, .65, 1.49 + i * .08, .18, .56, .075, .28, [C.terra, C.blue, C.cream][i])
     const bed = group(root, -3.8, -2.7)
     box(bed, 0, .36, 0, 2.4, .55, 3.45, C.edge); box(bed, 0, .72, 0, 2.38, .28, 3.3, C.white)
     box(bed, 0, 1.02, -1.66, 2.54, 1.2, .14, C.lightWood)
@@ -172,31 +194,36 @@ export function buildWorld(room: RoomId): World {
     for (const x of [-.16, 0, .16]) box(chair, x, .88, .27, .055, .26, .075, C.lightWood)
     obstacle(.15, -1.6, .82, .82)
     const printer = table(root, 3.76, -3.55, 2.15, 1.55)
-    printer.name = 'h2s-printer'
-    // Enclosed silver chassis, dark glass door, and a single moving toolhead.
-    box(printer, 0, 1.25, 0, 1.46, .25, 1.24, '#b9c1bf')
-    box(printer, 0, 1.95, -.57, 1.46, 1.45, .12, '#b9c1bf')
-    for (const x of [-.69, .69]) box(printer, x, 1.95, 0, .1, 1.45, 1.24, '#c9cfcb')
-    box(printer, 0, 2.69, 0, 1.48, .2, 1.26, '#343e42')
-    box(printer, 0, 2.8, -.1, 1.24, .025, .83, '#647570')
-    box(printer, 0, 1.58, .015, 1.2, .06, .98, '#778682')
-    for (const x of [-.5, .5]) cylinder(printer, x, 1.98, -.35, .025, .025, 1.1, '#d9ddd3', 8)
-    box(printer, 0, 2.27, 0, 1.27, .06, .09, '#aeb6ae')
-    const nozzle = group(printer); nozzle.position.y = 2.17
-    box(nozzle, 0, 0, 0, .31, .28, .29, '#e0e1d6'); box(nozzle, 0, -.06, .16, .2, .13, .05, '#424d4f')
-    cylinder(nozzle, 0, -.19, 0, .035, .065, .1, '#c7a563', 8)
-    cylinder(printer, 0, 1.77, .04, .17, .23, .32, '#e3b56b', 8)
-    for (const x of [-.65, .65]) box(printer, x, 1.96, .63, .08, 1.36, .08, '#354144')
-    for (const y of [1.32, 2.6]) box(printer, 0, y, .63, 1.37, .075, .08, '#354144')
-    const glass = box(printer, 0, 1.96, .63, 1.22, 1.2, .025, '#9bbab7')
-    glass.material = new THREE.MeshStandardMaterial({ color: '#9bbab7', transparent: true, opacity: .16, roughness: .2, depthWrite: false })
-    glass.castShadow = false
-    box(printer, .53, 2.02, .71, .065, .39, .09, '#303a3d')
-    const printerScreen = group(printer, -.48, .72); printerScreen.position.y = 2.65; printerScreen.rotation.x = -.18
-    box(printerScreen, 0, 0, 0, .45, .32, .065, '#303a3d'); box(printerScreen, 0, 0, .04, .35, .23, .015, '#87b7ac')
-    box(printerScreen, -.07, .035, .052, .13, .025, .01, '#e0eed6'); box(printerScreen, 0, -.05, .052, .25, .023, .01, '#4d8779')
-    animated.push(t => { nozzle.position.x = Math.sin(t * 1.6) * .36; nozzle.position.z = Math.cos(t) * .22 })
-    obstacle(3.76, -3.55, 2.15, 1.55); hot('printer', printer, { x: 3.7, z: -2.15 }, 3.02)
+    printer.name = 'bambu-a1-printer'
+    // Open A1 bed-slinger: exposed uprights, X rail, moving bed and top spool.
+    box(printer, 0, 1.23, 0, 1.5, .19, 1.24, '#d9dddb')
+    box(printer, 0, 1.35, .08, .34, .12, 1.36, '#525f64')
+    const printBed = group(printer, 0, .12)
+    box(printBed, 0, 1.44, 0, 1.18, .09, 1.04, '#4a5355')
+    box(printBed, 0, 1.495, 0, 1.13, .018, .99, '#b6a174')
+    cylinder(printBed, 0, 1.63, 0, .14, .21, .26, '#6eaf9f', 8)
+    for (const x of [-.66, .66]) {
+      box(printer, x, 2.01, -.43, .13, 1.56, .17, '#d6dcda')
+      cylinder(printer, x, 2.02, -.325, .025, .025, 1.41, '#77868a', 8)
+    }
+    box(printer, 0, 2.81, -.43, 1.48, .15, .23, '#d6dcda')
+    box(printer, 0, 2.11, -.27, 1.38, .17, .18, '#b9c3c4')
+    box(printer, 0, 2.14, -.17, 1.26, .037, .025, '#4c5b5e')
+    const nozzle = group(printer, 0, -.12); nozzle.position.y = 2.06
+    box(nozzle, 0, 0, 0, .36, .35, .32, '#f0f1e8')
+    box(nozzle, 0, -.035, .175, .25, .22, .04, '#59656a')
+    const fan = cylinder(nozzle, 0, -.02, .21, .075, .075, .02, '#303e43', 10); fan.rotation.x = Math.PI / 2
+    cylinder(nozzle, 0, -.23, 0, .045, .065, .11, '#b99459', 8)
+    box(printer, .42, 3.03, -.43, .09, .36, .09, '#677579')
+    const spool = group(printer, .42, -.43); spool.position.y = 3.28; spool.name = 'filament-spool'
+    for (const z of [-.13, .13]) { const rim = cylinder(spool, 0, 0, z, .32, .32, .045, '#e3e5dc', 16); rim.rotation.x = Math.PI / 2 }
+    const filament = cylinder(spool, 0, 0, 0, .265, .265, .22, '#6eaf9f', 16); filament.rotation.x = Math.PI / 2
+    const hub = cylinder(spool, 0, 0, .16, .09, .09, .025, '#536064', 12); hub.rotation.x = Math.PI / 2
+    const printerScreen = group(printer, .88, .35); printerScreen.position.y = 1.44; printerScreen.rotation.x = -.35
+    box(printerScreen, 0, 0, 0, .38, .29, .07, '#454f54'); box(printerScreen, 0, 0, .045, .29, .2, .015, '#87b7ac')
+    box(printerScreen, 0, -.035, .057, .21, .025, .01, '#e0eed6')
+    animated.push(t => { nozzle.position.x = Math.sin(t * 1.6) * .35; printBed.position.z = .12 + Math.cos(t) * .18 })
+    obstacle(3.76, -3.55, 2.15, 1.55); hot('printer', printer, { x: 3.7, z: -2.15 }, 3.85)
     const shelf = group(root, -5.38, 1.81); shelf.rotation.y = Math.PI / 2
     box(shelf, 0, 1.02, -.2, 1.95, 2, .16, C.edge)
     for (const x of [-.95, .95]) box(shelf, x, 1.02, .05, .12, 2.06, .65, C.lightWood)
@@ -303,11 +330,25 @@ export function buildWorld(room: RoomId): World {
     obstacle(1.45, -.6, .85, .9); hot('baby', baby, { x: 1.6, z: .6 }, 1.65)
     const dog = group(root, -2.3, 2.5); dog.name = 'roaming-dog'
     const dogLegs: THREE.Mesh[] = []
-    box(dog, 0, .39, 0, .49, .44, .85, '#c39960'); box(dog, 0, .69, .36, .5, .43, .43, '#d8b37a'); box(dog, 0, .57, .63, .31, .2, .27, '#e9cca0')
-    box(dog, 0, .61, .78, .16, .1, .065, '#42493f')
-    for (const s of [-1, 1]) { box(dog, s * .24, .69, .35, .16, .44, .27, '#805f3e'); box(dog, s * .14, .75, .584, .06, .065, .015, C.dark); for (const z of [-.29, .27]) dogLegs.push(box(dog, s * .18, .14, z, .16, .28, .18, '#c39960')) }
-    box(dog, 0, .49, .39, .51, .07, .46, '#b5684f')
-    const tail = group(dog, 0, -.39); tail.position.y = .51; box(tail, 0, .16, -.15, .14, .14, .48, '#bc9259'); tail.rotation.x = .6
+    // Lola: sandy lab/shepherd coat, cream chest and muzzle, folded triangular ears.
+    box(dog, 0, .43, -.03, .53, .49, .96, '#c4ae87')
+    box(dog, 0, .64, -.15, .46, .08, .64, '#a9977a')
+    box(dog, 0, .42, .39, .44, .4, .2, '#eee3c9')
+    box(dog, 0, .77, .4, .48, .43, .46, '#d3bf98')
+    box(dog, 0, .68, .68, .3, .22, .38, '#eee3c9')
+    box(dog, 0, .72, .88, .16, .11, .06, '#343c3e')
+    for (const side of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(.17, .32, 3), material('#bca582'))
+      ear.position.set(side * .245, .93, .35); ear.rotation.z = side * .95; ear.rotation.x = -.35; dog.add(ear)
+      box(dog, side * .15, .81, .638, .055, .065, .02, '#3d3830')
+      for (const z of [-.35, .29]) {
+        const leg = box(dog, side * .19, .17, z, .16, .34, .19, '#e5d9bc'); dogLegs.push(leg)
+        box(leg, 0, -.115, .035, .18, .1, .25, '#f0e6ce')
+      }
+    }
+    box(dog, 0, .55, .38, .54, .07, .47, '#718f86')
+    const tail = group(dog, 0, -.48); tail.position.y = .51
+    box(tail, 0, .06, -.24, .18, .17, .52, '#c4ae87'); box(tail, 0, .06, -.5, .14, .14, .15, '#e5d9bc'); tail.rotation.x = .35
     animated.push(t => { tail.rotation.y = Math.sin(t * 9) * .65 }); hot('dog', dog, { x: -2.3, z: 3.6 }, 1.36)
     const dogBounds = { x: dog.position.x, z: dog.position.z, w: 1, d: 1 }; obstacles.push(dogBounds)
     const dogHotspot = hotspots.find(h => h.id === 'dog')!
@@ -392,6 +433,7 @@ export function buildWorld(room: RoomId): World {
     box(backDoor, 0, .06, .26, 1.5, .12, .6, C.lightWood)
     hot('outside', backDoor, { x: -1.7, z: -3.75 }, 2.67)
   } else {
+    neighborhood(root)
     for (let i = 0; i < 105; i++) {
       const x = Math.sin(i * 84.3) * 5.8, z = Math.cos(i * 43.7) * 4.8
       box(root, x, .023, z, .1, .035, .23, i % 2 ? '#a5bd7b' : '#859f65')
@@ -400,6 +442,18 @@ export function buildWorld(room: RoomId): World {
     for (const y of [.3, .82]) box(root, 0, y, -5, 12.25, .13, .12, '#bdac86')
     for (let i = 0; i < 20; i++) box(root, -6, .57, -4.7 + i * .5, .12, 1.1, .27, '#e0d1ac')
     for (const y of [.3, .82]) box(root, -6.04, y, 0, .12, .13, 10, '#bdac86')
+    // A closed perimeter, including the driveway gate. Navigation stays inside it.
+    const perimeter = group(root); perimeter.name = 'closed-yard-perimeter'
+    for (let i = 0; i <= 24; i++) {
+      const x = -6 + i * .5
+      box(perimeter, x, .38, 4.96, .12, .79, .12, '#dddac5')
+    }
+    for (const y of [.2, .6]) box(perimeter, 0, y, 4.96, 12.15, .09, .1, '#c3c5b0')
+    for (let i = 0; i <= 20; i++) box(perimeter, 5.98, .38, -5 + i * .5, .12, .79, .12, '#dddac5')
+    for (const y of [.2, .6]) box(perimeter, 5.98, y, 0, .1, .09, 10.15, '#c3c5b0')
+    for (const x of [1.45, 5.4]) box(perimeter, x, .51, 4.96, .2, 1.03, .2, '#eee4ca')
+    box(perimeter, 3.4, .46, 4.89, .16, .16, .05, '#687977')
+    const gateBrace = box(perimeter, 3.4, .4, 4.96, 3.85, .07, .07, '#c3c5b0'); gateBrace.rotation.z = .13
     const home = group(root, -2.35, -3.55); home.name = 'house-exterior'
     box(home, 0, .17, 0, 6.25, .34, 2.92, '#8d9290')
     box(home, 0, 1.91, 0, 6.02, 3.35, 2.68, '#f3dfaa')
@@ -500,6 +554,20 @@ export function buildWorld(room: RoomId): World {
     box(tesla, 0, .52, 1.92, 1.03, .045, .018, '#4b5a5c')
     box(tesla, 0, .715, 1.91, .09, .012, .015, '#9ba8a7')
     obstacle(3.32, .75, 2.3, 4.1); hot('tesla', tesla, { x: 1.65, z: .4 }, 2.05)
+    const grill = group(root, -5.1, -1.15); grill.name = 'yard-grill'
+    box(grill, 0, .85, 0, .7, .45, .5, '#4a5b5b'); box(grill, 0, 1.12, 0, .75, .12, .54, '#60716b')
+    box(grill, 0, 1.06, .3, .4, .04, .06, '#b8c1b1')
+    for (const x of [-.24, .24]) box(grill, x, .38, 0, .055, .7, .055, '#65716c')
+    obstacle(-5.1, -1.15, .75, .6)
+    const hose = new THREE.Mesh(new THREE.TorusGeometry(.26, .045, 5, 14), material('#527c63')); hose.position.set(.1, .8, -2.16); root.add(hose)
+    const birdbath = group(root, -2.7, 3.85); birdbath.name = 'birdbath'
+    cylinder(birdbath, 0, .38, 0, .09, .18, .76, '#b7b7a2', 8)
+    cylinder(birdbath, 0, .77, 0, .35, .16, .16, '#cecab1', 10); cylinder(birdbath, 0, .855, 0, .29, .29, .015, '#8bb6b5', 10)
+    obstacle(-2.7, 3.85, .7, .7)
+    ball(root, .75, .14, 3.65, .14, '#d5b45f', 1)
+    const wateringCan = group(root, 4.65, -3.05)
+    cylinder(wateringCan, 0, .2, 0, .17, .19, .37, '#749da1', 8)
+    const spout = box(wateringCan, .24, .22, 0, .35, .09, .09, '#749da1'); spout.rotation.z = .5
     const charger = group(root, 5.2, -1.45); box(charger, 0, .72, 0, .14, 1.4, .16, '#758274'); box(charger, 0, 1.3, 0, .4, .57, .2, C.white); box(charger, 0, 1.32, .12, .06, .17, .02, '#7daa79')
   }
   function stairs(id: string, x: number, z: number, direction: 'up' | 'down') {
@@ -531,3 +599,143 @@ export function buildWorld(room: RoomId): World {
 }
 // Materials are shared between floors. Dispose only when the entire experience ends.
 export function disposeMaterials() { materials.forEach(m => m.dispose()); materials.clear() }
+
+/** Decorative surroundings live outside the fixed, yard-only navigation bounds. */
+function neighborhood(parent: THREE.Group) {
+  const district = group(parent); district.name = 'suburban-nj-neighborhood'
+  box(district, 0, -.42, 0, 48, .34, 44, '#86a475')
+  // Quiet residential streets, concrete curbs, grass verges and jointed sidewalks.
+  box(district, 0, -.205, 8.3, 48, .06, 4, '#697274')
+  box(district, 10.2, -.205, 0, 3.8, .06, 44, '#697274')
+  for (const z of [6.23, 10.37]) box(district, 0, -.15, z, 48, .17, .15, '#bfc5bc')
+  for (const x of [8.2, 12.2]) box(district, x, -.15, 0, .15, .17, 44, '#bfc5bc')
+  for (const z of [5.65, 10.95]) {
+    box(district, 0, -.17, z, 48, .1, .88, '#cdd0bf')
+    for (let x = -23; x <= 23; x += 1.1) box(district, x, -.112, z, .022, .01, .88, '#a7afa5')
+  }
+  for (const x of [7.5, 12.9]) {
+    box(district, x, -.17, 0, .8, .1, 44, '#cdd0bf')
+    for (let z = -21; z < 22; z += 1.1) box(district, x, -.112, z, .8, .01, .022, '#a7afa5')
+  }
+  for (let x = -24; x < 24; x += 3) if (x < 7 || x > 12) {
+    for (const z of [8.22, 8.38]) box(district, x, -.168, z, 1.45, .012, .045, '#e5d5a0')
+  }
+  for (let i = 0; i < 6; i++) box(district, 7.1 + i * .5, -.16, 6.75, .28, .02, .8, '#e8e7cf')
+  for (const x of [-7, 6.5, 13.5]) {
+    box(district, x, -.105, 6.14, .58, .035, .3, '#4c595b')
+    for (let i = 0; i < 5; i++) box(district, x - .22 + i * .11, -.08, 6.14, .035, .012, .25, '#85918f')
+  }
+  const shrub = (x: number, z: number, color = '#5b845b') => {
+    ball(district, x, .25, z, .44, color, 0).scale.set(1.2, .8, 1)
+  }
+  const tree = (x: number, z: number, size: number, autumn = false, evergreen = false) => {
+    const t = group(district, x, z); t.scale.setScalar(size)
+    cylinder(t, 0, 1.1, 0, .13, .23, 2.4, '#80694f', 7)
+    if (evergreen) {
+      for (let i = 0; i < 3; i++) {
+        const crown = new THREE.Mesh(new THREE.ConeGeometry(1.1 - i * .22, 1.7, 7), material(i % 2 ? '#527b67' : '#436b5c'))
+        crown.position.y = 1.65 + i * .65; crown.castShadow = true; t.add(crown)
+      }
+    } else {
+      for (const [x, y, z, r] of [[0, 2.9, 0, 1.25], [-.7, 2.5, .25, .85], [.7, 2.65, -.2, .95], [.1, 3.7, -.1, .8]]) ball(t, x, y, z, r, autumn ? '#b69558' : (x < 0 ? '#6e965f' : '#7da268'), 1)
+    }
+    cylinder(t, 0, -.13, 0, .75, .75, .035, '#7d7759', 12)
+  }
+  const house = (x: number, z: number, width: number, height: number, color: string, roofColor: string, facing = 0, porch = false) => {
+    const h = group(district, x, z); h.name = 'neighbor-house'; h.rotation.y = facing
+    box(h, 0, .03, 0, width + .3, .42, 3.7, '#8e9690')
+    box(h, 0, height / 2 + .2, 0, width, height, 3.5, color)
+    for (let i = 0; i < height / .27; i++) box(h, 0, .35 + i * .27, 1.765, width, .025, .018, '#ffffff')
+    const shape = new THREE.Shape(); shape.moveTo(-width / 2 - .25, 0); shape.lineTo(0, 1.35); shape.lineTo(width / 2 + .25, 0); shape.closePath()
+    const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 4, bevelEnabled: false }), material(roofColor)); roof.position.set(0, height + .23, -2); roof.castShadow = true; h.add(roof)
+    box(h, width * .29, height + 1.05, -.5, .52, 1.4, .55, '#a57865')
+    box(h, width * .29, height + 1.79, -.5, .65, .12, .66, '#d0c9b6')
+    const window = (x: number, y: number) => {
+      box(h, x, y, 1.81, .94, .93, .13, '#f3edd8'); box(h, x, y, 1.89, .73, .72, .025, '#8ab6bd')
+      box(h, x, y, 1.92, .04, .75, .025, '#f3edd8'); box(h, x, y, 1.92, .75, .04, .025, '#f3edd8')
+      for (const side of [-1, 1]) box(h, x + side * .59, y, 1.81, .18, .91, .09, '#4e6e73')
+    }
+    for (const x of [-width * .3, width * .3]) { window(x, 1.24); if (height > 3) window(x, 2.95) }
+    box(h, 0, 1.12, 1.8, .85, 1.84, .12, '#f0e9d4'); box(h, 0, 1.08, 1.89, .67, 1.69, .09, porch ? '#a9634e' : '#4a7779')
+    box(h, 0, 1.51, 1.945, .43, .43, .025, '#98b8b9'); ball(h, .22, .99, 1.97, .035, C.yellow, 0)
+    for (let i = 0; i < 2; i++) box(h, 0, .05 + i * .08, 2.3 - i * .2, 1.35, .14, .7, '#b8b9a7')
+    if (porch) {
+      box(h, 0, .17, 2.3, width - .25, .16, 1.2, '#b1b5ab')
+      box(h, 0, 2.25, 2.3, width, .16, 1.3, '#e9e4d2')
+      for (const x of [-width / 2 + .3, width / 2 - .3]) box(h, x, 1.2, 2.75, .13, 2, .13, '#f0ead9')
+      for (const x of [-width * .3, width * .3]) { box(h, x, .59, 2.43, .48, .12, .48, '#526f69'); box(h, x, .91, 2.2, .48, .61, .1, '#526f69') }
+    }
+    for (const side of [-1, 1]) {
+      box(h, side * (width / 2 - .04), height / 2 + .2, 1.8, .09, height, .08, '#eee9d8')
+      ball(h, side * width * .35, .4, 2.9, .47, '#678960', 0)
+    }
+  }
+  // Colonial, Cape and ranch silhouettes, with different siding, porches and lots.
+  house(-10.7, -.6, 4.5, 3.6, '#c3c4b5', '#666d77', 0, true)
+  house(-10, -9, 4.7, 2.35, '#b6c5c0', '#746b60')
+  house(-2.2, -10.8, 5.2, 3.65, '#b7a48d', '#5e7277', 0, true)
+  house(5.3, -10.1, 4.3, 2.4, '#bd8671', '#65646a')
+  house(-9.5, 14, 4.7, 2.5, '#d4c4a0', '#71675c', Math.PI, true)
+  house(-1.5, 14, 5.1, 3.65, '#b6c6cd', '#646e7c', Math.PI)
+  house(15.2, -5.4, 4.3, 3.5, '#c9c5aa', '#7b6760', Math.PI / 2, true)
+  // The next row of lots comes into view only as the camera pulls back.
+  house(-20, -5, 4.5, 2.4, '#b6c5c0', '#746b60', 0, true)
+  house(-19, 14, 4.7, 3.5, '#bd8671', '#65646a', Math.PI)
+  house(17.3, 13.6, 4.8, 2.5, '#d4c4a0', '#71675c', Math.PI, true)
+  house(2, -18.5, 4.9, 3.6, '#b6c6cd', '#646e7c')
+  for (const [x, z] of [[-22, 2], [-19, -13], [-13, -18], [-5, -19], [8, -18], [18, -14], [20, 4], [21, 18], [5, 19], [-12, 19]]) tree(x, z, 1.1, x === 5, x === -19 || x === 18)
+  for (const [x, z, size] of [[-15, 2, 1.2], [-14, -7, 1.1], [-6.5, -10, 1.2], [2, -7.9, .85], [6.7, -5.9, .9], [-14, 12, 1], [4, 13, 1.1], [14, 2.8, 1]]) tree(x, z, size, x === 4, x === -6.5 || x === 14)
+  for (let i = 0; i < 10; i++) shrub(-6.9, -4.4 + i * .65)
+  for (let i = 0; i < 9; i++) shrub(-5.5 + i * 1.3, -6.9, i % 2 ? '#759765' : '#598064')
+  // Driveways, a detached garage, curbside mailboxes and recycling bins.
+  box(district, -14, -.11, 1.5, 2.2, .04, 7.3, '#a3aaa3')
+  box(district, -14, .85, -3.5, 2.65, 1.95, 2.7, '#c3c4b5')
+  box(district, -14, 1.87, -3.5, 2.95, .2, 3, '#666d77')
+  box(district, -14, .79, -2.12, 2.18, 1.67, .06, '#e4e3d5')
+  for (let i = 0; i < 6; i++) box(district, -14, .15 + i * .26, -2.077, 2.18, .025, .02, '#9ba9a6')
+  for (const x of [-10.5, -3, 5.7]) {
+    box(district, x, .43, 5.13, .1, 1.1, .1, '#7e6852')
+    box(district, x, 1.04, 5.13, .48, .32, .6, '#536972')
+    box(district, x + .26, 1.11, 5.17, .035, .21, .06, '#bd6855')
+    box(district, x, 1.03, 5.45, .2, .04, .016, '#e7dbc0')
+  }
+  for (const [x, color] of [[-12, '#527863'], [-11.5, '#527b93']] as const) {
+    box(district, x, .31, 4.65, .37, .69, .42, color); box(district, x, .68, 4.65, .43, .08, .47, '#435c60')
+    for (const side of [-1, 1]) ball(district, x + side * .16, .015, 4.5, .08, '#394748', 0)
+  }
+  // Hydrant, street blades, lamps and a basketball hoop.
+  cylinder(district, 6.6, .24, 6, .12, .16, .65, '#b8644f', 8)
+  ball(district, 6.6, .62, 6, .17, '#ba6d52', 0); box(district, 6.6, .36, 6, .5, .12, .14, '#b8644f')
+  cylinder(district, 7.2, 1.2, 5.1, .035, .035, 2.7, '#677778', 8)
+  box(district, 7.2, 2.4, 5.1, 1.2, .23, .06, '#42776a'); box(district, 7.2, 2.67, 5.1, .06, .23, 1.2, '#42776a')
+  for (let i = 0; i < 6; i++) box(district, 6.81 + i * .14, 2.4, 5.14, .07, .05, .012, '#eee8d0')
+  for (const x of [-7.1, 13.1]) {
+    cylinder(district, x, 1.55, 5.3, .055, .08, 3.4, '#556568', 8)
+    box(district, x, 3.28, 5.55, .08, .08, .56, '#556568'); box(district, x, 3.22, 5.83, .34, .13, .55, '#e1d7a9')
+  }
+  box(district, -14.8, 1.25, .4, .07, 2.7, .07, '#586668'); box(district, -14.8, 2.6, .4, 1, .67, .08, '#e0e4da')
+  box(district, -14.8, 2.53, .45, .41, .28, .02, '#bb765e')
+  const hoop = new THREE.Mesh(new THREE.TorusGeometry(.23, .025, 4, 12), material('#bd7656')); hoop.rotation.x = Math.PI / 2; hoop.position.set(-14.8, 2.32, .7); district.add(hoop)
+  // A bicycle resting near the sidewalk.
+  for (const x of [-9.3, -8.35]) {
+    const wheel = new THREE.Mesh(new THREE.TorusGeometry(.3, .045, 5, 12), material('#465655')); wheel.position.set(x, .2, 4.25); district.add(wheel)
+  }
+  for (const [x, angle] of [[-9.02, -.55], [-8.65, .55], [-8.42, -.25]]) { const frame = box(district, x, .43, 4.25, .045, .65, .045, '#b66852'); frame.rotation.z = angle }
+  box(district, -8.95, .76, 4.25, .3, .06, .15, '#485553'); box(district, -8.32, .83, 4.25, .25, .04, .05, '#485553')
+  // Merge static scenery by material to keep a rich block inexpensive to render.
+  district.updateMatrixWorld(true)
+  const batches = new Map<THREE.Material, THREE.BufferGeometry[]>()
+  district.traverse(object => {
+    if (!(object instanceof THREE.Mesh) || Array.isArray(object.material)) return
+    const geometry = (object.geometry.index ? object.geometry.toNonIndexed() : object.geometry.clone()).applyMatrix4(object.matrixWorld)
+    const batch = batches.get(object.material) || []; batch.push(geometry); batches.set(object.material, batch)
+    object.geometry.dispose()
+  })
+  district.clear()
+  for (const [finish, geometries] of batches) {
+    const geometry = mergeGeometries(geometries, false)
+    geometries.forEach(g => g.dispose())
+    if (!geometry) continue
+    const mesh = new THREE.Mesh(geometry, finish); mesh.castShadow = true; mesh.receiveShadow = true; district.add(mesh)
+  }
+}

@@ -1,5 +1,4 @@
-@font-face { font-family: 'House Pixel'; src: url('/fonts/VT323-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
-.house { --ink: #30384d; --paper: #fffbea; --edge: #49536c; --field: #b6cea3; position: relative; width: 100%; height: 100svh; min-height: 620px; overflow: hidden; background: var(--field); color: var(--ink); font: 24px/1.2 'House Pixel', monospace; isolation: isolate; }
+.house { --ink: #30384d; --paper: #fffbea; --edge: #49536c; --field: #b6cea3; position: relative; width: 100%; height: 100svh; min-height: 620px; overflow: hidden; background: var(--field); color: var(--ink); font: 24px/1.2 var(--font-house), monospace; isolation: isolate; }
 .house * { box-sizing: border-box; }
 /* Include the clickable Three.js canvas, not just links and buttons. */
 .house, .house * { -webkit-tap-highlight-color: transparent; }
@@ -32,13 +31,13 @@
 .zoom { position: absolute; z-index: 3; left: 28px; bottom: 81px; display: flex; gap: 6px; }
 .zoom button { width: 33px; height: 33px; padding: 0; border: 2px solid var(--edge); background: #edf3da; box-shadow: 2px 2px var(--edge); font-size: 26px; }
 .welcome { position: absolute; z-index: 5; bottom: 81px; left: 50%; transform: translateX(-50%); width: min(820px, calc(100% - 230px)); padding: 25px 27px 16px; background: var(--paper); border: 4px solid var(--ink); box-shadow: inset 0 0 0 3px #a9b6c1, inset 0 0 0 6px var(--paper), 4px 4px #536353; }
-.speaker { position: absolute; top: -19px; left: 20px; margin: 0 !important; padding: 2px 12px; border: 3px solid var(--ink); background: var(--paper); color: var(--ink) !important; font: 24px/1 'House Pixel', monospace !important; letter-spacing: 1px; }
+.speaker { position: absolute; top: -19px; left: 20px; margin: 0 !important; padding: 2px 12px; border: 3px solid var(--ink); background: var(--paper); color: var(--ink) !important; font: 24px/1 var(--font-house), monospace !important; letter-spacing: 1px; }
 .welcome p { margin: 0 0 9px; font-size: 26px; }
 .continueButton { border: 0; background: none; display: flex; align-items: center; gap: 15px; margin-left: auto; padding: 3px 0 0 12px; font-size: 19px !important; }
 .continueButton span { display: grid; place-items: center; width: 16px; height: 22px; font-size: 13px; line-height: 1; animation: blink 1s steps(2, end) infinite; }
 @keyframes blink { 50% { opacity: .2; } }
 .interact { position: absolute; z-index: 5; bottom: 90px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 7px 14px 7px 8px; border: 3px solid var(--edge); background: var(--paper); box-shadow: 3px 3px var(--edge); font-size: 23px !important; }
-.house kbd { display: inline-grid; place-items: center; min-width: 24px; height: 25px; padding: 0 4px; background: #edf3da; border: 2px solid #6c7b70; box-shadow: 1px 1px #6c7b70; color: var(--ink); font: 19px/1 'House Pixel', monospace; }
+.house kbd { display: inline-grid; place-items: center; min-width: 24px; height: 25px; padding: 0 4px; background: #edf3da; border: 2px solid #6c7b70; box-shadow: 1px 1px #6c7b70; color: var(--ink); font: 19px/1 var(--font-house), monospace; }
 .footer { position: absolute; z-index: 5; bottom: 0; left: 28px; right: 28px; height: 61px; border-top: 2px solid #8fa780; display: flex; align-items: center; justify-content: space-between; }
 .keyboardHints { display: flex; align-items: center; gap: 24px; font-size: 18px; }
 .keyboardHints > span { display: flex; align-items: center; gap: 3px; }
@@ -51,7 +50,7 @@
 .loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 26px; }
 .loadingHouse { font-size: 36px; }
 .fallback { position: absolute; z-index: 6; width: min(90%, 450px); top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; padding: 24px; border: 4px solid var(--edge); box-shadow: inset 0 0 0 3px #bac8c8; background: var(--paper); }
-.fallback h2 { font: 28px/1.2 'House Pixel', monospace; margin: 12px 0; }
+.fallback h2 { font: 28px/1.2 var(--font-house), monospace; margin: 12px 0; }
 .fallback p { font-size: 23px; }
 .dialog { color: var(--ink); padding: 0; border: 4px solid var(--ink); border-radius: 0; background: var(--paper); box-shadow: inset 0 0 0 3px #a9b6c1, inset 0 0 0 6px var(--paper), 4px 4px #30384d; max-height: calc(100svh - 80px); overflow: visible; }
 .dialog::backdrop { background: transparent; }
@@ -60,7 +59,7 @@
 .menuDialog { width: min(520px, calc(100vw - 36px)); overflow: auto; }
 .menuDialog::backdrop { background: #30384d26; }
 .dialogClose { position: absolute; top: 6px; right: 8px; width: 26px; height: 26px; padding: 0; border: 0; background: none; font-size: 26px !important; z-index: 1; }
-.dialog h2 { font: 30px/1.1 'House Pixel', monospace; color: var(--ink); margin: 0 0 21px; }
+.dialog h2 { font: 30px/1.1 var(--font-house), monospace; color: var(--ink); margin: 0 0 21px; }
 .dialog p { font-size: 27px; line-height: 1.25; margin: 0; }
 .storyBody { display: flex; align-items: flex-start; gap: 30px; min-height: 66px; }
 .storyBody > p { flex: 1; min-width: 0; padding-top: 5px; }

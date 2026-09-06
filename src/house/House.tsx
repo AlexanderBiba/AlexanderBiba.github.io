@@ -1,17 +1,20 @@
 'use client'
 
+import localFont from 'next/font/local'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { collectibleIds, rooms, stories, type RoomId } from './content'
 import { handleDialogKey, createBackdropDismiss } from './dialogControls'
 import type { Engine } from './engine'
 import styles from './house.module.css'
 
+const houseFont = localFont({ src: '../../public/fonts/VT323-Regular.ttf', variable: '--font-house', display: 'block' })
+
 const contents: Record<RoomId, string[]> = {
   upstairs: ['bed', 'laptop', 'printer', 'guitar', 'bookshelf', 'stairsDown'],
   downstairs: ['wife', 'baby', 'dog', 'fridge', 'photos', 'stairsUp', 'outside'],
   backyard: ['tesla', 'garden', 'picnic', 'inside'],
 }
-const objectLabels: Record<string, string> = { bed: 'About me', laptop: 'Laptop', printer: '3D printer', guitar: 'Guitar', bookshelf: 'Bookshelf', stairsDown: 'Go downstairs', wife: 'Wife', baby: 'Baby', dog: 'Dog', photos: 'Family photos', fridge: 'Fridge', stairsUp: 'Go upstairs', outside: 'Go outside', tesla: 'Car', garden: 'Flower garden', picnic: 'Picnic table', inside: 'Go inside' }
+const objectLabels: Record<string, string> = { bed: 'About me', laptop: 'Laptop', printer: '3D printer', guitar: 'Guitar', bookshelf: 'Bookshelf', stairsDown: 'Go downstairs', wife: 'Wife', baby: 'Baby', dog: 'Lola', photos: 'Family photos', fridge: 'Fridge', stairsUp: 'Go upstairs', outside: 'Go outside', tesla: 'Car', garden: 'Flower garden', picnic: 'Picnic table', inside: 'Go inside' }
 const roomOrder: RoomId[] = ['upstairs', 'downstairs', 'backyard']
 type Panel = { kind: 'story'; id: string } | { kind: 'guide' } | { kind: 'help' } | null
 
@@ -52,8 +55,7 @@ export default function House() {
     import('./engine').then(({ createEngine }) => {
       if (cancelled || !container.current) return
       try {
-        engine.current = createEngine(container.current, { interact: openStory, nearby: setNearby, hover: (id, x, y) => setHover(id ? { id, x, y } : null), error: () => setFailed(true) })
-        setReady(true)
+        engine.current = createEngine(container.current, { interact: openStory, nearby: setNearby, hover: (id, x, y) => setHover(id ? { id, x, y } : null), error: () => setFailed(true), ready: () => setReady(true) })
       } catch { setFailed(true) }
     }).catch(() => setFailed(true))
     return () => { cancelled = true; engine.current?.dispose(); engine.current = null; if (transitionTimer.current) clearTimeout(transitionTimer.current) }
@@ -83,7 +85,7 @@ export default function House() {
     else closePanel()
   }
   return (
-    <main className={styles.house}>
+    <main className={`${styles.house} ${houseFont.variable}`}>
       <header className={styles.header}>
         <a href="/" className={styles.brand} aria-label="Alex Biba — classic website"><span>ALEX’S HOUSE</span></a>
         <div className={styles.headerActions}>

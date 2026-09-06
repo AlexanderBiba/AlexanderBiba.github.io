@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { findPath, walkable, interactionDistance, canInteract, interactionPath, isMovementKey } from '../src/house/navigation.ts'
+import { findPath, advancePath, walkable, interactionDistance, canInteract, interactionPath, isMovementKey } from '../src/house/navigation.ts'
 import { buildWorld, disposeMaterials } from '../src/house/world.ts'
 
 for (const room of ['upstairs', 'downstairs', 'backyard']) {
@@ -146,5 +146,49 @@ test('doors, stairs, and objects share reachable activation points', () => {
       assert.ok(canInteract(path.at(-1) ?? world.spawn, target), `${target.id}: clicking reaches the same range used by E`)
       assert.equal(canInteract({ x: 30, z: 30 }, target), false)
     }
+  }
+})
+
+
+test('click walking uses every frame across waypoints and never overshoots the destination', () => {
+  for (const dt of [1 / 144, 1 / 60, 1 / 30, .04]) {
+    const path = [{ x: .3, z: 0 }, { x: .6, z: 0 }, { x: .6, z: .3 }, { x: .6, z: .37 }]
+    let position = { x: .11, z: 0 }, remaining = .19 + .3 + .37
+    while (path.length) {
+      const step = advancePath(position, path, dt * 2.9, [])
+      assert.ok(Math.abs(step.traveled - Math.min(remaining, dt * 2.9)) < 1e-9, 'no idle frame or lost distance at a waypoint')
+      remaining -= step.traveled; position = step.position
+    }
+    assert.deepEqual(position, { x: .6, z: .37 }, 'stops at the exact clicked point')
+  }
+})
+
+test('new clicks start at the current position and short walks do not snap to a grid', () => {
+  let position = { x: .113, z: .127 }
+  for (const end of [{ x: .14, z: .15 }, { x: 2.037, z: 1.019 }, { x: -1.123, z: -.071 }]) {
+    const path = findPath(position, end, [])
+    assert.deepEqual(path, [end], 'open floor uses a direct path to the exact click')
+    const step = advancePath(position, path, .025, [])
+    assert.ok(Math.hypot(step.position.x - position.x, step.position.z - position.z) <= .025000001)
+    position = step.position
+  }
+})
+
+test('click walking stops safely when a roaming character blocks the path', () => {
+  const path = [{ x: 3, z: 0 }]
+  const step = advancePath({ x: 0, z: 0 }, path, 3, [{ x: 1.5, z: 0, w: .6, d: .6 }])
+  assert.equal(step.traveled, 0)
+  assert.equal(path.length, 1, 'retain destination for replanning')
+})
+
+test('the richer neighborhood remains scenery outside a fully enclosed yard', () => {
+  const world = buildWorld('backyard')
+  const district = world.root.getObjectByName('suburban-nj-neighborhood')
+  assert.ok(district && district.children.length > 20, 'neighborhood geometry survives static batching')
+  assert.ok(district.children.length < 100, 'static scenery is batched instead of thousands of draw calls')
+  assert.ok(world.root.getObjectByName('closed-yard-perimeter'))
+  for (const end of [{ x: 0, z: 8.3 }, { x: 10.2, z: 0 }, { x: -10, z: -9 }, { x: 0, z: -6 }]) {
+    assert.equal(walkable(end, world.obstacles), false)
+    assert.deepEqual(findPath(world.spawn, end, world.obstacles), [])
   }
 })

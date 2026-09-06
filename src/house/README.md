@@ -19,15 +19,15 @@ Run `npm run dev`, then open `http://localhost:3000/play/` (use the port printed
 ## Content and models
 
 - The shared `content/` indexes provide profile, project, and writing data; article bodies are Markdown and images live in `public/content/`.
-- `content.ts` contains the room names and object stories. Family characters are generic; personal names, appearances, and details can be customized here and in `world.ts`.
+- `content.ts` contains the room names and object stories. Alex is bald with a brown beard; Lola is a sandy Labrador–German Shepherd mix. Personal names, appearances, and details can be customized here and in `world.ts`.
 - `world.ts` builds the three original low-poly dioramas, characters, furniture, and animations from Three.js geometry. No remote model or texture downloads are needed.
 - `engine.ts` owns rendering, raycasting, movement, audio, and cleanup.
-- `navigation.ts` handles collision detection and grid-based pathfinding.
+- `navigation.ts` handles collision detection, pathfinding with clear-line shortcuts, and continuous movement across waypoints to exact click destinations. Walking poses blend into idle, and the canvas becomes visible only after its first rendered frame.
 - `House.tsx` and `house.module.css` provide the responsive interface, dialogs, touch controls, and WebGL fallback.
 
 The interface uses the locally bundled VT323 pixel font (SIL OFL license in `public/fonts/VT323-OFL.txt`), opaque bottom dialogue boxes, and a reduced-resolution 3D canvas. Reduced-motion settings disable typewriter text and idle animation.
 
-The baby sits on a play mat in the living room, beside a kitchen with cabinets, a sink, stove, and fridge. The wife and dog patrol the open floor, pause near the player, and stop when clicked so their interaction points stay reachable. The upstairs staircase is cut into all floor layers. People, the dog, stairs, and the car support interactions from all accessible sides. The yard includes the two-story house and a back door; transitions spawn at the corresponding stairs or doorway.
+The baby sits on a play mat in the living room, beside a kitchen with cabinets, a sink, stove, and fridge. The wife and dog patrol the open floor, pause near the player, and stop when clicked so their interaction points stay reachable. The upstairs staircase is cut into all floor layers. People, the dog, stairs, and the car support interactions from all accessible sides. The yard includes the two-story house and a back door; transitions spawn at the corresponding stairs or doorway. A closed fence and driveway gate enclose the playable property. The surrounding NJ neighborhood is decorative, with varied homes, mature trees, sidewalks, streets and everyday objects; its static geometry is batched by material. Outside starts at the original close yard view; zooming out gradually reveals the surrounding neighborhood and the next row of lots. Each room remembers its own zoom. Upstairs has matching blue walls, a bedside gallery, and an open-frame Bambu Lab A1 printer.
 
 The new route has its own metadata. The classic site’s metadata uses the shared local profile in `content/site.json`.
 

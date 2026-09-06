@@ -5,15 +5,23 @@ export const LIMIT_Z = 4.55
 export function walkable(p: Point, obstacles: Obstacle[], padding = 0.23) {
   return Math.abs(p.x) <= LIMIT_X && Math.abs(p.z) <= LIMIT_Z && !obstacles.some(o => Math.abs(p.x - o.x) < o.w / 2 + padding && Math.abs(p.z - o.z) < o.d / 2 + padding)
 }
+/** Sample the whole segment so shortcuts cannot cut through furniture corners. */
+function clearSegment(a: Point, b: Point, obstacles: Obstacle[]) {
+  const samples = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / .06))
+  for (let i = 1; i <= samples; i++) if (!walkable({ x: a.x + (b.x - a.x) * i / samples, z: a.z + (b.z - a.z) * i / samples }, obstacles)) return false
+  return true
+}
 // A small navigation grid keeps point-and-click walks out of the furniture.
 export function findPath(start: Point, end: Point, obstacles: Obstacle[]): Point[] {
+  if (!walkable(end, obstacles)) return []
+  if (clearSegment(start, end, obstacles)) return Math.hypot(end.x - start.x, end.z - start.z) < .0001 ? [] : [{ ...end }]
   const step = 0.3, width = 37, height = 31
   const point = (id: number): Point => ({ x: (id % width - 18) * step, z: (Math.floor(id / width) - 15) * step })
   const nearest = (p: Point) => {
     let best = -1, distance = Infinity
     for (let id = 0; id < width * height; id++) {
       const q = point(id), d = Math.hypot(q.x - p.x, q.z - p.z)
-      if (d < distance && walkable(q, obstacles)) { best = id; distance = d }
+      if (d < distance && walkable(q, obstacles) && clearSegment(p, q, obstacles)) { best = id; distance = d }
     }
     return best
   }
@@ -25,14 +33,39 @@ export function findPath(start: Point, end: Point, obstacles: Obstacle[]): Point
     if (id === to) break
     for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       const x = id % width + dx, z = Math.floor(id / width) + dz, next = z * width + x
-      if (x < 0 || x >= width || z < 0 || z >= height || visited.has(next) || !walkable(point(next), obstacles)) continue
+      if (x < 0 || x >= width || z < 0 || z >= height || visited.has(next) || !walkable(point(next), obstacles) || !clearSegment(point(id), point(next), obstacles)) continue
       visited.set(next, id); queue.push(next)
     }
   }
   if (!visited.has(to)) return []
   const path: Point[] = []
   for (let id = to; id !== from; id = visited.get(id)!) path.unshift(point(id))
-  return path
+  path.unshift(point(from))
+  path.push({ ...end })
+  const smooth: Point[] = []
+  let anchor = start
+  for (let i = 0; i < path.length;) {
+    let next = path.length - 1
+    while (next > i && !clearSegment(anchor, path[next], obstacles)) next--
+    smooth.push(path[next]); anchor = path[next]; i = next + 1
+  }
+  return smooth
+}
+
+/** Consume the full frame distance across waypoints, without pause frames or overshoot. */
+export function advancePath(start: Point, path: Point[], budget: number, obstacles: Obstacle[]) {
+  const position = { x: start.x, z: start.z }
+  let traveled = 0
+  while (path.length && budget > .000001) {
+    const next = path[0], dx = next.x - position.x, dz = next.z - position.z, distance = Math.hypot(dx, dz)
+    if (distance < .000001) { path.shift(); continue }
+    const step = Math.min(budget, distance)
+    const candidate = { x: position.x + dx / distance * step, z: position.z + dz / distance * step }
+    if (!clearSegment(position, candidate, obstacles)) break
+    Object.assign(position, candidate); traveled += step; budget -= step
+    if (step === distance) path.shift()
+  }
+  return { position, traveled }
 }
 
 export type InteractionTarget = { group: { position: Point }; approach: Point; zone?: { w: number; d: number } }

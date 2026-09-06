@@ -11,14 +11,14 @@ export const rooms: Record<RoomId, { title: string; label: string; number: strin
 }
 export const stories: Record<string, Story> = {
   laptop: { id: 'laptop', title: 'ALEX', text: 'I build software. Here are a few things I’ve shipped.', links: projects.map(p => ({ label: p.title, href: p.url || `/projects/${p.slug}/` })) },
-  printer: { id: 'printer', title: 'ALEX', text: 'My 3D printer. I like making things I can actually hold.' },
+  printer: { id: 'printer', title: 'ALEX', text: 'My Bambu Lab A1 3D printer. I like making things I can actually hold.' },
   guitar: { id: 'guitar', title: 'GUITAR', text: 'What should we play next?' },
   bookshelf: { id: 'bookshelf', title: 'ALEX', text: 'I write about what I’m building and learning.', links: posts.map(p => ({ label: p.title, href: `/blog/${p.slug}/` })) },
   bed: { id: 'bed', title: 'ALEX', text: 'I’m Alex. Engineer, husband, dad. This is my place.', links: [{ label: 'X (Twitter)', href: profile.twitter }, { label: 'LinkedIn', href: profile.linkedin }, { label: 'GitHub', href: profile.github }, { label: 'Email', href: `mailto:${profile.email}` }] },
   stairsDown: { id: 'stairsDown', title: 'STAIRS', text: '', destination: 'downstairs' },
   wife: { id: 'wife', title: 'ALEX', text: 'Meet my wife. We live here with our baby and our dog.' },
   baby: { id: 'baby', title: 'BABY', text: 'Ba! Ba ba!' },
-  dog: { id: 'dog', title: 'DOG', text: 'Woof!' },
+  dog: { id: 'dog', title: 'LOLA', text: 'Woof! (Lola, our Labrador–German Shepherd mix.)' },
   fridge: { id: 'fridge', title: 'FRIDGE', text: 'You open the fridge. A little snack break.' },
   photos: { id: 'photos', title: 'ALEX', text: 'A few family photos.' },
   stairsUp: { id: 'stairsUp', title: 'STAIRS', text: '', destination: 'upstairs' },

@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { buildWorld, disposeMaterials, person, type World } from './world'
-import { findPath, walkable, interactionDistance, canInteract, interactionPath, isMovementKey, type Point } from './navigation'
+import { findPath, advancePath, walkable, interactionDistance, canInteract, interactionPath, isMovementKey, type Point } from './navigation'
 import type { RoomId } from './content'
 
 export type Engine = {
@@ -12,12 +12,13 @@ export type Engine = {
   zoom: (delta: number) => void
   dispose: () => void
 }
-export function createEngine(container: HTMLElement, callbacks: { interact: (id: string) => void; nearby: (id: string | null) => void; hover: (id: string | null, x: number, y: number) => void; error: () => void }): Engine {
+export function createEngine(container: HTMLElement, callbacks: { interact: (id: string) => void; nearby: (id: string | null) => void; hover: (id: string | null, x: number, y: number) => void; error: () => void; ready: () => void }): Engine {
   const scene = new THREE.Scene()
   const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: 'low-power' })
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap
   renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 1.05
   renderer.domElement.setAttribute('aria-label', 'Alex’s house. Use arrow keys to walk, E to interact, or click an object.'); renderer.domElement.tabIndex = 0
+  renderer.domElement.style.visibility = 'hidden'
   container.appendChild(renderer.domElement)
   const camera = new THREE.OrthographicCamera(-10, 10, 7, -7, .1, 100)
   camera.position.set(16, 16, 16); camera.lookAt(0, .6, 0)
@@ -31,6 +32,7 @@ export function createEngine(container: HTMLElement, callbacks: { interact: (id:
   const ring = new THREE.Mesh(new THREE.RingGeometry(.33, .4, 32), new THREE.MeshBasicMaterial({ color: '#fff4cc', transparent: true, opacity: .8, side: THREE.DoubleSide })); ring.rotation.x = -Math.PI / 2; ring.position.y = .045; scene.add(ring)
   const destination = new THREE.Mesh(new THREE.RingGeometry(.12, .19, 24), new THREE.MeshBasicMaterial({ color: '#fff0b3', transparent: true, opacity: .8, side: THREE.DoubleSide })); destination.rotation.x = -Math.PI / 2; destination.position.y = .06; destination.visible = false; scene.add(destination)
   let path: Point[] = [], pending: string | null = null, nearest: string | null = null, paused = false, disposed = false, sound = false, zoom = 1, walkTime = 0, lastStep = 0, lastRepath = 0
+  const roomZoom: Record<RoomId, number> = { upstairs: 1, downstairs: 1, backyard: 1 }
   let audio: AudioContext | null = null
   const keys = new Set<string>(), reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), floor = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3()
@@ -43,8 +45,9 @@ export function createEngine(container: HTMLElement, callbacks: { interact: (id:
   }
   function setRoom(room: RoomId) {
     const previousRoom = world ? current : null
-    if (world) scene.remove(world.root)
+    if (world) { roomZoom[current] = zoom; scene.remove(world.root) }
     current = room
+    zoom = roomZoom[room]
     if (!worlds.has(room)) worlds.set(room, buildWorld(room))
     world = worlds.get(room)!; scene.add(world.root)
     const entry = room === 'downstairs' && previousRoom === 'backyard' ? { x: -1.7, z: -3.75 }
@@ -52,6 +55,12 @@ export function createEngine(container: HTMLElement, callbacks: { interact: (id:
       : world.spawn
     avatar.group.position.set(entry.x, 0, entry.z)
     avatar.group.rotation.y = entry.z > 1.5 ? Math.PI : 0
+    ring.position.set(entry.x, .045, entry.z)
+    avatar.animate(0, false, 0)
+    world.animated.forEach(fn => fn(0))
+    const shadowSpan = room === 'backyard' ? 24 : 11
+    Object.assign(sun.shadow.camera, { left: -shadowSpan, right: shadowSpan, top: shadowSpan, bottom: -shadowSpan, far: 65 })
+    sun.shadow.camera.updateProjectionMatrix()
     camera.lookAt(0, room === 'backyard' ? 1.2 : .6, 0)
     resize()
     path = []; pending = null; nearest = null; keys.clear(); destination.visible = false; callbacks.nearby(null); callbacks.hover(null, 0, 0)
@@ -62,6 +71,7 @@ export function createEngine(container: HTMLElement, callbacks: { interact: (id:
     if (!width || !height) return
     const aspect = width / height, span = Math.max(current === 'backyard' ? 13.1 : 11.7, 17.6 / aspect) / zoom
     camera.left = -span * aspect / 2; camera.right = span * aspect / 2; camera.top = span / 2; camera.bottom = -span / 2; camera.updateProjectionMatrix(); renderer.setPixelRatio(Math.min(1, 760 / width)); renderer.setSize(width, height)
+    if (world) renderer.render(scene, camera)
   }
   const observer = new ResizeObserver(resize); observer.observe(container)
   function hotspotAt(event: MouseEvent) {
@@ -100,7 +110,7 @@ export function createEngine(container: HTMLElement, callbacks: { interact: (id:
   renderer.domElement.addEventListener('click', sceneClick); renderer.domElement.addEventListener('pointermove', pointerMove); renderer.domElement.addEventListener('pointerleave', pointerLeave); renderer.domElement.addEventListener('webglcontextlost', contextLost)
   window.addEventListener('keydown', keyDown); window.addEventListener('keyup', keyUp); window.addEventListener('blur', blur)
   setRoom('upstairs'); resize()
-  let previous = performance.now(), frame = 0
+  let previous = performance.now(), frame = 0, firstFrame = true
   function tick(now: number) {
     if (disposed) return
     frame = requestAnimationFrame(tick)
@@ -115,22 +125,27 @@ export function createEngine(container: HTMLElement, callbacks: { interact: (id:
       let dx = (horizontal + vertical) / Math.SQRT2, dz = (-horizontal + vertical) / Math.SQRT2
       const p = avatar.group.position
       if (horizontal || vertical) { path = []; pending = null; destination.visible = false }
-      else if (path.length) { const next = path[0], distance = Math.hypot(next.x - p.x, next.z - p.z); if (distance < .09) path.shift(); else { dx = (next.x - p.x) / distance; dz = (next.z - p.z) / distance } }
-      const length = Math.hypot(dx, dz)
-      if (length) {
-        const step = dt * 2.9; dx = dx / length * step; dz = dz / length * step
-        const oldX = p.x, oldZ = p.z
+      const oldX = p.x, oldZ = p.z
+      if (horizontal || vertical) {
+        const length = Math.hypot(dx, dz), step = dt * 2.9
+        dx = dx / length * step; dz = dz / length * step
         if (walkable({ x: p.x + dx, z: p.z }, world.obstacles)) p.x += dx
         if (walkable({ x: p.x, z: p.z + dz }, world.obstacles)) p.z += dz
-        walking = Math.hypot(p.x - oldX, p.z - oldZ) > .001
-        if (!walking && path.length && !(horizontal || vertical) && walkTime - lastRepath > .4) {
+      } else if (path.length) {
+        const movement = advancePath(p, path, dt * 2.9, world.obstacles)
+        p.x = movement.position.x; p.z = movement.position.z
+        if (path.length && movement.traveled < .001 && walkTime - lastRepath > .4) {
           const target = pending ? world.hotspots.find(h => h.id === pending) : null
-          if (target) path = interactionPath(p, target, world.obstacles)
-          else path = findPath(p, path[path.length - 1], world.obstacles)
+          path = target ? interactionPath(p, target, world.obstacles) : findPath(p, path[path.length - 1], world.obstacles)
           lastRepath = walkTime
         }
-        if (walking) avatar.group.rotation.y = Math.atan2(dx, dz)
-        if (walking && walkTime - lastStep > .35) { lastStep = walkTime; chime([160]) }
+      }
+      walking = Math.hypot(p.x - oldX, p.z - oldZ) > .000001
+      if (walking) {
+        const heading = Math.atan2(p.x - oldX, p.z - oldZ)
+        const turn = Math.atan2(Math.sin(heading - avatar.group.rotation.y), Math.cos(heading - avatar.group.rotation.y))
+        avatar.group.rotation.y += turn * (1 - Math.exp(-dt * 18))
+        if (walkTime - lastStep > .35) { lastStep = walkTime; chime([160]) }
       }
       if (!path.length && pending) { const target = world.hotspots.find(h => h.id === pending); const id = pending; pending = null; if (target && canInteract(p, target)) activate(id) }
       if (!path.length) destination.visible = false
@@ -138,11 +153,12 @@ export function createEngine(container: HTMLElement, callbacks: { interact: (id:
       for (const h of world.hotspots) { const d = interactionDistance(p, h); if (d < distance && canInteract(p, h)) { distance = d; nextNearest = h.id } }
       if (nextNearest !== nearest) { nearest = nextNearest; callbacks.nearby(nearest) }
     }
-    avatar.animate(reducedMotion ? 0 : walkTime, walking)
+    avatar.animate(reducedMotion ? 0 : walkTime, walking, reducedMotion ? 0 : dt)
     ring.position.x = avatar.group.position.x; ring.position.z = avatar.group.position.z
     if (!reducedMotion) world.animated.forEach(fn => fn(walkTime))
     for (const h of world.hotspots) h.marker.scale.setScalar(h.id === nearest ? 1.4 : 1)
     renderer.render(scene, camera)
+    if (firstFrame) { firstFrame = false; renderer.domElement.style.visibility = 'visible'; callbacks.ready() }
   }
   frame = requestAnimationFrame(tick)
   return {
@@ -150,7 +166,7 @@ export function createEngine(container: HTMLElement, callbacks: { interact: (id:
     setPaused(value) { paused = value; if (value) { keys.clear(); callbacks.hover(null, 0, 0) } },
     setSound(value) { sound = value; if (value) chime() },
     interact() { if (nearest && !paused) activate(nearest) }, visit,
-    zoom(delta) { zoom = THREE.MathUtils.clamp(zoom + delta, .75, 3); resize() },
+    zoom(delta) { zoom = THREE.MathUtils.clamp(zoom + delta, current === 'backyard' ? .6 : .75, 3); resize() },
     dispose() {
       disposed = true; cancelAnimationFrame(frame); observer.disconnect(); window.removeEventListener('keydown', keyDown); window.removeEventListener('keyup', keyUp); window.removeEventListener('blur', blur)
       renderer.domElement.removeEventListener('click', sceneClick); renderer.domElement.removeEventListener('pointermove', pointerMove); renderer.domElement.removeEventListener('pointerleave', pointerLeave); renderer.domElement.removeEventListener('webglcontextlost', contextLost)
