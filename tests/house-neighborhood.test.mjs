@@ -88,3 +88,13 @@ test('starting views fit closely without cropping on portrait, landscape or wide
     }
   }
 })
+
+
+test('Alex’s car has unobstructed vehicle access through the driveway fence to the street', () => {
+  for (const x of [2.25, 3.35, 4.45]) {
+    const ray = new THREE.Raycaster(new THREE.Vector3(x, .5, 3), new THREE.Vector3(0, 0, 1), 0, 2.8)
+    assert.equal(ray.intersectObject(yard.root, true).length, 0, 'no fence posts, rails or gate block the car-width exit')
+  }
+  const pavement = new THREE.Raycaster(new THREE.Vector3(3.35, 2, 5.5), new THREE.Vector3(0, -1, 0)).intersectObject(yard.root, true)[0]
+  assert.equal(pavement.object.material.color.getHexString(), 'b5b4a1', 'the driveway continues through the opening to the curb')
+})

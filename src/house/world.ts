@@ -447,18 +447,19 @@ export function buildWorld(room: RoomId): World {
     for (const y of [.3, .82]) box(root, 3.5, y, -5, 5.1, .13, .12, '#bdac86')
     for (let i = 0; i < 20; i++) box(root, -6, .57, -4.7 + i * .5, .12, 1.1, .27, '#e0d1ac')
     for (const y of [.3, .82]) box(root, -6.04, y, 0, .12, .13, 10, '#bdac86')
-    // A closed perimeter, including the driveway gate. Navigation stays inside it.
-    const perimeter = group(root); perimeter.name = 'closed-yard-perimeter'
+    // Leave vehicle access open at the driveway; navigation still confines Alex to the yard.
+    const perimeter = group(root); perimeter.name = 'yard-perimeter'
     for (let i = 0; i <= 24; i++) {
       const x = -6 + i * .5
+      if (x > 1.3 && x < 5.4) continue
       box(perimeter, x, .38, 4.96, .12, .79, .12, '#dddac5')
     }
-    for (const y of [.2, .6]) box(perimeter, 0, y, 4.96, 12.15, .09, .1, '#c3c5b0')
+    for (const y of [.2, .6]) for (const [left, right] of [[-6.075, 1.45], [5.4, 6.075]]) {
+      box(perimeter, (left + right) / 2, y, 4.96, right - left, .09, .1, '#c3c5b0')
+    }
     for (let i = 0; i <= 20; i++) box(perimeter, 5.98, .38, -5 + i * .5, .12, .79, .12, '#dddac5')
     for (const y of [.2, .6]) box(perimeter, 5.98, y, 0, .1, .09, 10.15, '#c3c5b0')
     for (const x of [1.45, 5.4]) box(perimeter, x, .51, 4.96, .2, 1.03, .2, '#eee4ca')
-    box(perimeter, 3.4, .46, 4.89, .16, .16, .05, '#687977')
-    const gateBrace = box(perimeter, 3.4, .4, 4.96, 3.85, .07, .07, '#c3c5b0'); gateBrace.rotation.z = .13
     const home = group(root, -2.35, -3.55); home.name = 'house-exterior'
     box(home, 0, .17, -1.36, 6.25, .34, 5.64, '#8d9290')
     box(home, 0, 1.91, -1.36, HOUSE_WIDTH, 3.35, HOUSE_DEPTH, '#f3dfaa').name = 'home-shell'
@@ -521,7 +522,7 @@ export function buildWorld(room: RoomId): World {
     plant(picnic, 0, .95, 0, .48); cylinder(picnic, .67, 1.1, .15, .1, .08, .27, C.cream)
     obstacle(-3.35, 1.32, 2.4, 2.45); hot('picnic', picnic, { x: -1.5, z: 1.3 }, 1.7)
     const tesla = group(root, 3.32, .75); tesla.rotation.y = -.1
-    box(root, 3.35, .017, 1.1, 3.8, .035, 5.7, '#b5b4a1')
+    box(root, 3.35, .017, 2.025, 3.8, .035, 7.55, '#b5b4a1')
     tesla.name = 'electric-sedan'
     // Tapered body rings and coplanar glass avoid the old stacked-box cabin.
     const surface = (points: number[][], color: string, name = '') => {

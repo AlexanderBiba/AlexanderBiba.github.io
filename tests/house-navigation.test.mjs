@@ -181,12 +181,12 @@ test('click walking stops safely when a roaming character blocks the path', () =
   assert.equal(path.length, 1, 'retain destination for replanning')
 })
 
-test('the richer neighborhood remains scenery outside a fully enclosed yard', () => {
+test('the richer neighborhood remains scenery outside the playable yard', () => {
   const world = buildWorld('backyard')
   const district = world.root.getObjectByName('suburban-nj-neighborhood')
   assert.ok(district && district.children.length > 20, 'neighborhood geometry survives static batching')
   assert.ok(district.children.length < 100, 'static scenery is batched instead of thousands of draw calls')
-  assert.ok(world.root.getObjectByName('closed-yard-perimeter'))
+  assert.ok(world.root.getObjectByName('yard-perimeter'))
   for (const end of [{ x: 0, z: 8.3 }, { x: 10.2, z: 0 }, { x: -10, z: -9 }, { x: 0, z: -6 }]) {
     assert.equal(walkable(end, world.obstacles), false)
     assert.deepEqual(findPath(world.spawn, end, world.obstacles), [])
