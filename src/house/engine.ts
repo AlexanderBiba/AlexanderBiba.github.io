@@ -33,7 +33,6 @@ export function createEngine(container: HTMLElement, callbacks: { interact: (id:
   const ring = new THREE.Mesh(new THREE.RingGeometry(.33, .4, 32), new THREE.MeshBasicMaterial({ color: '#fff4cc', transparent: true, opacity: .8, side: THREE.DoubleSide })); ring.rotation.x = -Math.PI / 2; ring.position.y = .045; scene.add(ring)
   const destination = new THREE.Mesh(new THREE.RingGeometry(.12, .19, 24), new THREE.MeshBasicMaterial({ color: '#fff0b3', transparent: true, opacity: .8, side: THREE.DoubleSide })); destination.rotation.x = -Math.PI / 2; destination.position.y = .06; destination.visible = false; scene.add(destination)
   let path: Point[] = [], pending: string | null = null, nearest: string | null = null, paused = false, disposed = false, sound = false, zoom = 1, walkTime = 0, lastStep = 0, lastRepath = 0
-  const roomZoom: Record<RoomId, number> = { upstairs: 1, downstairs: 1, backyard: 1 }
   let audio: AudioContext | null = null
   const keys = new Set<string>(), reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), floor = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hit = new THREE.Vector3()
@@ -46,9 +45,8 @@ export function createEngine(container: HTMLElement, callbacks: { interact: (id:
   }
   function setRoom(room: RoomId) {
     const previousRoom = world ? current : null
-    if (world) { roomZoom[current] = zoom; scene.remove(world.root) }
+    if (world) scene.remove(world.root)
     current = room
-    zoom = roomZoom[room]
     if (!worlds.has(room)) worlds.set(room, buildWorld(room))
     world = worlds.get(room)!; scene.add(world.root)
     const entry = room === 'downstairs' && previousRoom === 'backyard' ? { x: -1.7, z: -3.75 }
@@ -167,7 +165,7 @@ export function createEngine(container: HTMLElement, callbacks: { interact: (id:
     setPaused(value) { paused = value; if (value) { keys.clear(); callbacks.hover(null, 0, 0) } },
     setSound(value) { sound = value; if (value) chime() },
     interact() { if (nearest && !paused) activate(nearest) }, visit,
-    zoom(delta) { zoom = THREE.MathUtils.clamp(zoom + delta, current === 'backyard' ? .45 : .75, 3); resize() },
+    zoom(delta) { zoom = THREE.MathUtils.clamp(zoom + delta, .45, 3); resize() },
     dispose() {
       disposed = true; cancelAnimationFrame(frame); observer.disconnect(); window.removeEventListener('keydown', keyDown); window.removeEventListener('keyup', keyUp); window.removeEventListener('blur', blur)
       renderer.domElement.removeEventListener('click', sceneClick); renderer.domElement.removeEventListener('pointermove', pointerMove); renderer.domElement.removeEventListener('pointerleave', pointerLeave); renderer.domElement.removeEventListener('webglcontextlost', contextLost)
