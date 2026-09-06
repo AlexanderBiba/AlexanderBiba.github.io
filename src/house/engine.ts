@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { buildWorld, disposeMaterials, person, type World } from './world'
 import { findPath, advancePath, walkable, interactionDistance, canInteract, interactionPath, isMovementKey, type Point } from './navigation'
+import { fitRoomCamera } from './framing'
 import type { RoomId } from './content'
 
 export type Engine = {
@@ -20,7 +21,7 @@ export function createEngine(container: HTMLElement, callbacks: { interact: (id:
   renderer.domElement.setAttribute('aria-label', 'Alex’s house. Use arrow keys to walk, E to interact, or click an object.'); renderer.domElement.tabIndex = 0
   renderer.domElement.style.visibility = 'hidden'
   container.appendChild(renderer.domElement)
-  const camera = new THREE.OrthographicCamera(-10, 10, 7, -7, .1, 100)
+  const camera = new THREE.OrthographicCamera(-10, 10, 7, -7, .1, 200)
   camera.position.set(16, 16, 16); camera.lookAt(0, .6, 0)
   scene.add(new THREE.HemisphereLight('#fff9e9', '#94ad8c', 2.1))
   const sun = new THREE.DirectionalLight('#fff1cc', 2.6); sun.position.set(-3, 12, 7); sun.castShadow = true
@@ -69,8 +70,8 @@ export function createEngine(container: HTMLElement, callbacks: { interact: (id:
   function resize() {
     const width = container.clientWidth, height = container.clientHeight
     if (!width || !height) return
-    const aspect = width / height, span = Math.max(current === 'backyard' ? 13.1 : 11.7, 17.6 / aspect) / zoom
-    camera.left = -span * aspect / 2; camera.right = span * aspect / 2; camera.top = span / 2; camera.bottom = -span / 2; camera.updateProjectionMatrix(); renderer.setPixelRatio(Math.min(1, 760 / width)); renderer.setSize(width, height)
+    if (world) fitRoomCamera(camera, world.frame, width / height, zoom)
+    renderer.setPixelRatio(Math.min(1, 760 / width)); renderer.setSize(width, height)
     if (world) renderer.render(scene, camera)
   }
   const observer = new ResizeObserver(resize); observer.observe(container)
@@ -166,7 +167,7 @@ export function createEngine(container: HTMLElement, callbacks: { interact: (id:
     setPaused(value) { paused = value; if (value) { keys.clear(); callbacks.hover(null, 0, 0) } },
     setSound(value) { sound = value; if (value) chime() },
     interact() { if (nearest && !paused) activate(nearest) }, visit,
-    zoom(delta) { zoom = THREE.MathUtils.clamp(zoom + delta, current === 'backyard' ? .6 : .75, 3); resize() },
+    zoom(delta) { zoom = THREE.MathUtils.clamp(zoom + delta, current === 'backyard' ? .45 : .75, 3); resize() },
     dispose() {
       disposed = true; cancelAnimationFrame(frame); observer.disconnect(); window.removeEventListener('keydown', keyDown); window.removeEventListener('keyup', keyUp); window.removeEventListener('blur', blur)
       renderer.domElement.removeEventListener('click', sceneClick); renderer.domElement.removeEventListener('pointermove', pointerMove); renderer.domElement.removeEventListener('pointerleave', pointerLeave); renderer.domElement.removeEventListener('webglcontextlost', contextLost)

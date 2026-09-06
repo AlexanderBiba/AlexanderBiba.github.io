@@ -1,10 +1,12 @@
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
+import { framingPoints } from './framing.ts'
+import { ROAD_WIDTH, ROAD_X, ROAD_Z, HOUSE_WIDTH, HOUSE_DEPTH, LOT_WIDTH, LOT_DEPTH, DISTRICT, neighborhoodLots } from './neighborhoodLayout.ts'
 import type { RoomId } from './content'
 import type { Obstacle, Point } from './navigation'
 
 export type Hotspot = { id: string; group: THREE.Group; approach: Point; marker: THREE.Mesh; zone?: { w: number; d: number } }
-export type World = { root: THREE.Group; obstacles: Obstacle[]; hotspots: Hotspot[]; animated: ((time: number) => void)[]; spawn: Point; update?: (dt: number, time: number, player: Point, target: string | null) => void }
+export type World = { root: THREE.Group; frame: THREE.Vector3[]; obstacles: Obstacle[]; hotspots: Hotspot[]; animated: ((time: number) => void)[]; spawn: Point; update?: (dt: number, time: number, player: Point, target: string | null) => void }
 const C = { wood: '#b47c4f', edge: '#855b43', lightWood: '#e4b984', cream: '#fff1d2', wall: '#8faebf', green: '#65a279', darkGreen: '#365f50', blue: '#769fad', dark: '#364850', terra: '#c47450', yellow: '#efbc5b', white: '#fff8e9' }
 const materials = new Map<string, THREE.MeshStandardMaterial>()
 function material(color: string) {
@@ -438,8 +440,11 @@ export function buildWorld(room: RoomId): World {
       const x = Math.sin(i * 84.3) * 5.8, z = Math.cos(i * 43.7) * 4.8
       box(root, x, .023, z, .1, .035, .23, i % 2 ? '#a5bd7b' : '#859f65')
     }
-    for (let i = 0; i < 25; i++) { const x = -6 + i * .5; box(root, x, .57, -4.94, .27, 1.1, .12, '#e0d1ac'); const cap = new THREE.Mesh(new THREE.ConeGeometry(.2, .2, 4), material('#e0d1ac')); cap.position.set(x, 1.21, -4.94); cap.rotation.y = Math.PI / 4; root.add(cap) }
-    for (const y of [.3, .82]) box(root, 0, y, -5, 12.25, .13, .12, '#bdac86')
+    for (let i = 0; i <= 10; i++) {
+      const x = 1 + i * .5
+      box(root, x, .57, -4.94, .22, 1.1, .12, '#e0d1ac')
+    }
+    for (const y of [.3, .82]) box(root, 3.5, y, -5, 5.1, .13, .12, '#bdac86')
     for (let i = 0; i < 20; i++) box(root, -6, .57, -4.7 + i * .5, .12, 1.1, .27, '#e0d1ac')
     for (const y of [.3, .82]) box(root, -6.04, y, 0, .12, .13, 10, '#bdac86')
     // A closed perimeter, including the driveway gate. Navigation stays inside it.
@@ -455,18 +460,18 @@ export function buildWorld(room: RoomId): World {
     box(perimeter, 3.4, .46, 4.89, .16, .16, .05, '#687977')
     const gateBrace = box(perimeter, 3.4, .4, 4.96, 3.85, .07, .07, '#c3c5b0'); gateBrace.rotation.z = .13
     const home = group(root, -2.35, -3.55); home.name = 'house-exterior'
-    box(home, 0, .17, 0, 6.25, .34, 2.92, '#8d9290')
-    box(home, 0, 1.91, 0, 6.02, 3.35, 2.68, '#f3dfaa')
+    box(home, 0, .17, -1.36, 6.25, .34, 5.64, '#8d9290')
+    box(home, 0, 1.91, -1.36, HOUSE_WIDTH, 3.35, HOUSE_DEPTH, '#f3dfaa').name = 'home-shell'
     for (let row = 0; row < 12; row++) box(home, 0, .48 + row * .26, 1.356, 6.03, .035, .025, '#d1b985')
     for (const x of [-2.95, 2.95]) box(home, x, 1.95, 1.39, .14, 3.42, .13, '#fff3ce')
     box(home, 0, 2.02, 1.39, 6.2, .12, .14, '#fff3ce')
     // A pitched, tiled roof and two rows of windows make both floors readable.
     const roofShape = new THREE.Shape(); roofShape.moveTo(-3.32, 0); roofShape.lineTo(0, 1.26); roofShape.lineTo(3.32, 0); roofShape.closePath()
-    const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(roofShape, { depth: 3.22, bevelEnabled: false }), material('#b75653'))
-    roof.position.set(0, 3.62, -1.61); roof.castShadow = true; home.add(roof)
+    const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(roofShape, { depth: 5.94, bevelEnabled: false }), material('#b75653'))
+    roof.position.set(0, 3.62, -4.33); roof.castShadow = true; home.add(roof)
     for (let i = 0; i < 9; i++) for (const side of [-1, 1]) {
       const x = side * (.2 + i * .37), y = 4.9 - Math.abs(x) * .379
-      box(home, x, y, 0, .08, .06, 3.25, '#923f47')
+      box(home, x, y, -1.36, .08, .06, 5.97, '#923f47')
     }
     box(home, 1.97, 4.53, -.47, .55, 1.16, .58, '#b77762'); box(home, 1.97, 5.13, -.47, .69, .13, .7, '#82574f')
     for (const y of [1.17, 2.83]) for (const x of [-1.98, 1.98]) {
@@ -475,11 +480,27 @@ export function buildWorld(room: RoomId): World {
       for (const side of [-1, 1]) box(home, x + side * .64, y, 1.43, .19, .89, .1, '#5c8b84')
     }
     box(home, 0, 2.86, 1.43, .95, .86, .1, '#fff4d7'); box(home, 0, 2.86, 1.51, .72, .62, .04, '#7eb5bd')
+    const front = group(home, 0, -4.09); front.rotation.y = Math.PI; front.name = 'street-facing-front-door'
+    for (const y of [1.17, 2.83]) for (const x of [-1.98, 1.98]) {
+      box(front, x, y, 0, 1.05, .91, .15, '#fff4d7'); box(front, x, y, .09, .83, .7, .04, '#7eb5bd')
+      box(front, x, y, .13, .06, .72, .035, '#fff4d7'); box(front, x, y, .13, .84, .06, .035, '#fff4d7')
+      for (const side of [-1, 1]) box(front, x + side * .64, y, .03, .19, .89, .1, '#5c8b84')
+    }
+    box(front, 0, 1.03, .01, 1.37, 2.05, .18, '#fff4d7'); box(front, 0, .97, .13, 1.12, 1.91, .13, '#567a70')
+    box(front, 0, 1.43, .22, .73, .62, .035, '#9bcbbd'); box(front, .39, .9, .23, .09, .09, .065, C.yellow)
+    box(front, 0, .08, .33, 1.64, .16, .8, '#b7afa0')
+    for (const side of [-1, 1]) {
+      const windows = group(home, side * 3.03, -1.4); windows.rotation.y = side * Math.PI / 2
+      for (const x of [-1.1, 1.1]) for (const y of [1.17, 2.83]) {
+        box(windows, x, y, 0, .92, .91, .09, '#fff4d7'); box(windows, x, y, .06, .72, .7, .035, '#7eb5bd')
+        box(windows, x, y, .09, .055, .72, .03, '#fff4d7')
+      }
+    }
     const entry = group(root, -2.35, -2.12); entry.name = 'backyard-door'
     box(entry, 0, 1.03, 0, 1.37, 2.05, .18, '#fff4d7'); box(entry, 0, .97, .12, 1.12, 1.91, .13, '#567a70')
     box(entry, 0, 1.43, .21, .73, .62, .035, '#9bcbbd'); box(entry, .39, .9, .22, .09, .09, .065, C.yellow)
     box(entry, 0, .08, .25, 1.64, .16, .64, '#b7afa0')
-    obstacle(-2.35, -3.55, 6.25, 2.92); hot('inside', entry, { x: -2.35, z: -1.43 }, 2.45)
+    obstacle(-2.35, -4.91, 6.25, 5.64); hot('inside', entry, { x: -2.35, z: -1.43 }, 2.45)
     for (let i = 0; i < 4; i++) box(root, -2.35 + i * .65, .035, -1.35, .59, .06, .58, '#e3ce9e')
     for (let i = 0; i < 6; i++) box(root, -.4, .035, -1.35 + i * .9, .85, .06, .68, '#e3ce9e')
     const tree = (x: number, z: number, scale: number) => {
@@ -595,38 +616,62 @@ export function buildWorld(room: RoomId): World {
     }
     obstacle(x, z, 1.85, 1.95); hot(id, g, { x, z: z - 1.5 }, 1.6)
   }
-  return { root, obstacles, hotspots, animated, update, spawn: room === 'upstairs' ? { x: -1.7, z: .5 } : room === 'downstairs' ? { x: -.9, z: 2.9 } : { x: -2.35, z: -1.35 } }
+  return { root, frame: framingPoints(root), obstacles, hotspots, animated, update, spawn: room === 'upstairs' ? { x: -1.7, z: .5 } : room === 'downstairs' ? { x: -.9, z: 2.9 } : { x: -2.35, z: -1.35 } }
 }
 // Materials are shared between floors. Dispose only when the entire experience ends.
 export function disposeMaterials() { materials.forEach(m => m.dispose()); materials.clear() }
 
-/** Decorative surroundings live outside the fixed, yard-only navigation bounds. */
+/** Nine residential blocks, with lots, setbacks and crossings planned from the same grid. */
 function neighborhood(parent: THREE.Group) {
-  const district = group(parent); district.name = 'suburban-nj-neighborhood'
-  box(district, 0, -.42, 0, 48, .34, 44, '#86a475')
-  // Quiet residential streets, concrete curbs, grass verges and jointed sidewalks.
-  box(district, 0, -.205, 8.3, 48, .06, 4, '#697274')
-  box(district, 10.2, -.205, 0, 3.8, .06, 44, '#697274')
-  for (const z of [6.23, 10.37]) box(district, 0, -.15, z, 48, .17, .15, '#bfc5bc')
-  for (const x of [8.2, 12.2]) box(district, x, -.15, 0, .15, .17, 44, '#bfc5bc')
-  for (const z of [5.65, 10.95]) {
-    box(district, 0, -.17, z, 48, .1, .88, '#cdd0bf')
-    for (let x = -23; x <= 23; x += 1.1) box(district, x, -.112, z, .022, .01, .88, '#a7afa5')
+  const district = group(parent); district.name = 'suburban-nj-neighborhood'; district.userData.excludeFromFrame = true
+  const { minX, maxX, minZ, maxZ } = DISTRICT, half = ROAD_WIDTH / 2
+  box(district, (minX + maxX) / 2, -.42, (minZ + maxZ) / 2, maxX - minX, .34, maxZ - minZ, '#86a475')
+  const asphalt = '#697274', concrete = '#cdd0bf', curb = '#bfc5bc', paint = '#eee9d6'
+  // Horizontal streets include intersections. Vertical segments meet them without overlapping faces.
+  for (const z of ROAD_Z) box(district, (minX + maxX) / 2, -.205, z, maxX - minX, .06, ROAD_WIDTH, asphalt)
+  const streetGaps = [minZ, ...ROAD_Z.flatMap(z => [z - half, z + half]), maxZ]
+  for (const x of ROAD_X) for (let i = 0; i < streetGaps.length; i += 2) {
+    const from = streetGaps[i], to = streetGaps[i + 1]
+    box(district, x, -.205, (from + to) / 2, ROAD_WIDTH, .06, to - from, asphalt)
   }
-  for (const x of [7.5, 12.9]) {
-    box(district, x, -.17, 0, .8, .1, 44, '#cdd0bf')
-    for (let z = -21; z < 22; z += 1.1) box(district, x, -.112, z, .8, .01, .022, '#a7afa5')
+  // Sidewalks stop at intersections: no concrete strips or curbs across traffic lanes.
+  for (let col = 0; col < ROAD_X.length - 1; col++) for (const z of ROAD_Z) for (const side of [-1, 1]) {
+    const from = ROAD_X[col] + half, to = ROAD_X[col + 1] - half
+    box(district, (from + to) / 2, -.145, z + side * (half + .4), to - from, .09, .7, concrete)
+    box(district, (from + to) / 2, -.15, z + side * (half + .05), to - from - 4.1, .13, .1, curb)
+    for (let x = from + 1.1; x < to; x += 1.1) box(district, x, -.095, z + side * (half + .4), .018, .008, .7, '#a7afa5')
   }
-  for (let x = -24; x < 24; x += 3) if (x < 7 || x > 12) {
-    for (const z of [8.22, 8.38]) box(district, x, -.168, z, 1.45, .012, .045, '#e5d5a0')
+  for (let row = 0; row < ROAD_Z.length - 1; row++) for (const x of ROAD_X) for (const side of [-1, 1]) {
+    const from = ROAD_Z[row] + half, to = ROAD_Z[row + 1] - half
+    box(district, x + side * (half + .4), -.145, (from + to) / 2, .7, .09, to - from, concrete)
+    box(district, x + side * (half + .05), -.15, (from + to) / 2, .1, .13, to - from - 4.1, curb)
+    for (let z = from + 1.1; z < to; z += 1.1) box(district, x + side * (half + .4), -.095, z, .7, .008, .018, '#a7afa5')
   }
-  for (let i = 0; i < 6; i++) box(district, 7.1 + i * .5, -.16, 6.75, .28, .02, .8, '#e8e7cf')
-  for (const x of [-7, 6.5, 13.5]) {
-    box(district, x, -.105, 6.14, .58, .035, .3, '#4c595b')
-    for (let i = 0; i < 5; i++) box(district, x - .22 + i * .11, -.08, 6.14, .035, .012, .25, '#85918f')
+  for (const x of ROAD_X) for (const z of ROAD_Z) {
+    // Nine stripes span BOTH lanes on each of the four approaches.
+    for (const side of [-1, 1]) for (let stripe = 0; stripe < 9; stripe++) {
+      const offset = (stripe - 4) * .49
+      box(district, x + side * 3.4, -.163, z + offset, 1.15, .02, .29, paint)
+      box(district, x + offset, -.163, z + side * 3.4, .29, .02, 1.15, paint)
+    }
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+      box(district, x + sx * (half + .4), -.145, z + sz * (half + .4), .7, .09, .7, concrete)
+    }
+    // Small signs and a hydrant sit on the verge, away from the crossing landings.
+    cylinder(district, x - 3.35, 1.15, z - 3.45, .035, .035, 2.6, '#677778', 8)
+    box(district, x - 3.35, 2.29, z - 3.45, 1.1, .2, .06, '#42776a')
+    box(district, x - 3.35, 2.54, z - 3.45, .06, .2, 1.1, '#42776a')
+    cylinder(district, x + 3.45, .2, z + 4.65, .12, .16, .6, '#b8644f', 8)
+    ball(district, x + 3.45, .54, z + 4.65, .16, '#ba6d52', 0)
+    box(district, x + 3.45, .29, z + 4.65, .46, .12, .14, '#b8644f')
   }
-  const shrub = (x: number, z: number, color = '#5b845b') => {
-    ball(district, x, .25, z, .44, color, 0).scale.set(1.2, .8, 1)
+  for (const z of ROAD_Z) for (let x = minX + 1; x < maxX; x += 2.8) {
+    if (ROAD_X.some(cross => Math.abs(x - cross) < 5.7)) continue
+    for (const offset of [-.08, .08]) box(district, x, -.163, z + offset, 1.3, .018, .045, '#e5d5a0')
+  }
+  for (const x of ROAD_X) for (let z = minZ + 1; z < maxZ; z += 2.8) {
+    if (ROAD_Z.some(cross => Math.abs(z - cross) < 5.7)) continue
+    for (const offset of [-.08, .08]) box(district, x + offset, -.163, z, .045, .018, 1.3, '#e5d5a0')
   }
   const tree = (x: number, z: number, size: number, autumn = false, evergreen = false) => {
     const t = group(district, x, z); t.scale.setScalar(size)
@@ -643,86 +688,154 @@ function neighborhood(parent: THREE.Group) {
   }
   const house = (x: number, z: number, width: number, height: number, color: string, roofColor: string, facing = 0, porch = false) => {
     const h = group(district, x, z); h.name = 'neighbor-house'; h.rotation.y = facing
-    box(h, 0, .03, 0, width + .3, .42, 3.7, '#8e9690')
-    box(h, 0, height / 2 + .2, 0, width, height, 3.5, color)
-    for (let i = 0; i < height / .27; i++) box(h, 0, .35 + i * .27, 1.765, width, .025, .018, '#ffffff')
+    box(h, 0, .03, 0, width + .3, .42, 5.64, '#8e9690')
+    box(h, 0, height / 2 + .2, 0, width, height, HOUSE_DEPTH, color)
+    for (let i = 0; i < height / .27; i++) box(h, 0, .35 + i * .27, 2.715, width, .025, .018, '#ffffff')
     const shape = new THREE.Shape(); shape.moveTo(-width / 2 - .25, 0); shape.lineTo(0, 1.35); shape.lineTo(width / 2 + .25, 0); shape.closePath()
-    const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 4, bevelEnabled: false }), material(roofColor)); roof.position.set(0, height + .23, -2); roof.castShadow = true; h.add(roof)
+    const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 5.94, bevelEnabled: false }), material(roofColor)); roof.position.set(0, height + .23, -2.97); roof.castShadow = true; h.add(roof)
     box(h, width * .29, height + 1.05, -.5, .52, 1.4, .55, '#a57865')
     box(h, width * .29, height + 1.79, -.5, .65, .12, .66, '#d0c9b6')
     const window = (x: number, y: number) => {
-      box(h, x, y, 1.81, .94, .93, .13, '#f3edd8'); box(h, x, y, 1.89, .73, .72, .025, '#8ab6bd')
-      box(h, x, y, 1.92, .04, .75, .025, '#f3edd8'); box(h, x, y, 1.92, .75, .04, .025, '#f3edd8')
-      for (const side of [-1, 1]) box(h, x + side * .59, y, 1.81, .18, .91, .09, '#4e6e73')
+      box(h, x, y, 2.76, .94, .93, .13, '#f3edd8'); box(h, x, y, 2.84, .73, .72, .025, '#8ab6bd')
+      box(h, x, y, 2.87, .04, .75, .025, '#f3edd8'); box(h, x, y, 2.87, .75, .04, .025, '#f3edd8')
+      for (const side of [-1, 1]) box(h, x + side * .59, y, 2.76, .18, .91, .09, '#4e6e73')
     }
     for (const x of [-width * .3, width * .3]) { window(x, 1.24); if (height > 3) window(x, 2.95) }
-    box(h, 0, 1.12, 1.8, .85, 1.84, .12, '#f0e9d4'); box(h, 0, 1.08, 1.89, .67, 1.69, .09, porch ? '#a9634e' : '#4a7779')
-    box(h, 0, 1.51, 1.945, .43, .43, .025, '#98b8b9'); ball(h, .22, .99, 1.97, .035, C.yellow, 0)
-    for (let i = 0; i < 2; i++) box(h, 0, .05 + i * .08, 2.3 - i * .2, 1.35, .14, .7, '#b8b9a7')
+    box(h, 0, 1.12, 2.75, .85, 1.84, .12, '#f0e9d4'); box(h, 0, 1.08, 2.84, .67, 1.69, .09, porch ? '#a9634e' : '#4a7779')
+    box(h, 0, 1.51, 2.895, .43, .43, .025, '#98b8b9'); ball(h, .22, .99, 2.92, .035, C.yellow, 0)
+    for (let i = 0; i < 2; i++) box(h, 0, .05 + i * .08, 3.25 - i * .2, 1.35, .14, .7, '#b8b9a7')
     if (porch) {
-      box(h, 0, .17, 2.3, width - .25, .16, 1.2, '#b1b5ab')
-      box(h, 0, 2.25, 2.3, width, .16, 1.3, '#e9e4d2')
-      for (const x of [-width / 2 + .3, width / 2 - .3]) box(h, x, 1.2, 2.75, .13, 2, .13, '#f0ead9')
-      for (const x of [-width * .3, width * .3]) { box(h, x, .59, 2.43, .48, .12, .48, '#526f69'); box(h, x, .91, 2.2, .48, .61, .1, '#526f69') }
+      box(h, 0, .17, 3.25, width - .25, .16, 1.2, '#b1b5ab')
+      box(h, 0, 2.25, 3.25, width, .16, 1.3, '#e9e4d2')
+      for (const x of [-width / 2 + .3, width / 2 - .3]) box(h, x, 1.2, 3.7, .13, 2, .13, '#f0ead9')
+      for (const x of [-width * .3, width * .3]) { box(h, x, .59, 3.38, .48, .12, .48, '#526f69'); box(h, x, .91, 3.15, .48, .61, .1, '#526f69') }
+    }
+    const rear = group(h, 0, -2.74); rear.rotation.y = Math.PI
+    for (const x of [-1.85, 1.85]) for (const y of height > 3 ? [1.25, 2.95] : [1.25]) {
+      box(rear, x, y, 0, .94, .93, .1, '#f3edd8'); box(rear, x, y, .07, .73, .72, .035, '#8ab6bd')
+      box(rear, x, y, .1, .04, .75, .02, '#f3edd8')
+    }
+    box(rear, 0, 1.08, .03, .85, 1.84, .1, '#f0e9d4'); box(rear, 0, 1.05, .1, .67, 1.7, .07, '#64827a')
+    for (const side of [-1, 1]) {
+      const sideWindows = group(h, side * (width / 2 + .025)); sideWindows.rotation.y = side * Math.PI / 2
+      for (const x of [-1.25, 1.25]) for (const y of height > 3 ? [1.25, 2.95] : [1.25]) {
+        box(sideWindows, x, y, 0, .9, .93, .08, '#f3edd8'); box(sideWindows, x, y, .055, .7, .72, .03, '#8ab6bd')
+      }
     }
     for (const side of [-1, 1]) {
-      box(h, side * (width / 2 - .04), height / 2 + .2, 1.8, .09, height, .08, '#eee9d8')
-      ball(h, side * width * .35, .4, 2.9, .47, '#678960', 0)
+      box(h, side * (width / 2 - .04), height / 2 + .2, 2.75, .09, height, .08, '#eee9d8')
+      ball(h, side * width * .35, .4, 3.85, .47, '#678960', 0)
     }
   }
-  // Colonial, Cape and ranch silhouettes, with different siding, porches and lots.
-  house(-10.7, -.6, 4.5, 3.6, '#c3c4b5', '#666d77', 0, true)
-  house(-10, -9, 4.7, 2.35, '#b6c5c0', '#746b60')
-  house(-2.2, -10.8, 5.2, 3.65, '#b7a48d', '#5e7277', 0, true)
-  house(5.3, -10.1, 4.3, 2.4, '#bd8671', '#65646a')
-  house(-9.5, 14, 4.7, 2.5, '#d4c4a0', '#71675c', Math.PI, true)
-  house(-1.5, 14, 5.1, 3.65, '#b6c6cd', '#646e7c', Math.PI)
-  house(15.2, -5.4, 4.3, 3.5, '#c9c5aa', '#7b6760', Math.PI / 2, true)
-  // The next row of lots comes into view only as the camera pulls back.
-  house(-20, -5, 4.5, 2.4, '#b6c5c0', '#746b60', 0, true)
-  house(-19, 14, 4.7, 3.5, '#bd8671', '#65646a', Math.PI)
-  house(17.3, 13.6, 4.8, 2.5, '#d4c4a0', '#71675c', Math.PI, true)
-  house(2, -18.5, 4.9, 3.6, '#b6c6cd', '#646e7c')
-  for (const [x, z] of [[-22, 2], [-19, -13], [-13, -18], [-5, -19], [8, -18], [18, -14], [20, 4], [21, 18], [5, 19], [-12, 19]]) tree(x, z, 1.1, x === 5, x === -19 || x === 18)
-  for (const [x, z, size] of [[-15, 2, 1.2], [-14, -7, 1.1], [-6.5, -10, 1.2], [2, -7.9, .85], [6.7, -5.9, .9], [-14, 12, 1], [4, 13, 1.1], [14, 2.8, 1]]) tree(x, z, size, x === 4, x === -6.5 || x === 14)
-  for (let i = 0; i < 10; i++) shrub(-6.9, -4.4 + i * .65)
-  for (let i = 0; i < 9; i++) shrub(-5.5 + i * 1.3, -6.9, i % 2 ? '#759765' : '#598064')
-  // Driveways, a detached garage, curbside mailboxes and recycling bins.
-  box(district, -14, -.11, 1.5, 2.2, .04, 7.3, '#a3aaa3')
-  box(district, -14, .85, -3.5, 2.65, 1.95, 2.7, '#c3c4b5')
-  box(district, -14, 1.87, -3.5, 2.95, .2, 3, '#666d77')
-  box(district, -14, .79, -2.12, 2.18, 1.67, .06, '#e4e3d5')
-  for (let i = 0; i < 6; i++) box(district, -14, .15 + i * .26, -2.077, 2.18, .025, .02, '#9ba9a6')
-  for (const x of [-10.5, -3, 5.7]) {
-    box(district, x, .43, 5.13, .1, 1.1, .1, '#7e6852')
-    box(district, x, 1.04, 5.13, .48, .32, .6, '#536972')
-    box(district, x + .26, 1.11, 5.17, .035, .21, .06, '#bd6855')
-    box(district, x, 1.03, 5.45, .2, .04, .016, '#e7dbc0')
+  const car = (x: number, z: number, facing: number, color: string, suv: boolean) => {
+    const g = group(district, x, z); g.name = 'neighbor-car'; g.rotation.y = facing
+    box(g, 0, .48, 0, 1.66, .47, 3.55, color)
+    box(g, 0, .72, 1.18, 1.62, .09, 1.1, color)
+    const cabin = new THREE.BoxGeometry(1.46, suv ? .73 : .58, suv ? 2.05 : 1.8)
+    const positions = cabin.getAttribute('position')
+    for (let i = 0; i < positions.count; i++) if (positions.getY(i) > 0) {
+      positions.setX(i, positions.getX(i) * .82); positions.setZ(i, positions.getZ(i) * .67)
+    }
+    cabin.computeVertexNormals()
+    const glass = new THREE.Mesh(cabin, material('#4b6770')); glass.position.set(0, suv ? 1.04 : .965, -.23); glass.castShadow = true; g.add(glass)
+    box(g, 0, suv ? 1.42 : 1.27, -.23, 1.22, .06, suv ? 1.4 : 1.24, color)
+    for (const side of [-1, 1]) {
+      for (const z of [-1.12, 1.12]) {
+        const wheel = cylinder(g, side * .83, .29, z, .3, .3, .16, '#344144', 12); wheel.rotation.z = Math.PI / 2
+        const hub = cylinder(g, side * .925, .29, z, .16, .16, .035, '#a3b0ad', 10); hub.rotation.z = Math.PI / 2
+      }
+      box(g, side * .59, .61, 1.79, .35, .095, .03, '#f5e9c2')
+      box(g, side * .59, .61, -1.79, .35, .09, .03, '#b95850')
+      box(g, side * .83, .95, .65, .16, .09, .2, color)
+      box(g, side * .74, 1.01, -.3, .04, .48, .055, '#384f55')
+    }
+    box(g, 0, .4, 1.795, .9, .07, .03, '#4e5f60')
+    box(g, 0, .52, -1.795, .3, .13, .025, '#e0c995')
   }
-  for (const [x, color] of [[-12, '#527863'], [-11.5, '#527b93']] as const) {
-    box(district, x, .31, 4.65, .37, .69, .42, color); box(district, x, .68, 4.65, .43, .08, .47, '#435c60')
-    for (const side of [-1, 1]) ball(district, x + side * .16, .015, 4.5, .08, '#394748', 0)
+  const fence = (x: number, z: number, length: number, rotation = 0, height = .72) => {
+    const f = group(district, x, z); f.rotation.y = rotation
+    for (let i = 0; i <= Math.floor(length / .55); i++) box(f, -length / 2 + i * length / Math.floor(length / .55), height / 2, 0, .1, height, .1, '#d6d6bd')
+    for (const y of [.2, height - .15]) box(f, 0, y, 0, length, .07, .08, '#b6bda5')
   }
-  // Hydrant, street blades, lamps and a basketball hoop.
-  cylinder(district, 6.6, .24, 6, .12, .16, .65, '#b8644f', 8)
-  ball(district, 6.6, .62, 6, .17, '#ba6d52', 0); box(district, 6.6, .36, 6, .5, .12, .14, '#b8644f')
-  cylinder(district, 7.2, 1.2, 5.1, .035, .035, 2.7, '#677778', 8)
-  box(district, 7.2, 2.4, 5.1, 1.2, .23, .06, '#42776a'); box(district, 7.2, 2.67, 5.1, .06, .23, 1.2, '#42776a')
-  for (let i = 0; i < 6; i++) box(district, 6.81 + i * .14, 2.4, 5.14, .07, .05, .012, '#eee8d0')
-  for (const x of [-7.1, 13.1]) {
-    cylinder(district, x, 1.55, 5.3, .055, .08, 3.4, '#556568', 8)
-    box(district, x, 3.28, 5.55, .08, .08, .56, '#556568'); box(district, x, 3.22, 5.83, .34, .13, .55, '#e1d7a9')
+  const colors = ['#c3c4b5', '#b6c5c0', '#b7a48d', '#bd8671', '#d4c4a0', '#b6c6cd']
+  const roofs = ['#666d77', '#746b60', '#5e7277', '#65646a']
+  for (const lot of neighborhoodLots) {
+    const { x, z, houseX, houseZ, direction, facing, variant, player } = lot
+    const streetEdge = lot.streetZ - direction * half
+    const frontFenceZ = z + direction * LOT_DEPTH / 2
+    const backFenceZ = z - direction * LOT_DEPTH / 2
+    if (player) {
+      // Front lawn and street access extend the existing back yard, without moving its facade.
+      box(district, x, -.045, -8.6, 12.15, .12, 6.8, '#94b276')
+      for (const side of [-1, 1]) fence(x + side * 6, -8.6, 6.8, Math.PI / 2)
+      fence(x, frontFenceZ, LOT_WIDTH)
+      box(district, houseX, .025, -10.14, .95, .05, 4.8, '#d8cfb6')
+      box(district, x + 3.35, .017, -7.275, 3.8, .035, 11.05, '#b5b4a1')
+      tree(x + 1.2, -10.2, .58)
+      plant(district, houseX - 1.7, .02, -8.35, .65)
+      plant(district, houseX + 1.7, .02, -8.35, .65)
+    } else {
+      const lawn = variant % 2 ? '#93ad78' : '#9ab57e'
+      box(district, x, -.045, z, LOT_WIDTH, .12, LOT_DEPTH, lawn)
+      // Visible lawn on both sides of a normal-depth house; driveway occupies the side setback.
+      house(houseX, houseZ, HOUSE_WIDTH, variant % 3 === 0 ? 2.5 : 3.6, colors[variant % colors.length], roofs[variant % roofs.length], facing, variant % 2 === 0)
+      const driveEnd = houseZ - direction * 3.1
+      box(district, x + 3.35, .02, (driveEnd + streetEdge) / 2, 2.5, .04, Math.abs(driveEnd - streetEdge), '#b3b7ac')
+      car(x + 3.35, houseZ + direction * .8, facing, ['#c8d5d0', '#577f96', '#b16b58', '#d9c693', '#6f8876'][variant % 5], variant % 3 === 1)
+      const doorZ = houseZ + direction * (HOUSE_DEPTH / 2 + .3)
+      box(district, houseX, .03, (doorZ + streetEdge) / 2, .86, .04, Math.abs(doorZ - streetEdge), '#d8cfb6')
+      for (const side of [-1, 1]) fence(x + side * 6, z, LOT_DEPTH, Math.PI / 2)
+      fence(x, backFenceZ, LOT_WIDTH, 0, .9)
+      // Rear patios and planted beds make the rear lawns distinct from the street lawns.
+      const patioZ = houseZ - direction * (HOUSE_DEPTH / 2 + 1.15)
+      box(district, houseX, .025, patioZ, 3.3, .04, 1.8, '#bfc0ab')
+      const furniture = group(district, houseX, patioZ)
+      box(furniture, 0, .64, 0, 1.15, .1, .68, '#bb9971')
+      for (const side of [-1, 1]) { box(furniture, side * .4, .31, 0, .075, .62, .075, '#7f7057'); box(furniture, 0, .32, side * .6, 1.2, .1, .25, '#bb9971') }
+      tree(x + 4.3, z - direction * 6.8, variant % 2 ? .68 : .82, variant % 7 === 0, variant % 5 === 0)
+      const bedZ = backFenceZ + direction * .8
+      box(district, x - 3.4, .16, bedZ, 3.1, .28, .75, '#927858')
+      for (let i = 0; i < 6; i++) {
+        ball(district, x - 4.6 + i * .47, .4, bedZ, .21, '#66885b', 0)
+        ball(district, x - 4.6 + i * .47, .58, bedZ, .085, variant % 2 ? '#d9bb73' : '#c98980', 0)
+      }
+      if (variant % 3 === 0) {
+        const garage = group(district, x + 3.35, houseZ - direction * 4.45); garage.rotation.y = facing
+        box(garage, 0, .95, 0, 2.9, 1.9, 2.6, colors[variant % colors.length])
+        box(garage, 0, 1.96, 0, 3.15, .2, 2.85, roofs[variant % roofs.length])
+        box(garage, 0, .88, 1.33, 2.45, 1.65, .06, '#e4e3d5')
+        for (let i = 0; i < 6; i++) box(garage, 0, .18 + i * .26, 1.37, 2.45, .02, .015, '#a3ada5')
+      }
+      if (variant % 4 === 1) {
+        const basketball = group(district, x + 4.9, z + direction * 5.4); basketball.rotation.y = -Math.PI / 2
+        box(basketball, 0, 1.26, 0, .07, 2.52, .07, '#586668')
+        box(basketball, 0, 2.55, .03, 1.04, .65, .075, '#e0e4da')
+        box(basketball, 0, 2.48, .075, .38, .25, .02, '#bb765e')
+        const hoop = new THREE.Mesh(new THREE.TorusGeometry(.23, .025, 4, 12), material('#bd7656'))
+        hoop.rotation.x = Math.PI / 2; hoop.position.set(0, 2.26, .32); basketball.add(hoop)
+      } else if (variant % 4 === 2) {
+        const bike = group(district, x - 4.5, z + direction * 5.5)
+        for (const x of [-.48, .48]) {
+          const wheel = new THREE.Mesh(new THREE.TorusGeometry(.3, .035, 5, 12), material('#465655')); wheel.position.set(x, .31, 0); bike.add(wheel)
+        }
+        for (const [x, angle] of [[-.25, -.55], [.13, .55], [.4, -.25]]) { const frame = box(bike, x, .54, 0, .04, .65, .04, '#b66852'); frame.rotation.z = angle }
+        box(bike, -.2, .85, 0, .3, .06, .15, '#485553'); box(bike, .5, .91, 0, .25, .04, .05, '#485553')
+      }
+      // Bins live alongside the house, off the footpath and driveway.
+      for (const [offset, color] of [[-.3, '#527863'], [.3, '#527b93']] as const) {
+        box(district, x + 1.15, .31, houseZ + offset, .4, .6, .43, color)
+        box(district, x + 1.15, .64, houseZ + offset, .44, .07, .47, '#435c60')
+      }
+    }
+    // Every front lawn has its own mailbox, and every street gets regularly spaced trees.
+    box(district, x + 1.3, .5, frontFenceZ + direction * .1, .09, 1, .09, '#7e6852')
+    box(district, x + 1.3, 1.04, frontFenceZ + direction * .1, .45, .3, .57, '#536972')
+    box(district, x + 1.55, 1.12, frontFenceZ + direction * .1, .03, .19, .06, '#bd6855')
+    tree(x - 4.8, frontFenceZ - direction * 1.2, .58, variant % 6 === 0)
+    cylinder(district, x + 5.55, 1.55, frontFenceZ + direction * .7, .05, .08, 3.3, '#556568', 8)
+    box(district, x + 5.55, 3.2, frontFenceZ + direction * .86, .3, .11, .48, '#ded4aa')
   }
-  box(district, -14.8, 1.25, .4, .07, 2.7, .07, '#586668'); box(district, -14.8, 2.6, .4, 1, .67, .08, '#e0e4da')
-  box(district, -14.8, 2.53, .45, .41, .28, .02, '#bb765e')
-  const hoop = new THREE.Mesh(new THREE.TorusGeometry(.23, .025, 4, 12), material('#bd7656')); hoop.rotation.x = Math.PI / 2; hoop.position.set(-14.8, 2.32, .7); district.add(hoop)
-  // A bicycle resting near the sidewalk.
-  for (const x of [-9.3, -8.35]) {
-    const wheel = new THREE.Mesh(new THREE.TorusGeometry(.3, .045, 5, 12), material('#465655')); wheel.position.set(x, .2, 4.25); district.add(wheel)
-  }
-  for (const [x, angle] of [[-9.02, -.55], [-8.65, .55], [-8.42, -.25]]) { const frame = box(district, x, .43, 4.25, .045, .65, .045, '#b66852'); frame.rotation.z = angle }
-  box(district, -8.95, .76, 4.25, .3, .06, .15, '#485553'); box(district, -8.32, .83, 4.25, .25, .04, .05, '#485553')
-  // Merge static scenery by material to keep a rich block inexpensive to render.
+  // Keep static detail cheap to render even when several blocks are visible.
   district.updateMatrixWorld(true)
   const batches = new Map<THREE.Material, THREE.BufferGeometry[]>()
   district.traverse(object => {

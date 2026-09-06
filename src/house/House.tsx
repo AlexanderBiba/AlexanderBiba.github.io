@@ -106,7 +106,7 @@ export default function House() {
       {failed && <section className={styles.fallback}><span aria-hidden="true">⌂</span><h2>3D VIEW UNAVAILABLE</h2><p>Use the menu to read about my work and explore the house.</p><button className={styles.primary} onClick={() => setPanel({ kind: 'guide' })}>OPEN MENU</button></section>}
 
       <nav className={styles.floors} aria-label="House floors">{roomOrder.map(id => <button key={id} aria-label={rooms[id].label} onClick={() => changeRoom(id)} className={room === id ? styles.activeFloor : ''} aria-current={room === id ? 'location' : undefined}><span className={styles.menuArrow} aria-hidden="true">▶</span><span className={styles.floorLabel}>{rooms[id].label}</span><span className={styles.floorNumber}>{rooms[id].number}</span></button>)}</nav>
-      <div className={styles.zoom}><button onClick={() => engine.current?.zoom(.1)} aria-label="Zoom in">+</button><button onClick={() => engine.current?.zoom(-.1)} aria-label="Zoom out">−</button></div>
+      <div className={styles.zoom}><button onClick={() => engine.current?.zoom(-.1)} aria-label="Zoom out">−</button><button onClick={() => engine.current?.zoom(.1)} aria-label="Zoom in">+</button></div>
 
       {ready && !failed && nearby && !panel && !welcome && <button className={styles.interact} onClick={() => engine.current?.interact()}><kbd>E</kbd>{objectLabels[nearby]}</button>}
 
