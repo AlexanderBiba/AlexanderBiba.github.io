@@ -19,10 +19,9 @@ export async function generateMetadata({
   const { slug } = await params
   const [project, settings] = await Promise.all([getProjectBySlug(slug), getSiteSettings()])
 
-  if (!project) return generateNotFoundMetadata('Project', settings)
+  if (!project) return generateNotFoundMetadata(settings)
 
   return generateContentMetadata({
-    title: project.title,
     content: project.content,
     date: project.date,
     slug: project.slug,

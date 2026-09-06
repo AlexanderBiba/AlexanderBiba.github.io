@@ -1,9 +1,8 @@
 {
   "name": "Alex Biba",
-  "aboutBlurb": "I’m a hands-on engineer who turns complex ideas into simple, scalable products. I work across the stack with Node.js, React, and cloud technologies, focusing on clean, maintainable code that’s built to last.",
+  "aboutBlurb": "I build software and tools for AI agents. Currently building Gloss and Runvault, and writing about coding agents, infrastructure, and what it takes to ship.",
   "email": "alexbiba@gmail.com",
   "github": "https://github.com/AlexanderBiba",
   "linkedin": "https://www.linkedin.com/in/alexander-biba-b9794771",
-  "avatar": null,
   "twitter": "https://x.com/alexbibanyc"
 }

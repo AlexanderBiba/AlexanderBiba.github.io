@@ -3,7 +3,6 @@ import { extractDescription } from './description'
 import { SiteSettings } from '../types/blog'
 
 interface GenerateContentMetadataProps {
-  title: string
   content: string
   date: string
   slug: string
@@ -13,7 +12,6 @@ interface GenerateContentMetadataProps {
 }
 
 export function generateContentMetadata({
-  title,
   content,
   date,
   slug,
@@ -33,11 +31,11 @@ export function generateContentMetadata({
     : `https://alexbiba.com${ogImage.startsWith('/') ? ogImage : `/${ogImage}`}`
 
   return {
-    title: `${title} | ${authorName}`,
+    title: authorName,
     description,
     alternates: { canonical: pageUrl },
     openGraph: {
-      title: `${title} | ${authorName}`,
+      title: authorName,
       description,
       url: pageUrl,
       type: 'article',
@@ -48,7 +46,7 @@ export function generateContentMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} | ${authorName}`,
+      title: authorName,
       description,
       images: [ogImageUrl],
     },
@@ -61,11 +59,10 @@ export function generateContentMetadata({
 }
 
 export function generateNotFoundMetadata(
-  contentType: 'Post' | 'Project',
   settings?: SiteSettings | null
 ): Metadata {
   return {
-    title: `${contentType} Not Found | ${settings?.name || 'Alex Biba'}`,
+    title: settings?.name || 'Alex Biba',
   }
 }
 

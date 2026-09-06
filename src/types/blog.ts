@@ -25,7 +25,6 @@ export interface SiteSettings {
   github?: string
   linkedin?: string
   twitter?: string
-  avatar?: { url: string } | null
 }
 
 

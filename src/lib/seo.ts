@@ -74,12 +74,6 @@ export function generateContentSchema(
   }
 }
 
-// Alias for backwards compatibility
-export const generateBlogPostingSchema = (
-  post: { title: string; content: string; date: string; slug: string; ogImage?: string | { url: string } | null },
-  settings?: SiteSettings | null
-) => generateContentSchema({ ...post, image: post.ogImage }, settings ?? null, 'blog')
-
 export function generateCollectionPageSchema(
   settings: SiteSettings | null,
   type: 'blog' | 'projects' = 'blog'

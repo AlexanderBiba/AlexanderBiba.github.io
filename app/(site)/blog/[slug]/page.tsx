@@ -3,8 +3,8 @@ import BlogPost from '../../../../src/components/BlogPost'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
 import Script from 'next/script'
-import { generateBlogPostingSchema } from '../../../../src/lib/seo'
-import { extractDescription } from '../../../../src/lib/description'
+import { generateContentSchema } from '../../../../src/lib/seo'
+import { generateContentMetadata, generateNotFoundMetadata } from '../../../../src/lib/metadata'
 
 export async function generateStaticParams() {
   const posts = await getAllPosts()
@@ -21,55 +21,16 @@ export async function generateMetadata({
   const { slug } = await params
   const [post, settings] = await Promise.all([getPostBySlug(slug), getSiteSettings()])
 
-  if (!post) {
-    return {
-      title: settings ? `Post Not Found | ${settings.name}` : 'Post Not Found',
-    }
-  }
+  if (!post) return generateNotFoundMetadata(settings)
 
-  const description = extractDescription(post.content)
-  const ogImage =
-    (typeof post.ogImage === 'object' && post.ogImage !== null ? post.ogImage.url : post.ogImage) ||
-    '/avatar.png'
-  const ogImageUrl = ogImage.startsWith('http')
-    ? ogImage
-    : `https://alexbiba.com${ogImage.startsWith('/') ? ogImage : `/${ogImage}`}`
-  const postUrl = `https://alexbiba.com/blog/${post.slug}/`
-  const publishedDate = new Date(post.date).toISOString()
-
-  const baseMetadata: Metadata = {
-    title: settings ? `${post.title} | ${settings.name}` : post.title,
-    description,
-    alternates: {
-      canonical: postUrl,
-    },
-    openGraph: {
-      title: settings ? `${post.title} | ${settings.name}` : post.title,
-      description,
-      url: postUrl,
-      type: 'article',
-      images: [ogImageUrl],
-      publishedTime: publishedDate,
-      modifiedTime: publishedDate,
-      ...(settings && { authors: [settings.name] }),
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: settings ? `${post.title} | ${settings.name}` : post.title,
-      description,
-      images: [ogImageUrl],
-    },
-  }
-
-  if (settings) {
-    baseMetadata.other = {
-      'article:author': settings.name,
-      'article:published_time': publishedDate,
-      'article:modified_time': publishedDate,
-    }
-  }
-
-  return baseMetadata
+  return generateContentMetadata({
+    content: post.content,
+    date: post.date,
+    slug: post.slug,
+    image: post.ogImage,
+    settings,
+    baseRoute: 'blog',
+  })
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -80,7 +41,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     notFound()
   }
 
-  const schema = generateBlogPostingSchema(post, settings)
+  const schema = generateContentSchema({ ...post, image: post.ogImage }, settings, 'blog')
 
   return (
     <>

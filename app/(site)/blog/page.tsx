@@ -6,7 +6,7 @@ import { generateCollectionPageSchema } from '../../../src/lib/seo'
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings()
-  const title = settings ? `Writing | ${settings.name}` : 'Writing'
+  const title = settings?.name || 'Alex Biba'
   const description = 'Writing about software and other projects.'
 
   return {

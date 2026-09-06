@@ -6,7 +6,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings()
 
   return {
-    title: settings ? `404 - Page Not Found | ${settings.name}` : '404 - Page Not Found',
+    title: settings?.name || 'Alex Biba',
     description: 'The page you are looking for does not exist.',
     alternates: {
       canonical: 'https://alexbiba.com/404/',

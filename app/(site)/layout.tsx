@@ -4,8 +4,6 @@ import { ReactNode } from 'react'
 import { generatePersonSchema } from '../../src/lib/seo'
 import { getSiteSettings } from '../../src/lib/content'
 
-// Keep classic-site metadata separate from the interactive Play mode.
-export { generateMetadata } from '../../src/lib/siteMetadata'
 export const revalidate = 60
 
 export default async function SiteLayout({ children }: { children: ReactNode }) {
