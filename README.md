@@ -26,7 +26,7 @@ No CMS account, token, or environment variables are required. Deploy the Next.js
 
 To add a post or project, add its Markdown file and matching index entry. Keep existing slugs to preserve incoming links. Entries are displayed newest first.
 
-The repository contains all five published articles, three projects, profile settings, and their images. Both the main site and 3D mode read these local files; no external CMS or credentials are needed.
+The repository contains all five published articles, four projects, profile settings, and their images. Both the main site and 3D mode read these local files; no external CMS or credentials are needed.
 
 ## Verify
 

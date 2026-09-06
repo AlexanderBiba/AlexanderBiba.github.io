@@ -1,28 +1,26 @@
-Like many developers, I’ve come to depend on autocompletion in day-to-day coding. So when GitHub Copilot showed up with context-aware, AI-driven suggestions, it immediately stood out.
+I've leaned on autocomplete for as long as I've been writing code, so when GitHub Copilot came along with suggestions that actually understood the surrounding file, I was interested. But I was late to the "vibe coding" party. When work handed out Cursor licenses I mostly ignored mine. I felt faster doing things the way I always had, and I wasn't going to gamble a deadline on a tool I didn't trust yet.
 
-To be honest, I was a latecomer to the "vibe coding" hype train. When my workplace provided us with Cursor licenses, I was initially skeptical. I felt more productive sticking to my traditional, "old-fashioned" way of writing code, and, frankly, I didn't want to risk my project deadlines on a new tool.
+Paternity leave changed that. With some time and no deadlines, I decided to properly learn how to work with an AI agent instead of just tab-completing. It went better than I expected. Here's what I built and what I ran into.
 
-However, things changed during my paternity leave. I decided to dedicate some time to truly learn how to "vibe code," and I was absolutely blown away. Below is my experience.
+## Project 1: Personal website (React, GitHub Pages)
 
-## Project 1: Personal Website (React/GitHub Pages)
+I started with my [personal website](https://alexanderbiba.github.io/), a small React app on GitHub Pages. The first prompt got me hooked:
 
-My first task was improving my [personal website](https://alexanderbiba.github.io/), a small React application hosted on GitHub Pages. I was hooked from the very first prompt:
-
-> “This is my personal website; it looks a bit dated. Can we make it look modern and cool? Specifically, I would like a retro-futuristic theme and a dark mode/light mode button.”
+> "This is my personal website; it looks a bit dated. Can we make it look modern and cool? Specifically, I would like a retro-futuristic theme and a dark mode/light mode button."
 
 ![](/content/28616e6f80414bcac499e8e07a043c5b606b4d48-2382x1620.png)
 
-The initial result was... okay. A little infantile, perhaps, as "retro-futuristic" wasn't quite my style. But in that moment, I understood the agent's potential. My next prompt was:
+The result was... fine. A bit cartoonish, and "retro-futuristic" turned out not to be my thing. But I could already see where this was going. So I tried again:
 
 > "Actually, make it more professional, minimalistic, and concise, while still surfacing the most relevant information."
 
-I followed up with more specific requests:
+And then kept nudging:
 
 - "this section is unnecessary"
 - "make the experience part card-based"
-- "let’s try a dark style"
+- "let's try a dark style"
 
-After several rounds of back-and-forth, I reached an outcome I was satisfied with. Crucially, the process itself was fun, allowing me to experiment with different styles, prompts, and ideas.
+A few rounds later I had something I liked. What stuck with me was how fun it was. Trying a style, throwing it away, trying another one: that used to be expensive enough that I'd never bother.
 
 |         Before         |         After         |
 | :--------------------: | :-------------------: |
@@ -30,52 +28,52 @@ After several rounds of back-and-forth, I reached an outcome I was satisfied wit
 
 ---
 
-## Project 2: Wordle Clone (React/Firebase)
+## Project 2: Wordle clone (React, Firebase)
 
-The next project was a slightly more complex React/Firebase application, a [Wordle clone](https://alexanderbiba.github.io/wordle/). Here, I moved beyond just style updates (though it definitely got a facelift) to adding substantial new features. The basic app was bare-bones: a daily word, five attempts, all stored in browser cache. With the AI agent, I was able to implement:
+Next up was my [Wordle clone](https://alexanderbiba.github.io/wordle/), a React and Firebase app with a bit more going on. This time I wanted real features, not just a facelift (though it got one of those too). The original was bare-bones: one word a day, five guesses, everything in browser storage. With the agent I added:
 
-- **Profiles:** Sign-in functionality using a Google account.
-- **End-of-Game Statistics:** Metrics like games played, current streak, win percentage, and guess distribution.
-- **Leaderboard:** Displaying leaders across the above statistics.
-- **Information:** Game instructions and an "About" section.
+- **Profiles:** sign in with a Google account.
+- **Stats:** games played, current streak, win rate, guess distribution.
+- **Leaderboard:** rankings across those stats.
+- **Info:** how to play, and an About section.
 
-The agent was even helpful with backend configuration, guiding me on which Firebase settings needed updating to support the new login flow.
+It even walked me through which Firebase settings to change for the new login flow, which I hadn't expected.
 
 |         Before         |         After         |
 | :--------------------: | :-------------------: |
 | ![](/content/851987bcf98eb2b1452f1d3e566b07fbb6387187-1172x1618.png) | ![](/content/bc7035e499014c684a04bad9e825eaed39a6b546-1202x2048.png) |
 
-Despite these awesome features, this is where I started encountering quirks:
+This is also where the cracks started to show:
 
-- **Minor CSS Glitches:** The initial dark mode button worked, but when zoomed out, white bars appeared where the page should have been dark.
-- **Feature Implementation Complexity:** Redesigning the keyboard took several attempts; the agent initially placed it outside the card, then created two keyboards.
-- **Data Inaccuracy:** The end-of-game statistics were buggy; guess distribution consistently showed five guesses regardless of actual data.
-- **Performance Issues:** Moving app storage to Firebase for cross-device state management failed; I had to revert and manually update state only on submit/refresh.
-- **Design Inconsistency:** Every new card, modal, or tab slightly differed in shadow, corner rounding, padding, or margins.
+- **CSS glitches.** Dark mode worked, until I zoomed out and white bars appeared where the dark background should have been.
+- **Fiddly features.** Redesigning the keyboard took several tries. First it landed outside the card, then I had two keyboards.
+- **Wrong data.** The stats were buggy; the guess distribution always showed five guesses no matter what I'd actually played.
+- **Performance.** Moving state to Firebase so it would sync across devices made everything sluggish. I reverted and now only write on submit or refresh.
+- **Design drift.** Every new card, modal, or tab had slightly different shadows, corner radii, padding, or margins.
 
-It seemed every new feature required iterative back-and-forth to get exactly what I wanted.
+Every feature got there eventually, but each one needed a few rounds of back-and-forth.
 
 ---
 
-## Project 3: ESP32 Embedded Wi-Fi Clock (C++/PlatformIO)
+## Project 3: ESP32 Wi-Fi clock (C++, PlatformIO)
 
-My final test was an [ESP32 embedded Wi-Fi clock project](https://github.com/AlexanderBiba/esp32-dotmatrix-wifi-clock). This C++ application, built using PlatformIO, drives a dot matrix display and runs a configuration web page in pure HTML/JS.
+The last test was my [ESP32 dot matrix Wi-Fi clock](https://github.com/AlexanderBiba/esp32-dotmatrix-wifi-clock): C++ on PlatformIO, driving a dot matrix display, with a settings page written in plain HTML and JS.
 
 ![](/content/11488dff0caf77a5a3f5f03d18fbc5446ea56061-2268x1275.jpg)
 
-Using the AI agent here was significantly more challenging. Most feature additions caused breakages requiring manual debugging:
+This was a lot harder. Most changes broke something and I had to go in and debug by hand:
 
-- Incompatible web page changes breaking server configurations.
-- Boot sequence changes preventing the device from turning on.
-- Settings object changes wiping stored data.
-- Style consistency issues on added web elements.
+- Web page changes that no longer matched the server config.
+- Boot sequence edits that stopped the device from turning on at all.
+- Settings struct changes that wiped saved data.
+- Styling on new elements that didn't match the rest of the page.
 
-Despite hurdles, I added some cool features:
+Still, I got a lot done:
 
-- **Revamped Web Page:** Light/dark modes
-- **New Screens:** Countdown, Rain effect (matrix style), IP address display
-- **Display Customization:** Screen order/duration, flip display
-- **System Features:** MDNS configuration, timezone/weather via Open-Meteo API, system info, reboot/factory reset
+- **Web page:** light and dark modes.
+- **New screens:** a countdown, a Matrix-style rain effect, and the device's IP address.
+- **Display options:** screen order and duration, flipped orientation.
+- **System stuff:** mDNS, timezone and weather via the Open-Meteo API, a system info page, reboot and factory reset.
 
 |        Before         |        After         |
 | :-------------------: | :------------------: |
@@ -83,27 +81,25 @@ Despite hurdles, I added some cool features:
 
 ---
 
-## Conclusion
+## What I took away
 
-### Pros and Cons Summary
+**Where it shines:**
 
-**Where it excels:**
+- **Starting from zero.** Bootstrapping a new project or feature is where it feels like magic.
+- **Small, well-defined changes.** Point it at the right file and it usually nails it.
+- **Cleanup.** Removing dead code and unused dependencies, safely.
 
-- **Cold Starts:** Excellent for bootstrapping new projects.
-- **Small, Precise Enhancements:** Handles minor, targeted improvements.
-- **General Cleanup:** Safely removes code and dependencies.
+**Where it struggles:**
 
-**Where it falls short:**
+- **Consistency.** It reinvents patterns unless you tell it exactly which ones to follow.
+- **Big features.** Anything sprawling needs a very specific prompt, and usually a few of them.
+- **Code quality.** The output can be brittle and narrowly fitted to the exact thing you asked for.
 
-- **Maintaining Consistency:** Tends to reinvent patterns unless explicitly instructed.
-- **Large-Scale Enhancements:** Needs very specific prompts for complex features.
-- **Code Quality:** Output can be brittle, narrowly tailored, and non-generic.
+**A few habits that helped:**
 
-### Tips for Using AI Coding Agents Effectively
-
-- **Start Fresh Often:** Long threads can spiral; restart to improve results.
-- **Revert and Rephrase:** Roll back and restate goals rather than patching incrementally.
-- **Provide Clear Context:** Point to specific files or entry points.
-- **Be Extremely Specific:** Clarity directly improves output quality.
-- **Leverage Project Rules:** Use `.cursor/rules` for project-wide consistency.
-- **Enjoy the Process:** Mastering the tool takes experimentation, but it’s rewarding.
+- Start a fresh chat often. Long threads drift.
+- When it goes sideways, revert and rephrase instead of patching the patch.
+- Give it context: name the files and entry points.
+- Be very specific. Vague prompts get vague code.
+- Put project conventions in `.cursor/rules` so you don't have to repeat them.
+- Have fun with it. Getting good at this takes some playing around.

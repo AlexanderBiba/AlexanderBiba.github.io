@@ -1,34 +1,16 @@
-A modern, feature-rich Wordle clone built as a full-stack web application. This project goes beyond the classic game by adding authentication, social competition, real-time data, and long-term player progression.
+A Wordle clone that grew into a full app. It started as the classic game, one five-letter word a day and six tries, with everything stored in the browser. I kept adding to it until it had accounts, stats, and a leaderboard.
 
-### What I Built
-- Daily Wordle gameplay with classic rules (5-letter words, 6 attempts)
-- Google authentication to enable persistent user profiles
-- Achievement system with unlockable badges based on performance and milestones
-- Global leaderboards across multiple metrics
-- Detailed player statistics to track improvement over time
-- Real-time updates using Firestore for live leaderboard synchronization
-- Dark / Light mode with persisted user preferences
-- Progressive Web App (PWA), installable on mobile and desktop
+What's in it:
 
-### Technical Highlights
-- Designed a scalable Firebase data model for users, games, statistics, and achievements
-- Implemented Cloud Functions for secure word validation and leaderboard aggregation
-- Built reusable React components and custom hooks for clean state management
-- Optimized real-time reads and writes while minimizing client-side trust
-- Deployed as a static React application with a fully serverless backend
+- Daily Wordle with the usual rules
+- Google sign-in so your profile follows you across devices
+- Stats over time: games played, streaks, win rate, guess distribution
+- Global leaderboards across several of those metrics
+- Achievements with unlockable badges
+- A live leaderboard backed by Firestore real-time updates
+- Dark and light mode, remembered per user
+- Installable as a PWA on mobile and desktop
 
-### Technology Stack
-- **Frontend:** React 18, SCSS  
-- **Backend:** Firebase (Authentication, Firestore)  
-- **Serverless:** Google Cloud Functions  
-- **Build & Deployment:** Create React App, GitHub Pages  
+It's a React 18 app with SCSS, deployed as a static site on GitHub Pages, with Firebase for auth and Firestore for data. Word validation and leaderboard aggregation run in Cloud Functions so the client isn't trusted with either. A lot of the later features were built with Cursor, which I wrote about in [My Experience with Cursor](/blog/cursor-experience/).
 
-### Why This Project Matters
-This project demonstrates my ability to:
-- Own a feature end-to-end (frontend, backend, and infrastructure)
-- Design real-time, multi-user systems
-- Build production-ready applications with authentication, analytics, and social features
-- Ship polished user experiences, not just demos
-
-### Source Code
-https://github.com/AlexanderBiba/wordle
+Source: [github.com/AlexanderBiba/wordle](https://github.com/AlexanderBiba/wordle)

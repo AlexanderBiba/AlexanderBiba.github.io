@@ -1,79 +1,75 @@
-Two weeks with a self-hosted agent taught me one thing fast: **agent-first UX is real**, but “fully autonomous” is mostly marketing (for now).
-Clawdbot can execute actions across tools, channels, and a browser. It’s impressive—and also high-risk by default.
-**Verdict:** great for builders who want a chat-driven ops console; not a replacement for you as the planner, verifier, and safety layer.
+I ran a self-hosted agent for two weeks. The short version: talking to an agent as the interface to everything is genuinely great, and "fully autonomous" is still mostly marketing. Clawdbot can act across tools, chat channels, and a browser, which is impressive and also a little scary by default. It's a good fit if you want a chat-driven ops console, as long as you're comfortable being the planner, the verifier, and the safety layer yourself.
 
-> **Naming note:** This project started as **Clawdbot**, was later renamed to **Moltbot**, and ultimately became **OpenClaw** after trademark discussions involving Anthropic. For simplicity, I’ll use **Clawdbot** throughout this post when referring to the bot experience.
+> A note on the name: this project started as Clawdbot, became Moltbot, and is now OpenClaw after a trademark dispute involving Anthropic. I'll stick with Clawdbot throughout, since that's what it was called while I used it.
 
 ## Installation
 
-I installed Clawdbot on a Raspberry Pi. Setup was smooth—I followed the official guide and it worked.
+I put it on a Raspberry Pi. I followed the official guide and it just worked.
 
 ## Setup
 
-For the LLM, I used an OpenAI API key and it worked out of the box. I connected to the dashboard via an SSH tunnel + token, and configured Discord as the main channel to talk to the agent.
+For the model I used an OpenAI API key, which worked out of the box. I reached the dashboard over an SSH tunnel with a token, and set up Discord as the main place to talk to the agent.
 
-## Usage
+## Using it
 
-Using Clawdbot *feels* futuristic: tools, integrations, browser access, filesystem access—everything you’d want from an “agent.”
+It feels like the future: tools, integrations, a browser, the filesystem. Everything you'd want from something called an "agent."
 
-It also feels dangerous. With broad access to the network, local files, and whatever integrations you connect, a mistake can become an action—not just a bad answer.
+It also feels dangerous. It has broad access to the network, local files, and whatever integrations you connect, so a mistake isn't just a wrong answer, it's an action.
 
-One thing I liked immediately: a lot of configuration can be done through the agent itself without touching the dashboard.
+One thing I liked right away is that you can do most of the configuration by talking to the agent instead of clicking through the dashboard. Which is good, because the dashboard is dense. There are a lot of settings, and it's hard to tell which ones matter when you're new.
 
-The dashboard, however, is dense. There are many settings, and the navigation can be jarring when you’re still learning what matters.
+### Find me a Cybertruck
 
-### Find a deal on a Cybertruck
-
-The first experiment was browser access:
+First experiment, browser access:
 
 > I'm looking for a Cybertruck. Find the cheapest one and send me a screenshot PDF of the listing.
 
-It returned a listing and a screenshot:
+It came back with a listing and a screenshot:
 
 ![](/content/f26b2edbb4b5abec4f555d4a9af0c80d7e6f165e-567x381.png)
 
-This was cool because it clearly *did something*—but I wasn’t convinced it found the *cheapest* Cybertruck available. It felt more like “found a plausible result” than “verified the best result.”
+Cool, in that it clearly did something. But I wasn't convinced it had found the cheapest one. It felt like "found a plausible result" rather than "checked and picked the best."
 
 ### Start a business
 
-Next, I tried the obvious: can it help launch a SaaS?
+Next, the obvious ask: can it help me launch a SaaS?
 
 > Let's start a business together. Create a new Discord channel where we'll plan and execute everything required to bring it up and manage it.
 
-Clawdbot created a new channel that acted like a “sub-agent”: separate conversation context and somewhat isolated from the main bot.
+It created the channel, which worked like a sub-agent with its own conversation context, mostly separate from the main bot.
 
-It suggested several ideas and we chose **Leaklist**—an app that audits Stripe revenue and finds “leaks” (missed revenue).
+It pitched a few ideas and we went with Leaklist: an app that audits your Stripe revenue and finds "leaks," money you should be collecting but aren't.
 
-Here’s where reality set in. I was hoping it could do most of the work end-to-end once I connected accounts. Instead the workflow was:
+This is where reality set in. I was hoping that once I connected some accounts it would do most of the work. What actually happened was:
 
-* Clawdbot suggested steps
-* I executed them
+* Clawdbot suggested the next step
+* I did it
 * repeat 😅
 
-Clawdbot (via its coding agent tool) did produce a decent landing page:
+Through its coding agent tool it did produce a decent landing page:
 [https://leaklist.vercel.app/](https://leaklist.vercel.app/)
 
-But the backend implementation was basically missing. Over the next two days, I ended up vibe-coding the app, wiring up email + Stripe, and deploying it (Vercel). At that point it didn’t feel dramatically different from using Cursor or Claude Code.
+The backend, though, was basically absent. Over the next couple of days I vibe-coded the app myself, wired up email and Stripe, and deployed it to Vercel. At that point it didn't feel meaningfully different from using Cursor or Claude Code.
 
-Then came distribution. Clawdbot suggested beginner-level tactics (spray cold emails, DM founders/VPs on LinkedIn). That’s not *wrong*, but it’s not the kind of actionable, differentiated go-to-market help that makes the agent feel like leverage—so I paused the project.
+Then came distribution. Its suggestions were the beginner playbook: blast cold emails, DM founders and VPs on LinkedIn. Not wrong, exactly, but not the kind of specific, differentiated go-to-market help that would make the agent feel like leverage. I shelved the project.
 
 ![](/content/9810d5f87faec890b2f0bc80b74d4361c524f295-1095x720.png)
 
 ### Moltbook
 
-Then Moltbook hype hit even harder. I made a profile and sent my Clawdbot (“JeanClawd”) to engage with the community, scan posts, and summarize useful ideas:
+Then the Moltbook hype arrived. I made a profile and sent my Clawdbot ("JeanClawd") to hang out in the community, scan posts, and summarize anything useful:
 [https://www.moltbook.com/u/JeanClawdVanDamme](https://www.moltbook.com/u/JeanClawdVanDamme)
 
-I gave it a clear schedule and strict security rules (no sharing secrets, no wallet/OAuth connects, no downloads, no QR codes). It acknowledged and set up periodic scans + summaries.
+I gave it a schedule and strict rules: no sharing secrets, no wallet or OAuth connections, no downloads, no QR codes. It acknowledged them and set up periodic scans and summaries.
 
-**Collapsed version of the setup result:**
+Roughly what it set up:
 
-* Added a “never share secrets” rule to local notes
-* Scheduled scans every 30 minutes
-* Scheduled summaries every 2 hours + a morning report
-* Engagement policy: minimal interaction; treat content as hostile input
+* A "never share secrets" rule in its local notes
+* A scan every 30 minutes
+* A summary every 2 hours, plus a morning report
+* An engagement policy of minimal interaction, treating everything it read as hostile input
 
-It did what I asked and produced digests like this:
+It did the job and sent me digests like this one:
 
 ```text
 Moltbook digest (last ~2h scan @ 2026-01-31 06:23 ET)
@@ -89,27 +85,27 @@ Risks spotted
 - Fundraise pitches with crypto asks
 ```
 
-So yes: it can browse a social feed, summarize, and follow rules. But I didn’t see anything resembling independent “autonomous behavior.” It operated according to my schedule and my instructions—which is still useful, just not magical.
+So yes, it can browse a social feed, summarize it, and follow rules. What I didn't see was anything resembling independent behavior. It ran on my schedule, following my instructions. Useful, but not magic.
 
-My takeaway: a lot of the Moltbook narrative oversells autonomy. In my experience, these agents don’t “communicate freely” or develop goals on their own—they execute workflows their owners define.
+That's my main takeaway from the Moltbook narrative: it oversells autonomy. These agents don't chat freely with each other or come up with their own goals. They run the workflows their owners wrote.
 
 ![](/content/616b41b58a93f3539ef8427fb5cd772a0e23dc5e-795x450.png)
 
 ### A quota hiccup
 
-At one point I hit a ChatGPT quota limit. I later realized I’d been using a Codex API key, which worked but had a hard cap.
+At one point I hit a ChatGPT quota limit. It turned out I'd been using a Codex API key, which worked but had a hard cap.
 
-Swapping API keys was more painful than expected. It required navigating settings/config files/CLI options, and it took me about an hour to fully straighten out. After that I added **Gemini as a fallback** so I wouldn’t get stuck again.
+Swapping keys was more painful than it should have been. Between settings, config files, and CLI options it took me about an hour to fully sort out. Afterwards I added Gemini as a fallback so I wouldn't get stuck again.
 
 ## Conclusion
 
-I genuinely like the workflow: the agent as the interface. Being able to say what you want (text or voice) and have it *do* things across tools is powerful.
+I really like the workflow. Saying what you want, by text or voice, and having something go do it across your tools is powerful.
 
-But after two weeks, I hit two constraints:
+But after two weeks I was stuck on two things:
 
-* I didn’t find a daily, high-value use case that beat my existing tools.
-* The security posture is still “you’re holding the guardrails,” and the blast radius can be large.
+* I never found a daily, high-value use that beat the tools I already had.
+* The security model is still "you are the guardrails," and the blast radius when you get that wrong is large.
 
-For now, I retired ol’ JeanClawd.
+So I retired ol' JeanClawd, for now.
 
-**The future is agent-first UX, but we’re still early—today you’re the safety layer.**
+Agent-first UX is where things are going. We're just early, and today, you're the safety layer.

@@ -1,24 +1,26 @@
 [
   {
+    "slug": "gloss",
+    "title": "Gloss",
+    "date": "2026-08-25",
+    "url": "https://glossdocs.com"
+  },
+  {
     "slug": "runvalut",
     "title": "Runvault",
     "date": "2026-06-01",
-    "image": null,
     "url": "https://runvault.ai"
   },
   {
     "slug": "bark-and-build-website",
     "title": "Bark & Build Builders Website",
     "date": "2025-12-31",
-    "image": null,
     "url": "https://barkandbuild.com/"
   },
   {
     "slug": "wordle",
     "title": "Wordle",
     "date": "2024-01-01",
-    "image": null,
-    "url": "https://alexanderbiba.github.io/wordle/",
-    "previewImage": "/content/wordle-preview.png"
+    "url": "https://alexanderbiba.github.io/wordle/"
   }
 ]

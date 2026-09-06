@@ -1,111 +1,89 @@
-I’ve been using Firebase for a few years, building several web apps on top of it. Firebase is excellent for moving fast: it gives you a backend, auth, storage, and hosting in one place so you can focus on the product. What I’ve valued most:
+I've been building on Firebase for a few years. It's great for moving fast: database, auth, storage, and hosting in one place, so you can get on with the actual product. The things I liked most:
 
-- Easy-to-use, scalable document database (Firestore)  
-- Storage with a built-in CDN  
-- Hosting with a deployment pipeline directly connected to GitHub  
+- Firestore, a document database that's easy to use and scales without you thinking about it
+- Storage with a CDN in front of it
+- Hosting that deploys straight from GitHub
 
-It makes it effortless to build a React or Next.js app without thinking about infrastructure. And because it runs on Google Cloud, scaling is never the bottleneck.
+You can put together a React or Next.js app on it without touching infrastructure, and because it's Google Cloud underneath, scale is never the problem.
 
-But after building applications for clients, I ran into concerns that pushed me to rethink the stack.
-
----
-
-## The Problem With Firebase for Client Projects
-
-Firebase is amazing for side projects, prototypes, and internal tools. The issues surface when you deploy something for a client—and you need predictable, controllable costs.
-
-**The biggest issue: Firebase has no hard billing cap.**
-
-- On the Blaze (pay-as-you-go) plan, you can set budget alerts, but alerts do *not* stop usage.  
-- A traffic spike, infinite loop, misconfigured client, or [DDOS attack](https://www.reddit.com/r/googlecloud/comments/1jzoi8v/ddos_attack_facing_100000_bill/?utm_source=chatgpt.com) can push your bill up with no automatic safeguard.  
-- This is a long-standing limitation across Firebase and Google Cloud.
-
-There are workaround scripts that attempt to shut down billing accounts when alerts trigger, but they’re unreliable and can break production systems. For client apps, that level of financial risk is hard to justify.
-
-This led me to look for alternatives where cost exposure is easier to control.
+Then I started building apps for clients, and one thing began to bother me.
 
 ---
 
-## Why Supabase Was a Better Fit
+## The problem: there's no off switch
 
-Supabase is a managed backend built on Postgres and AWS (plus Fly.io for some compute), offering SQL databases, storage, authentication, edge functions, and more. A few advantages stood out immediately:
+Firebase is perfect for side projects, prototypes, and internal tools. The trouble starts when you ship something for a client and need the bill to be predictable.
 
-### **Hard Spend Cap**
-Supabase allows you to enable a spend cap on paid plans.  
-When enabled:
+Firebase has no hard billing cap. On the Blaze pay-as-you-go plan you can set budget alerts, but an alert doesn't stop anything. A traffic spike, an infinite loop, a misconfigured client, or a [DDoS attack](https://www.reddit.com/r/googlecloud/comments/1jzoi8v/ddos_attack_facing_100000_bill/) can run the bill up with nothing in the way. This has been a known gap in Firebase and Google Cloud for years.
 
-- Your project stops scaling past its plan limits  
-- Certain usage categories stop rather than charging more  
-- You avoid runaway billing
+There are scripts floating around that try to shut off the billing account when an alert fires, but they're unreliable and can take production down with them. For a client app, that's a hard risk to explain, let alone justify.
 
-It’s not a global cap on *every* possible expansion (e.g., manually added add-ons), but it dramatically reduces exposure compared to Firebase.
-
-### **Postgres**
-A full relational database with:
-
-- schemas  
-- constraints  
-- migrations  
-- SQL  
-- predictable queries  
-
-This is a significant upgrade over a NoSQL document database once your data model grows.
-
-### **Storage With SQL-Style Policies**
-Supabase storage sits behind Postgres row-level policies, making the rules easier to reason about than Firebase’s custom rules language.
-
-### **Smooth Onboarding**
-The free tier lets you launch two projects with storage and a proper Postgres instance—ideal for early development.
+So I went looking for something where I could actually bound the cost.
 
 ---
 
-## Migration Experience
+## Why Supabase
 
-Migrating my client apps was straightforward. Most of the data involved media files (images, audio, videos), which mapped cleanly into Supabase buckets. And in the future, postgres makes relational data, backups, and exports easier using standard tools like `pg_dump`.
+Supabase is a managed backend on Postgres, running on AWS (with Fly.io for some compute). You get a SQL database, storage, auth, edge functions, and so on. A few things won me over quickly.
 
-You do need to design schemas and think relationally—but that’s part of what makes the system more robust long-term.
+### A real spend cap
+
+On paid plans you can turn on a spend cap. When it's on, the project stops scaling past what the plan includes, and metered resources stop rather than charging more. It doesn't cover absolutely everything (add-ons you enable by hand, for instance), but compared to Firebase it's night and day.
+
+### Postgres
+
+A proper relational database: schemas, constraints, migrations, SQL, predictable queries. Once a data model grows past a handful of collections, this is a big step up from a document store.
+
+### Storage with SQL-style policies
+
+Storage sits behind Postgres row-level security, so access rules live in the same place as everything else and are much easier to reason about than Firebase's rules language.
+
+### An easy start
+
+The free tier gives you two projects with storage and a real Postgres instance, which is plenty for early development.
 
 ---
 
-## Deployments With Vercel
+## The migration
 
-I paired Supabase with Vercel for deployments. The experience has been smooth:
+Moving my client apps over was easier than I feared. Most of the data was media (images, audio, video), which mapped straight onto Supabase buckets. And having Postgres underneath means backups and exports are just `pg_dump` and friends.
 
-- Automatic deployments on every GitHub push  
-- Preview URLs on pull requests  
-- Straightforward environment variable management  
-- Built-in serverless and edge functions  
-- A generous free tier that works well for multiple small projects  
-
-Vercel + Supabase is a natural fit, especially for Next.js apps. The stack is modern, scalable, and easier to reason about than Firebase once you move past prototypes.
+You do have to design a schema and think relationally instead of tossing documents into a collection, but that discipline is part of why the result holds up better over time.
 
 ---
 
-## Firebase vs. Supabase + Vercel: Feature Comparison
+## Deploying with Vercel
+
+For hosting I paired Supabase with Vercel, and it's been smooth:
+
+- Every push to GitHub deploys
+- Every pull request gets a preview URL
+- Environment variables are simple to manage
+- Serverless and edge functions are built in
+- The free tier is generous enough for several small projects
+
+For Next.js apps in particular the two fit together well. Once you're past the prototype stage, the combination is easier to reason about than Firebase.
+
+---
+
+## Side by side
 
 | Feature | Firebase | Supabase | Vercel |
 |--------|----------|----------|--------|
 | **Database** | Firestore (NoSQL) | Postgres | N/A |
-| **Hard Billing Cap** | ❌ | ✔️ (for capped resources) | ✔️ (per-project limits) |
+| **Hard billing cap** | ❌ | ✔️ (for capped resources) | ✔️ (per-project limits) |
 | **Auth** | ✔️ | ✔️ | Third-party or custom |
 | **Storage** | ✔️ CDN | ✔️ with SQL policies | Integrations / edge storage |
 | **Functions** | Cloud Functions | Edge Functions | Serverless / Edge Functions |
-| **Git Deploy** | Partial | N/A | ✔️ |
-| **Pricing Predictability** | Low | High (with spend cap enabled) | High |
+| **Git deploy** | Partial | N/A | ✔️ |
+| **Pricing predictability** | Low | High (with spend cap on) | High |
 
 ---
 
-## Conclusion
+## Where I landed
 
-Firebase is fantastic for rapid prototyping and personal apps. But for client projects, the lack of a true hard billing cap introduces financial risk that’s difficult to justify.
+Firebase is still my pick for quick prototypes and personal apps. For client work, the missing billing cap is a risk I'm no longer willing to carry.
 
-Supabase + Vercel offers:
+Supabase and Vercel give me a cost structure I can predict, a real relational database, good developer ergonomics, and a deploy workflow I don't have to think about. You still need to read the fine print on what the spend cap covers, but overall it's a much safer setup for production.
 
-- more predictable cost structure,  
-- a powerful relational database,  
-- strong developer ergonomics, and  
-- modern deployment workflows.
-
-You still need to understand how Supabase’s spend caps work and what’s covered, but overall it’s a safer, more controllable setup for production work.
-
-If you’re building real applications for clients or planning to scale, the Vercel + Supabase combination has been a reliable choice so far.
+If you're building for clients, or planning to scale, it's been a solid choice for me so far.
