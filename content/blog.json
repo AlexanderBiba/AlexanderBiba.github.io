@@ -9,7 +9,7 @@
   },
   {
     "slug": "clawdbot-impression",
-    "title": "I've used clawdbot/openclaw for 2 weeks and here is my impression",
+    "title": "Two weeks with a self-hosted agent",
     "date": "2026-02-25",
     "ogImage": {
       "url": "/content/616b41b58a93f3539ef8427fb5cd772a0e23dc5e-795x450.png"
@@ -17,19 +17,19 @@
   },
   {
     "slug": "firebase-vercel-supabase",
-    "title": "Moving from Firebase to Vercel + Supabase",
+    "title": "Firebase has no off switch",
     "date": "2025-12-09",
     "ogImage": null
   },
   {
     "slug": "cursor-experience",
-    "title": "My Experience with Cursor",
+    "title": "I finally tried vibe coding",
     "date": "2025-11-02",
     "ogImage": null
   },
   {
     "slug": "welcome-post",
-    "title": "Welcome to My Blog",
+    "title": "Hello, world",
     "date": "2025-11-01",
     "ogImage": null
   }

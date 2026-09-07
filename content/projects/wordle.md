@@ -11,6 +11,6 @@ What's in it:
 - Dark and light mode, remembered per user
 - Installable as a PWA on mobile and desktop
 
-It's a React 18 app with SCSS, deployed as a static site on GitHub Pages, with Firebase for auth and Firestore for data. Word validation and leaderboard aggregation run in Cloud Functions so the client isn't trusted with either. A lot of the later features were built with Cursor, which I wrote about in [My Experience with Cursor](/blog/cursor-experience/).
+It's a React 18 app with SCSS, deployed as a static site on GitHub Pages, with Firebase for auth and Firestore for data. Word validation and leaderboard aggregation run in Cloud Functions so the client isn't trusted with either. A lot of the later features were built with Cursor, which I wrote about in [I finally tried vibe coding](/blog/cursor-experience/).
 
 Source: [github.com/AlexanderBiba/wordle](https://github.com/AlexanderBiba/wordle)

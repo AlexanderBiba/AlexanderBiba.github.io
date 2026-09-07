@@ -17,13 +17,60 @@
         }
     }
 }
+.navbar .content-container { align-items: center; }
+
+// The controller is easy to miss, so a grey disc keeps swelling out from
+// behind it and fading, like a pulsing map marker. Two pulses, half a
+// cycle apart, so one is always in flight but they arrive unhurried. The link is a square so the
+// pulse is centred on the glyph itself rather than on its taller line box.
 .navbar .explore-link {
     margin-left: auto;
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: .4rem;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    line-height: 1;
     font-weight: 400;
     white-space: nowrap;
+
+    &:hover { text-decoration: none; }
+
+    span {
+        position: relative;
+        z-index: 1;
+        display: inline-block;
+        transition: transform .2s ease;
+    }
+
+    &::before,
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: rgba(120, 120, 120, .35);
+        opacity: 0;
+        pointer-events: none;
+        animation: gamepad-pulse 6s ease-out infinite;
+    }
+    &::after { animation-delay: 3s; }
+
+    &:hover span,
+    &:focus-visible span { transform: scale(1.15); }
+}
+
+@keyframes gamepad-pulse {
+    // Each pulse takes the first half of the cycle; the rest is quiet.
+    0%   { transform: scale(.45); opacity: 1; }
+    50%, 100% { transform: scale(2.6); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .navbar .explore-link::before,
+    .navbar .explore-link::after { display: none; }
+    .navbar .explore-link span { transition: none; }
 }
 
 @media (max-width: 480px) {
