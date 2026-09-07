@@ -93,12 +93,13 @@ function table(parent: THREE.Object3D, x: number, z: number, w: number, d: numbe
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(g, sx * (w / 2 - .15), height / 2, sz * (d / 2 - .13), .14, height, .14, C.edge)
   return g
 }
-function chessTable(parent: THREE.Object3D, x: number, z: number) {
-  const g = table(parent, x, z, 2, 2); g.name = 'chess-table'
-  box(g, 0, 1.15, 0, 1.76, .05, 1.76, C.edge)
-  const square = .2, boardTop = 1.19
+function chessBoard(parent: THREE.Object3D) {
+  const g = group(parent); g.name = 'chess-board'
+  g.position.y = .965; g.scale.setScalar(.6)
+  box(g, 0, .025, 0, 1.76, .05, 1.76, C.edge)
+  const square = .2, boardTop = .065
   for (let rank = 0; rank < 8; rank++) for (let file = 0; file < 8; file++) {
-    box(g, (file - 3.5) * square, 1.18, (rank - 3.5) * square, square, .02, square, (rank + file) % 2 ? '#54746a' : '#f1dfb7')
+    box(g, (file - 3.5) * square, .055, (rank - 3.5) * square, square, .02, square, (rank + file) % 2 ? '#54746a' : '#f1dfb7')
   }
   const backRank = ['rook', 'knight', 'bishop', 'queen', 'king', 'bishop', 'knight', 'rook']
   for (const side of [0, 1]) for (const rank of [0, 1]) for (let file = 0; file < 8; file++) {
@@ -168,7 +169,7 @@ export function buildWorld(room: RoomId): World {
     marker.position.set(g.position.x, height, g.position.z); marker.userData.hotspot = id; root.add(marker)
     const zones: Record<string, { w: number; d: number }> = {
       baby: { w: .85, d: .9 }, wife: { w: .65, d: .5 }, dog: { w: 1, d: 1 },
-      chess: { w: 2, d: 2 },
+      chess: { w: 2.4, d: 2.45 },
       stairsDown: { w: 1.85, d: 1.95 }, stairsUp: { w: 1.85, d: 1.95 },
       tesla: { w: 2.3, d: 4.1 }, outside: { w: 1.4, d: .3 }, inside: { w: 1.4, d: .3 },
     }
@@ -553,13 +554,13 @@ export function buildWorld(room: RoomId): World {
     box(garden, 0, .22, 0, 3.2, .43, 1.05, C.edge); box(garden, 0, .45, 0, 2.99, .05, .87, '#6e6246')
     for (let i = 0; i < 8; i++) { const x = -1.28 + i * .36; cylinder(garden, x, .71, Math.sin(i) * .2, .025, .025, .55, '#4b7c48'); for (let j = 0; j < 5; j++) ball(garden, x + Math.sin(j * 1.26) * .1, 1 + Math.cos(j * 1.26) * .09, Math.sin(i) * .2, .095, i % 2 ? '#dfab79' : '#efd99b', 0); ball(garden, x, 1, Math.sin(i) * .2 + .05, .06, C.yellow, 0) }
     obstacle(2.7, -3.6, 3.2, 1.05); hot('garden', garden, { x: 2.7, z: -2.35 }, 1.65)
-    const picnic = group(root, -3.35, 1.32)
+    const picnic = group(root, -3.35, 1.32); picnic.name = 'picnic-table'
     box(picnic, 0, .86, 0, 2.3, .16, 1.3, C.lightWood)
     for (let i = 1; i < 5; i++) box(picnic, 0, .952, -.65 + i * .26, 2.3, .02, .012, C.edge)
     for (const z of [-1, 1]) { box(picnic, 0, .46, z, 2.4, .15, .39, C.lightWood); for (const x of [-.8, .8]) box(picnic, x, .26, z, .15, .5, .17, C.edge) }
     for (const x of [-.79, .79]) { const leg = box(picnic, x, .43, 0, .13, .9, 1.3, C.edge); leg.rotation.z = x > 0 ? -.2 : .2 }
-    plant(picnic, 0, .95, 0, .48); cylinder(picnic, .67, 1.1, .15, .1, .08, .27, C.cream)
-    obstacle(-3.35, 1.32, 2.4, 2.45); hot('picnic', picnic, { x: -1.5, z: 1.3 }, 1.7)
+    chessBoard(picnic); cylinder(picnic, .85, 1.1, .15, .1, .08, .27, C.cream)
+    obstacle(-3.35, 1.32, 2.4, 2.45); hot('chess', picnic, { x: -1.5, z: 1.3 }, 1.7)
     const tesla = group(root, 3.32, .75); tesla.rotation.y = -.1
     box(root, 3.35, .017, 2.025, 3.8, .035, 7.55, '#b5b4a1')
     tesla.name = 'electric-sedan'
@@ -621,8 +622,6 @@ export function buildWorld(room: RoomId): World {
     for (const x of [-.24, .24]) box(grill, x, .38, 0, .055, .7, .055, '#65716c')
     obstacle(-5.1, -1.15, .75, .6)
     const hose = new THREE.Mesh(new THREE.TorusGeometry(.26, .045, 5, 14), material('#527c63')); hose.position.set(.1, .8, -2.16); root.add(hose)
-    const chess = chessTable(root, -2.7, 3.85)
-    obstacle(-2.7, 3.85, 2, 2); hot('chess', chess, { x: -1.2, z: 3.85 }, 1.95)
     ball(root, .75, .14, 3.65, .14, '#d5b45f', 1)
     const wateringCan = group(root, 4.65, -3.05)
     cylinder(wateringCan, 0, .2, 0, .17, .19, .37, '#749da1', 8)

@@ -26,7 +26,6 @@ export const stories: Record<string, Story> = {
   tesla: { id: 'tesla', title: 'ALEX', text: 'Charged up and ready to go.' },
   garden: { id: 'garden', title: 'ALEX', text: 'Our backyard. Good for a break from the screen.' },
   chess: { id: 'chess', title: 'ALEX', text: 'Up for a game? Find me on Chess.com.', links: [{ label: 'My Chess.com profile', href: profile.chess }] },
-  picnic: { id: 'picnic', title: 'ALEX', text: 'Have something in mind? Send me a message.', links: [{ label: 'X (Twitter)', href: profile.twitter }, { label: 'LinkedIn', href: profile.linkedin }, { label: 'GitHub', href: profile.github }, { label: 'Email', href: `mailto:${profile.email}` }] },
   inside: { id: 'inside', title: 'BACK DOOR', text: '', destination: 'downstairs' },
 }
 export const collectibleIds = Object.values(stories).filter(s => !s.destination).map(s => s.id)

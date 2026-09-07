@@ -12,9 +12,9 @@ const houseFont = localFont({ src: '../../public/fonts/VT323-Regular.ttf', varia
 const contents: Record<RoomId, string[]> = {
   upstairs: ['bed', 'laptop', 'printer', 'guitar', 'bookshelf', 'stairsDown'],
   downstairs: ['wife', 'baby', 'dog', 'fridge', 'photos', 'stairsUp', 'outside'],
-  backyard: ['tesla', 'garden', 'picnic', 'chess', 'inside'],
+  backyard: ['tesla', 'garden', 'chess', 'inside'],
 }
-const objectLabels: Record<string, string> = { bed: 'About me', laptop: 'Laptop', printer: '3D printer', guitar: 'Guitar', bookshelf: 'Bookshelf', stairsDown: 'Go downstairs', wife: 'Wife', baby: 'Baby', dog: 'Lola', photos: 'Family photos', fridge: 'Fridge', stairsUp: 'Go upstairs', outside: 'Go outside', tesla: 'Car', garden: 'Flower garden', picnic: 'Picnic table', chess: 'Chess table', inside: 'Go inside' }
+const objectLabels: Record<string, string> = { bed: 'About me', laptop: 'Laptop', printer: '3D printer', guitar: 'Guitar', bookshelf: 'Bookshelf', stairsDown: 'Go downstairs', wife: 'Wife', baby: 'Baby', dog: 'Lola', photos: 'Family photos', fridge: 'Fridge', stairsUp: 'Go upstairs', outside: 'Go outside', tesla: 'Car', garden: 'Flower garden', chess: 'Chess board', inside: 'Go inside' }
 const roomOrder: RoomId[] = ['upstairs', 'downstairs', 'backyard']
 type Panel = { kind: 'story'; id: string } | { kind: 'guide' } | { kind: 'help' } | null
 
