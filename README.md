@@ -16,6 +16,7 @@ No CMS account, token, or environment variables are required. Deploy the Next.js
 ## Edit content
 
 - `content/site.json`: name, bio, and social links, shared by the homepage and house.
+  Update `chess` for the Play app’s Chess.com profile and `youtube3dPrinting` for the printer’s YouTube channel. Both accept full URLs; no code changes are needed when a username changes.
 - `content/blog.json`: blog titles, slugs, dates, and cover images.
 - `content/blog/<slug>.md`: each article’s Markdown body.
 - `content/projects.json`: project titles, slugs, dates, links, and preview images.

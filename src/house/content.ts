@@ -11,7 +11,7 @@ export const rooms: Record<RoomId, { title: string; label: string; number: strin
 }
 export const stories: Record<string, Story> = {
   laptop: { id: 'laptop', title: 'ALEX', text: 'I build software. Here are a few things I’ve shipped.', links: projects.map(p => ({ label: p.title, href: p.url || `/projects/${p.slug}/` })) },
-  printer: { id: 'printer', title: 'ALEX', text: 'I like making things I can actually hold.' },
+  printer: { id: 'printer', title: 'ALEX', text: 'I like making things I can actually hold. Watch my 3D prints on YouTube.', links: [{ label: 'My 3D printing channel', href: profile.youtube3dPrinting }] },
   guitar: { id: 'guitar', title: 'GUITAR', text: 'What should we play next?' },
   bookshelf: { id: 'bookshelf', title: 'ALEX', text: 'I write about what I’m building and learning.', links: posts.map(p => ({ label: p.title, href: `/blog/${p.slug}/` })) },
   bed: { id: 'bed', title: 'ALEX', text: 'I’m Alex. Engineer, husband, dad. This is my place.', links: [{ label: 'X (Twitter)', href: profile.twitter }, { label: 'LinkedIn', href: profile.linkedin }, { label: 'GitHub', href: profile.github }, { label: 'Email', href: `mailto:${profile.email}` }] },
@@ -25,6 +25,7 @@ export const stories: Record<string, Story> = {
   outside: { id: 'outside', title: 'BACK DOOR', text: '', destination: 'backyard' },
   tesla: { id: 'tesla', title: 'ALEX', text: 'Charged up and ready to go.' },
   garden: { id: 'garden', title: 'ALEX', text: 'Our backyard. Good for a break from the screen.' },
+  chess: { id: 'chess', title: 'ALEX', text: 'Up for a game? Find me on Chess.com.', links: [{ label: 'My Chess.com profile', href: profile.chess }] },
   picnic: { id: 'picnic', title: 'ALEX', text: 'Have something in mind? Send me a message.', links: [{ label: 'X (Twitter)', href: profile.twitter }, { label: 'LinkedIn', href: profile.linkedin }, { label: 'GitHub', href: profile.github }, { label: 'Email', href: `mailto:${profile.email}` }] },
   inside: { id: 'inside', title: 'BACK DOOR', text: '', destination: 'downstairs' },
 }

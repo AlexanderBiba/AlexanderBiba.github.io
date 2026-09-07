@@ -93,6 +93,44 @@ function table(parent: THREE.Object3D, x: number, z: number, w: number, d: numbe
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(g, sx * (w / 2 - .15), height / 2, sz * (d / 2 - .13), .14, height, .14, C.edge)
   return g
 }
+function chessTable(parent: THREE.Object3D, x: number, z: number) {
+  const g = table(parent, x, z, 2, 2); g.name = 'chess-table'
+  box(g, 0, 1.15, 0, 1.76, .05, 1.76, C.edge)
+  const square = .2, boardTop = 1.19
+  for (let rank = 0; rank < 8; rank++) for (let file = 0; file < 8; file++) {
+    box(g, (file - 3.5) * square, 1.18, (rank - 3.5) * square, square, .02, square, (rank + file) % 2 ? '#54746a' : '#f1dfb7')
+  }
+  const backRank = ['rook', 'knight', 'bishop', 'queen', 'king', 'bishop', 'knight', 'rook']
+  for (const side of [0, 1]) for (const rank of [0, 1]) for (let file = 0; file < 8; file++) {
+    const kind = rank ? 'pawn' : backRank[file], color = side ? '#fff3d8' : '#35444b'
+    const piece = group(g, (file - 3.5) * square, ((side ? 7 - rank : rank) - 3.5) * square)
+    piece.position.y = boardTop; piece.rotation.y = side ? Math.PI : 0; piece.name = `${side ? 'white' : 'black'}-${kind}`
+    cylinder(piece, 0, .018, 0, .068, .078, .036, color, 8)
+    const height = kind === 'pawn' ? .09 : .15
+    cylinder(piece, 0, .035 + height / 2, 0, .032, .055, height, color, 8)
+    const crown = .035 + height
+    if (kind === 'rook') {
+      cylinder(piece, 0, crown, 0, .064, .048, .045, color, 8)
+      for (const dx of [-.04, .04]) for (const dz of [-.04, .04]) box(piece, dx, crown + .035, dz, .035, .04, .035, color)
+    } else if (kind === 'knight') {
+      const neck = box(piece, 0, crown, 0, .06, .11, .065, color); neck.rotation.x = -.3
+      box(piece, 0, crown + .04, .035, .065, .05, .095, color)
+      for (const dx of [-.022, .022]) box(piece, dx, crown + .08, -.006, .02, .04, .025, color)
+    } else {
+      ball(piece, 0, crown + .025, 0, kind === 'pawn' ? .049 : .056, color, 0)
+      if (kind === 'bishop') cylinder(piece, 0, crown + .08, 0, 0, .039, .07, color, 8)
+      if (kind === 'queen') {
+        cylinder(piece, 0, crown + .073, 0, .06, .034, .045, color, 8)
+        ball(piece, 0, crown + .11, 0, .026, color, 0)
+      }
+      if (kind === 'king') {
+        box(piece, 0, crown + .105, 0, .025, .105, .025, color)
+        box(piece, 0, crown + .12, 0, .075, .023, .025, color)
+      }
+    }
+  }
+  return g
+}
 export function person(parent: THREE.Object3D, x: number, z: number, shirt = '#d78652', hair: string | null = null) {
   const g = group(parent, x, z), body = group(g), leftLeg = group(body, -.15), rightLeg = group(body, .15)
   box(leftLeg, 0, .26, 0, .24, .45, .26, '#435967'); box(rightLeg, 0, .26, 0, .24, .45, .26, '#435967')
@@ -130,6 +168,7 @@ export function buildWorld(room: RoomId): World {
     marker.position.set(g.position.x, height, g.position.z); marker.userData.hotspot = id; root.add(marker)
     const zones: Record<string, { w: number; d: number }> = {
       baby: { w: .85, d: .9 }, wife: { w: .65, d: .5 }, dog: { w: 1, d: 1 },
+      chess: { w: 2, d: 2 },
       stairsDown: { w: 1.85, d: 1.95 }, stairsUp: { w: 1.85, d: 1.95 },
       tesla: { w: 2.3, d: 4.1 }, outside: { w: 1.4, d: .3 }, inside: { w: 1.4, d: .3 },
     }
@@ -582,10 +621,8 @@ export function buildWorld(room: RoomId): World {
     for (const x of [-.24, .24]) box(grill, x, .38, 0, .055, .7, .055, '#65716c')
     obstacle(-5.1, -1.15, .75, .6)
     const hose = new THREE.Mesh(new THREE.TorusGeometry(.26, .045, 5, 14), material('#527c63')); hose.position.set(.1, .8, -2.16); root.add(hose)
-    const birdbath = group(root, -2.7, 3.85); birdbath.name = 'birdbath'
-    cylinder(birdbath, 0, .38, 0, .09, .18, .76, '#b7b7a2', 8)
-    cylinder(birdbath, 0, .77, 0, .35, .16, .16, '#cecab1', 10); cylinder(birdbath, 0, .855, 0, .29, .29, .015, '#8bb6b5', 10)
-    obstacle(-2.7, 3.85, .7, .7)
+    const chess = chessTable(root, -2.7, 3.85)
+    obstacle(-2.7, 3.85, 2, 2); hot('chess', chess, { x: -1.2, z: 3.85 }, 1.95)
     ball(root, .75, .14, 3.65, .14, '#d5b45f', 1)
     const wateringCan = group(root, 4.65, -3.05)
     cylinder(wateringCan, 0, .2, 0, .17, .19, .37, '#749da1', 8)
