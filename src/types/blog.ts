@@ -10,7 +10,7 @@ export interface PortfolioProject {
   slug: string
   title: string
   date: string
-  image: { url: string } | string | null
+  image?: { url: string } | string | null
   url?: string
   content: string
   // Fallback illustration (e.g. the og:image of the linked site) used when no
@@ -26,5 +26,4 @@ export interface SiteSettings {
   linkedin?: string
   twitter?: string
 }
-
 
