@@ -29,6 +29,15 @@ To add a post or project, add its Markdown file and matching index entry. Keep e
 
 The repository contains all five published articles, four projects, profile settings, and their images. Both the main site and 3D mode read these local files; no external CMS or credentials are needed.
 
+## Analytics
+
+Page views go to Vercel Web Analytics and PostHog (EU cloud), both without cookies or any storage on the visitor's device, so no cookie banner is needed. PostHog setup lives in `src/components/PostHogAnalytics.tsx`:
+
+- Paste the PostHog project API key into `POSTHOG_KEY`. Analytics stays off while it's empty, and only `alexbiba.com` reports.
+- In PostHog project settings, turn on **Cookieless server hash mode** (otherwise PostHog drops the events) and **Discard client IP data**.
+- Visitors who send Do Not Track or Global Privacy Control never load PostHog.
+- Don't call `posthog.identify()` or turn on session replay; either would need consent. `/privacy/` describes the setup and should change if this does.
+
 ## Verify
 
 ```sh
