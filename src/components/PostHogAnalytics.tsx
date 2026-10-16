@@ -32,8 +32,8 @@ export default function PostHogAnalytics() {
     import('posthog-js').then(({ default: posthog }) => {
       if (posthog.__loaded) return
       posthog.init(POSTHOG_KEY, {
-        api_host: 'https://eu.i.posthog.com',
-        ui_host: 'https://eu.posthog.com',
+        api_host: 'https://us.i.posthog.com',
+        ui_host: 'https://us.posthog.com',
         defaults: '2026-08-30',
         cookieless_mode: 'always',
         persistence: 'memory',

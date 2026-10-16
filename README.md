@@ -31,7 +31,7 @@ The repository contains all five published articles, four projects, profile sett
 
 ## Analytics
 
-Page views go to Vercel Web Analytics and PostHog (EU cloud), both without cookies or any storage on the visitor's device, so no cookie banner is needed. PostHog setup lives in `src/components/PostHogAnalytics.tsx`:
+Page views go to Vercel Web Analytics and PostHog (US cloud), both without cookies or any storage on the visitor's device, so no cookie banner is needed. PostHog setup lives in `src/components/PostHogAnalytics.tsx`:
 
 - Paste the PostHog project API key into `POSTHOG_KEY`. Analytics stays off while it's empty, and only `alexbiba.com` reports.
 - In PostHog project settings, turn on **Cookieless server hash mode** (otherwise PostHog drops the events) and **Discard client IP data**.

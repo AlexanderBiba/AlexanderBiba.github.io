@@ -19,9 +19,10 @@ export default async function PrivacyPage() {
       <h2>Analytics</h2>
       <p>
         To see which pages get read, the site sends anonymous page views to{' '}
-        <a href="https://posthog.com/privacy">PostHog</a> (hosted in the EU) and{' '}
-        <a href="https://vercel.com/docs/analytics/privacy-policy">Vercel Web Analytics</a>. Neither sets
-        cookies or uses local storage. Visits are counted with a short-lived hash that resets every day,
+        <a href="https://vercel.com/docs/analytics/privacy-policy">Vercel Web Analytics</a> and{' '}
+        <a href="https://posthog.com/privacy">PostHog</a> (hosted in the US). PostHog also records how
+        far each page is scrolled and which links and buttons are clicked, but never what you type.
+        Neither sets cookies or uses local storage. Visits are counted with a short-lived hash that resets every day,
         so you can’t be recognised across days, and IP addresses aren’t stored. The data is only used
         for aggregate statistics about this site and is never sold or shared for advertising.
       </p>
