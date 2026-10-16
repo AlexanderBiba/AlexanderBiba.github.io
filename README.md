@@ -33,7 +33,7 @@ The repository contains all five published articles, four projects, profile sett
 
 Page views go to Vercel Web Analytics and PostHog (US cloud), both without cookies or any storage on the visitor's device, so no cookie banner is needed. PostHog setup lives in `src/components/PostHogAnalytics.tsx`:
 
-- Paste the PostHog project API key into `POSTHOG_KEY`. Analytics stays off while it's empty, and only `alexbiba.com` reports.
+- `POSTHOG_KEY` holds the public PostHog project API key. Analytics stays off if it's empty, and only `alexbiba.com` reports.
 - In PostHog project settings, turn on **Cookieless server hash mode** (otherwise PostHog drops the events) and **Discard client IP data**.
 - Visitors who send Do Not Track or Global Privacy Control never load PostHog.
 - Don't call `posthog.identify()` or turn on session replay; either would need consent. `/privacy/` describes the setup and should change if this does.

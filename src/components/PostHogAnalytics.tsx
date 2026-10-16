@@ -2,10 +2,9 @@
 
 import { useEffect } from 'react'
 
-// TODO: paste the PostHog project API key here (PostHog → Project settings →
-// "Project API key", starts with `phc_`). It is public by design, so committing
-// it is fine. Analytics stays off while this is empty.
-const POSTHOG_KEY = ''
+// PostHog project API key (PostHog → Settings → Project). It is public by
+// design, so committing it is fine. Analytics stays off if this is emptied.
+const POSTHOG_KEY = 'phc_wLMgc6KxxzXpa8cEJkYo3kXxpoWJ4PkSnaXjpkZr3gj3'
 
 // Only the live site reports, so local dev and preview deployments don't
 // pollute the numbers.
