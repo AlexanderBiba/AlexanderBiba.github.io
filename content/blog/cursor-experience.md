@@ -10,11 +10,11 @@ I started with my [personal website](https://alexanderbiba.github.io/), a small 
 
 ![](/content/28616e6f80414bcac499e8e07a043c5b606b4d48-2382x1620.png)
 
-The result was ok. A bit cartoonish, and it turns out retro-futuristic isn't really my thing, but I could see the potential. So I tried again:
+The result was ok, a bit cartoonish, and it turns out retro-futuristic isn't really my thing. So I tried again:
 
 > "Actually, make it more professional, minimalistic, and concise, while still surfacing the most relevant information."
 
-and kept nudging it with stuff like "this section is unnecessary", "make the experience part card-based" and "let's try a dark style". A few rounds later I had something I liked. The best part was how fun it was, trying a style, throwing it away and trying another one used to take so long that I'd never bother.
+and kept nudging it with stuff like "this section is unnecessary" and "let's try a dark style". A few rounds later I had something I liked. The best part was how fun it was, trying a style, throwing it away and trying another one used to take so long that I'd never bother.
 
 |         Before         |         After         |
 | :--------------------: | :-------------------: |
@@ -22,14 +22,7 @@ and kept nudging it with stuff like "this section is unnecessary", "make the exp
 
 ## Wordle clone (React, Firebase)
 
-Next was my [Wordle clone](https://alexanderbiba.github.io/wordle/), a React and Firebase app with a bit more going on. This time I wanted real features and not just a facelift (though it got one of those too). The original was pretty bare, one word a day, five guesses, everything saved in browser storage. With the agent I added:
-
-- profiles, so you can sign in with your Google account
-- stats: games played, current streak, win rate and guess distribution
-- a leaderboard ranking those stats
-- an info page with how to play and an About section
-
-It even walked me through which Firebase settings to change for the new login flow, which I didn't expect.
+Next was my [Wordle clone](https://alexanderbiba.github.io/wordle/), a React and Firebase app. The original was pretty bare, one word a day, five guesses, everything saved in browser storage. With the agent I added Google sign-in, stats (games played, streak, win rate and guess distribution), a leaderboard and an info page. It even walked me through which Firebase settings to change for the new login flow, which I didn't expect.
 
 |         Before         |         After         |
 | :--------------------: | :-------------------: |
@@ -39,9 +32,9 @@ But this is also where I started running into problems:
 
 - Dark mode worked until I zoomed out, and then white bars showed up where the dark background should be.
 - Redesigning the keyboard took a bunch of tries. First it ended up outside the card, then I had two keyboards.
-- The stats were buggy, the guess distribution always showed five guesses no matter how I'd actually played.
+- The guess distribution always showed five guesses no matter how I'd actually played.
 - Moving state to Firebase so it syncs across devices made everything really slow, so I reverted that and now it only writes on submit or refresh.
-- Every new card, modal or tab came out with slightly different shadows, corner radius, padding or margins.
+- Every new card, modal or tab came out with slightly different shadows, padding or margins.
 
 Everything got there eventually, but each feature took a few rounds of back and forth.
 
@@ -51,14 +44,7 @@ The last one was my [ESP32 dot matrix Wi-Fi clock](https://github.com/AlexanderB
 
 ![](/content/11488dff0caf77a5a3f5f03d18fbc5446ea56061-2268x1275.jpg)
 
-This one was a lot harder. Most changes broke something and I had to go in and debug it myself. Web page changes stopped matching the server config, edits to the boot sequence stopped the device from turning on at all, changes to the settings struct wiped the saved data, and new elements on the page were styled differently from everything else.
-
-Still, I got a lot done:
-
-- light and dark modes for the web page
-- new screens: a countdown, a Matrix style rain effect and the device's IP address
-- display options for screen order, duration and flipping the orientation
-- mDNS, timezone and weather from the Open-Meteo API, a system info page, reboot and factory reset
+This one was a lot harder. Most changes broke something and I had to debug it myself. Web page changes stopped matching the server config, edits to the boot sequence stopped the device from turning on at all, and changes to the settings struct wiped the saved data. Still, I got a lot done: light and dark modes for the web page, new screens like a countdown and a Matrix style rain effect, options for screen order and orientation, and mDNS, timezone and weather from the Open-Meteo API, plus reboot and factory reset.
 
 |        Before         |        After         |
 | :-------------------: | :------------------: |
@@ -66,15 +52,12 @@ Still, I got a lot done:
 
 ## What I learned
 
-It's best at starting from zero, bootstrapping a new project or feature is where it's most impressive. It's also good at small, well-defined changes if you point it at the right file, and at cleaning up dead code and unused dependencies without breaking anything.
-
-Where it struggles is consistency, it keeps reinventing patterns unless you tell it exactly which ones to follow. Big features need a very specific prompt, usually more than one, and the code it writes can be brittle and fit only the exact thing you asked for.
+It's best at starting from zero, bootstrapping a new project or feature is where it's most impressive. It's also good at small, well-defined changes if you point it at the right file, and at cleaning up dead code and unused dependencies. Where it struggles is consistency, it keeps reinventing patterns unless you tell it exactly which ones to follow, and big features need a very specific prompt, usually more than one. The code it writes can also be brittle and fit only the exact thing you asked for.
 
 A few things that helped me:
 
 - Start a fresh chat often, long threads drift.
 - When it goes sideways, revert and rephrase instead of patching the patch.
-- Give it context, name the files and entry points.
-- Be very specific, vague prompts get vague code.
+- Name the files and entry points, and be very specific. Vague prompts get vague code.
 - Put your project's conventions in `.cursor/rules` so you don't have to repeat them.
 - Have fun with it, getting good at this takes some playing around.
