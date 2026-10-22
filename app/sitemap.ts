@@ -27,6 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.8,
     },
+    { url: `${baseUrl}/privacy/`, changeFrequency: 'yearly', priority: 0.2 },
   ]
   
   // Get all blog posts and portfolio projects
