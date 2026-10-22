@@ -1,6 +1,10 @@
-This started as a Wordle clone and kept growing. At first it was just the classic game, one five-letter word a day and six tries, with everything saved in the browser. I kept adding stuff until it had accounts, stats and a leaderboard.
+A Wordle clone with accounts, stats and a leaderboard.
 
-What's in it now:
+It started as the classic game, one five-letter word a day and six tries, with everything saved in the browser. I kept adding stuff until it grew into a full app, and a lot of the later features I built with Cursor.
+
+Word validation and leaderboard aggregation run in Cloud Functions, so the client can't fake either one.
+
+What's in it:
 
 - daily Wordle with the usual rules
 - Google sign-in so your profile follows you across devices
@@ -11,6 +15,8 @@ What's in it now:
 - dark and light mode, remembered per user
 - installable as a PWA on mobile and desktop
 
-It's a React 18 app with SCSS, deployed as a static site on GitHub Pages, with Firebase for auth and Firestore for data. Word validation and leaderboard aggregation run in Cloud Functions so the client can't fake either one. A lot of the later features I built with Cursor, which I wrote about in [I finally tried vibe coding](/blog/cursor-experience/).
+It's built with React 18 and SCSS, with Firebase for auth and Firestore for data. It runs as a static site on GitHub Pages.
+
+Related post: [I finally tried vibe coding](/blog/cursor-experience/)
 
 Source: [github.com/AlexanderBiba/wordle](https://github.com/AlexanderBiba/wordle)
