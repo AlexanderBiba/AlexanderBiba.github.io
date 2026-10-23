@@ -1,5 +1,13 @@
 [
   {
+    "slug": "modern-development-lifecycle",
+    "title": "The modern development lifecycle",
+    "date": "2026-10-23",
+    "ogImage": {
+      "url": "/content/967b9e2d44f35f1a46495c5932cc9f45ca066339-1600x960.png"
+    }
+  },
+  {
     "slug": "runvault-development",
     "title": "Shipping a SaaS from my phone",
     "date": "2026-05-30",
