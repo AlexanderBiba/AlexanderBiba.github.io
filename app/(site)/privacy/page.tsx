@@ -19,16 +19,17 @@ export default async function PrivacyPage() {
       <h2>Analytics</h2>
       <p>
         To see which pages get read, the site sends anonymous page views to{' '}
-        <a href="https://vercel.com/docs/analytics/privacy-policy">Vercel Web Analytics</a> and{' '}
+        <a href="https://www.cloudflare.com/web-analytics/">Cloudflare Web Analytics</a> and{' '}
         <a href="https://posthog.com/privacy">PostHog</a> (hosted in the US). PostHog also records how
         far each page is scrolled and which links and buttons are clicked, but never what you type.
-        Neither sets cookies or uses local storage. Visits are counted with a short-lived hash that resets every day,
-        so you can’t be recognised across days, and IP addresses aren’t stored. The data is only used
-        for aggregate statistics about this site and is never sold or shared for advertising.
+        Neither sets cookies or uses local storage. Cloudflare doesn’t try to tell visitors apart at all,
+        and PostHog counts visits with a short-lived hash that resets every day, so you can’t be
+        recognised across days, and doesn’t store IP addresses. The data is only used for aggregate
+        statistics about this site and is never sold or shared for advertising.
       </p>
       <p>
-        If your browser sends a Do Not Track or Global Privacy Control signal, PostHog isn’t loaded at
-        all.
+        If your browser sends a Do Not Track or Global Privacy Control signal, neither of them is loaded
+        at all.
       </p>
       {settings.email && (
         <>

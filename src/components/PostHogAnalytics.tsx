@@ -1,23 +1,11 @@
 'use client'
 
 import { useEffect } from 'react'
+import { isProductionHost, visitorOptedOut } from '../lib/privacy'
 
 // PostHog project API key (PostHog → Settings → Project). It is public by
 // design, so committing it is fine. Analytics stays off if this is emptied.
 const POSTHOG_KEY = 'phc_wLMgc6KxxzXpa8cEJkYo3kXxpoWJ4PkSnaXjpkZr3gj3'
-
-// Only the live site reports, so local dev and preview deployments don't
-// pollute the numbers.
-const PRODUCTION_HOSTS = ['alexbiba.com', 'www.alexbiba.com']
-
-// Cookieless mode ignores `respect_dnt`, so Do Not Track and Global Privacy
-// Control are honoured here by never loading PostHog at all.
-function visitorOptedOut() {
-  const nav = navigator as Navigator & { globalPrivacyControl?: boolean; msDoNotTrack?: string }
-  const win = window as Window & { doNotTrack?: string }
-  return [nav.doNotTrack, nav.msDoNotTrack, win.doNotTrack].some((v) => v === '1' || v === 'yes')
-    || nav.globalPrivacyControl === true
-}
 
 // Privacy-first analytics that needs no cookie banner: nothing is stored on the
 // visitor's device (no cookies, localStorage or sessionStorage), visitors are
@@ -26,7 +14,7 @@ function visitorOptedOut() {
 // the PostHog project settings, otherwise PostHog drops these events.
 export default function PostHogAnalytics() {
   useEffect(() => {
-    if (!POSTHOG_KEY || !PRODUCTION_HOSTS.includes(window.location.hostname) || visitorOptedOut()) return
+    if (!POSTHOG_KEY || !isProductionHost() || visitorOptedOut()) return
 
     import('posthog-js').then(({ default: posthog }) => {
       if (posthog.__loaded) return

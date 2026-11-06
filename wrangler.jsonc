@@ -1,0 +1,17 @@
+// Cloudflare Worker that serves the static export in `out/` (no server code).
+// Workers Builds runs `npm run build` and then `npx wrangler deploy` on every push.
+// alexbiba.com is attached as a custom domain in the Cloudflare dashboard.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "alexbiba",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./out",
+    // Serves out/404.html with a 404 status for unknown paths.
+    "not_found_handling": "404-page",
+    // Matches `trailingSlash: true`: /blog redirects to /blog/.
+    "html_handling": "auto-trailing-slash"
+  },
+  "workers_dev": true,
+  "preview_urls": true
+}

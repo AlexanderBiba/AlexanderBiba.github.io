@@ -1,6 +1,6 @@
 import '../src/index.scss'
 import { ReactNode } from 'react'
-import { Analytics } from '@vercel/analytics/next'
+import CloudflareAnalytics from '../src/components/CloudflareAnalytics'
 import PostHogAnalytics from '../src/components/PostHogAnalytics'
 
 export { generateMetadata } from '../src/lib/siteMetadata'
@@ -10,7 +10,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         {children}
-        <Analytics />
+        <CloudflareAnalytics />
         <PostHogAnalytics />
       </body>
     </html>

@@ -6,12 +6,18 @@ Live: https://alexbiba.com/
 
 ```sh
 npm ci
-npm run dev
-npm run build
-npm start
+npm run dev     # Next.js dev server
+npm run build   # static export into out/
+npm start       # serves out/ locally the way Cloudflare does (wrangler dev)
 ```
 
-No CMS account, token, or environment variables are required. Deploy the Next.js app using the usual GitHub-connected hosting workflow; publishing content means committing changes and deploying a new build.
+No CMS account, token, or environment variables are required.
+
+## Deploy
+
+The site is a fully static Next.js export (`output: 'export'` in `next.config.js`), so there's no server: Next.js features that need one (ISR, route handlers, middleware, the image optimizer) won't work here. A Cloudflare Worker with only static assets serves `out/`, configured in `wrangler.jsonc`, with `out/404.html` for unknown paths.
+
+Workers Builds is connected to this repo, builds with `npm run build` and deploys with `npx wrangler deploy` on every push to `master`. Other branches get preview URLs on workers.dev. alexbiba.com is attached to the `alexbiba` Worker as a custom domain in the Cloudflare dashboard, and www.alexbiba.com redirects to it with a Cloudflare redirect rule. Publishing content means committing to `master`.
 
 ## Edit content
 
@@ -31,11 +37,14 @@ The repository contains all five published articles, four projects, profile sett
 
 ## Analytics
 
-Page views go to Vercel Web Analytics and PostHog (US cloud), both without cookies or any storage on the visitor's device, so no cookie banner is needed. PostHog setup lives in `src/components/PostHogAnalytics.tsx`:
+Page views go to Cloudflare Web Analytics and PostHog (US cloud), both without cookies or any storage on the visitor's device, so no cookie banner is needed. Both only load on `alexbiba.com` and never for visitors who send Do Not Track or Global Privacy Control (`src/lib/privacy.ts`).
 
-- `POSTHOG_KEY` holds the public PostHog project API key. Analytics stays off if it's empty, and only `alexbiba.com` reports.
+Cloudflare Web Analytics setup lives in `src/components/CloudflareAnalytics.tsx`. `CLOUDFLARE_ANALYTICS_TOKEN` holds the public site token from the Cloudflare dashboard (Web Analytics, alexbiba.com). It stays off while the token is empty. Don't also turn on the dashboard's automatic beacon injection for the site, or page views get counted twice and Do Not Track is ignored.
+
+PostHog setup lives in `src/components/PostHogAnalytics.tsx`:
+
+- `POSTHOG_KEY` holds the public PostHog project API key. Analytics stays off if it's empty.
 - The PostHog project (shared with Gloss) must keep **Cookieless tracking** on under Settings > Web analytics, otherwise PostHog drops these events. Cookieless processing also strips IP addresses and user agents from the site's events, so the project-wide **Discard client IP data** setting isn't needed.
-- Visitors who send Do Not Track or Global Privacy Control never load PostHog.
 - Don't call `posthog.identify()` or turn on session replay; either would need consent. `/privacy/` describes the setup and should change if this does.
 
 ## Verify
