@@ -3,24 +3,28 @@
     "slug": "gloss",
     "title": "Gloss",
     "date": "2026-08-25",
-    "url": "https://glossdocs.com"
+    "url": "https://glossdocs.com",
+    "image": "/content/works-gloss.png"
   },
   {
     "slug": "runvalut",
     "title": "Runvault",
     "date": "2026-06-01",
-    "url": "https://runvault.ai"
+    "url": "https://runvault.ai",
+    "image": "/content/works-runvault.png"
   },
   {
     "slug": "bark-and-build-website",
     "title": "Bark & Build Builders Website",
     "date": "2025-12-31",
-    "url": "https://barkandbuild.com/"
+    "url": "https://barkandbuild.com/",
+    "image": "/content/works-bark-and-build.png"
   },
   {
     "slug": "wordle",
     "title": "Wordle",
     "date": "2024-01-01",
-    "url": "https://alexanderbiba.github.io/wordle/"
+    "url": "https://alexanderbiba.github.io/wordle/",
+    "image": "/content/works-wordle.png"
   }
 ]

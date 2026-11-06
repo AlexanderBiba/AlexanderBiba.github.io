@@ -35,7 +35,7 @@ export default function WorkList({ works }: WorkListProps) {
               {work.image && (
                 <Link href={`/works/${work.slug}`} className="work-screenshot">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={work.image} alt={`Screenshot of ${work.title}`} loading="lazy" />
+                  <img src={work.image} alt={`Screenshot of ${work.title}`} width={1440} height={900} loading="lazy" />
                 </Link>
               )}
               <p className="post-excerpt">{extractDescription(work.content)}</p>

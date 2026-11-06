@@ -66,7 +66,7 @@ export default function ContentPost({
             className="work-screenshot"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={coverImage} alt={`Screenshot of ${title}`} />
+            <img src={coverImage} alt={`Screenshot of ${title}`} width={1440} height={900} />
           </a>
         )}
         <div className="markdown-content">
