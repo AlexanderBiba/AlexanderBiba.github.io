@@ -1,4 +1,5 @@
 import Navbar from '../../src/components/Navbar'
+import Link from 'next/link'
 import Script from 'next/script'
 import { ReactNode } from 'react'
 import { generatePersonSchema } from '../../src/lib/seo'
@@ -21,6 +22,11 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
       )}
       <Navbar />
       {children}
+      <footer className="site-footer">
+        <div className="content-container">
+          <Link href="/privacy/">Privacy</Link>
+        </div>
+      </footer>
     </div>
   )
 }
