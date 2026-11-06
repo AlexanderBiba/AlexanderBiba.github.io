@@ -12,9 +12,9 @@ interface PortfolioListProps {
 export default function PortfolioList({ projects }: PortfolioListProps) {
   return (
     <div className="content-container">
-      <h1>Projects</h1>
+      <h1>Work</h1>
       {projects.length === 0 ? (
-        <p>No projects available yet.</p>
+        <p>Nothing here yet.</p>
       ) : (
         <ul className="post-list">
           {projects.map((project) => {

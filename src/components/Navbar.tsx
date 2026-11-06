@@ -7,7 +7,7 @@ export default function Navbar() {
             <div className="content-container">
                 <Link href="/">Home</Link>
                 <Link href="/blog">Blog</Link>
-                <Link href="/projects">Projects</Link>
+                <Link href="/projects">Work</Link>
                 <Link href="/play/" className="explore-link" aria-label="Enter 3D mode" title="Enter 3D mode"><span aria-hidden="true">🎮</span></Link>
             </div>
         </nav>
