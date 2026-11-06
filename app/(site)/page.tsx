@@ -1,13 +1,13 @@
 import About from '../../src/components/About'
 import BlogPreview from '../../src/components/BlogPreview'
-import ProjectsPreview from '../../src/components/ProjectsPreview'
+import WorksPreview from '../../src/components/WorksPreview'
 import SocialMedia from '../../src/components/SocialMedia'
-import { getLatestPosts, getLatestProjects, getSiteSettings } from '../../src/lib/content'
+import { getLatestPosts, getLatestWorks, getSiteSettings } from '../../src/lib/content'
 
 export default async function HomePage() {
-  const [posts, projects, siteSettings] = await Promise.all([
+  const [posts, works, siteSettings] = await Promise.all([
     getLatestPosts(3),
-    getLatestProjects(3),
+    getLatestWorks(3),
     getSiteSettings(),
   ])
 
@@ -15,7 +15,7 @@ export default async function HomePage() {
     <>
       <About settings={siteSettings} />
       <BlogPreview posts={posts} />
-      <ProjectsPreview projects={projects} />
+      <WorksPreview works={works} />
       <SocialMedia settings={siteSettings} />
     </>
   )

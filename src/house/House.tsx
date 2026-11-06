@@ -146,7 +146,7 @@ export default function House() {
           </>}
         </div>
       </dialog>
-      <noscript><div className={styles.fallback}>This house needs JavaScript to explore. <a href="/">Visit Alex’s classic website</a> for projects, writing, and contact details.</div></noscript>
+      <noscript><div className={styles.fallback}>This house needs JavaScript to explore. <a href="/">Visit Alex’s classic website</a> for things Alex has built, writing, and contact details.</div></noscript>
     </main>
   )
 }

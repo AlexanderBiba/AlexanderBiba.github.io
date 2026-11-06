@@ -148,34 +148,33 @@
     }
 }
 
-// Project-specific styles
-.project-image,
-.project-cover-image {
-    margin: 1.5rem 0;
-    border-radius: 8px;
-    overflow: hidden;
+// Things I've built: live site link and screenshot
+.work-site-link {
+    margin: 0.25rem 0 0;
 
     a {
-        display: block;
-        cursor: zoom-in;
+        color: #0070f3;
+        text-decoration: none;
+        font-weight: 500;
+
+        &:hover {
+            color: #0051cc;
+            text-decoration: underline;
+        }
     }
+}
+
+.work-screenshot {
+    display: block;
+    margin: 1rem 0 1.5rem;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    overflow: hidden;
 
     img {
         width: 100%;
         height: auto;
         display: block;
-    }
-}
-
-.project-link-block a {
-    color: #0070f3;
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.2s ease;
-    
-    &:hover {
-        color: #0051cc;
-        text-decoration: underline;
     }
 }
 

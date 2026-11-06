@@ -1,8 +1,8 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { formatPostDate } from '../lib/date'
+import { siteLabel } from '../lib/siteLabel'
 import '../Blog.scss'
 
 interface ImageProps {
@@ -16,8 +16,8 @@ interface ContentPostProps {
   date: string
   content: string
   backLink: { href: string; label: string }
-  coverImage?: { url: string } | string | null
-  coverImageFallback?: string | null
+  // Screenshot shown above the body; links to externalLink when there is one.
+  coverImage?: string | null
   externalLink?: string
   imageFolder?: string
 }
@@ -28,7 +28,6 @@ export default function ContentPost({
   content,
   backLink,
   coverImage,
-  coverImageFallback,
   externalLink,
   imageFolder = 'images',
 }: ContentPostProps) {
@@ -45,9 +44,6 @@ export default function ContentPost({
     )
   }
 
-  const primaryCover = coverImage && typeof coverImage !== 'string' ? coverImage : null
-  const fallbackCover = !primaryCover ? coverImageFallback : null
-
   return (
     <div className="content-container">
       <article>
@@ -55,34 +51,23 @@ export default function ContentPost({
         <time dateTime={date} className="post-date post-date--block">
           {formatPostDate(date)}
         </time>
-        {primaryCover && (
-          <div className="project-cover-image">
-            <a href={primaryCover.url} target="_blank" rel="noopener noreferrer">
-              <Image
-                src={primaryCover.url}
-                alt={title}
-                width={1200}
-                height={675}
-                style={{ width: '100%', height: 'auto' }}
-                priority
-              />
-            </a>
-          </div>
-        )}
-        {fallbackCover && (
-          <div className="project-cover-image">
-            <a href={fallbackCover} target="_blank" rel="noopener noreferrer">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={fallbackCover} alt={title} />
-            </a>
-          </div>
-        )}
         {externalLink && (
-          <p className="project-link-block">
+          <p className="work-site-link">
             <a href={externalLink} target="_blank" rel="noopener noreferrer">
-              Visit site →
+              {siteLabel(externalLink)}
             </a>
           </p>
+        )}
+        {coverImage && (
+          <a
+            href={externalLink || coverImage}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="work-screenshot"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={coverImage} alt={`Screenshot of ${title}`} />
+          </a>
         )}
         <div className="markdown-content">
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ img: imageRenderer }}>

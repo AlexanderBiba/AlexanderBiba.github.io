@@ -1,0 +1,4 @@
+# The section moved from /projects/ to /works/. Cloudflare reads this file from out/.
+/projects /works/ 301
+/projects/ /works/ 301
+/projects/* /works/:splat 301

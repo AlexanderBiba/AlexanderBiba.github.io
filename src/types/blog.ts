@@ -6,16 +6,15 @@ export interface BlogPost {
   content: string
 }
 
-export interface PortfolioProject {
+export interface Work {
   slug: string
   title: string
   date: string
-  image?: { url: string } | string | null
+  // The live site the entry links to.
   url?: string
+  // Screenshot of the site, a local path under /content/.
+  image?: string | null
   content: string
-  // Fallback illustration (e.g. the og:image of the linked site) used when no
-  // cover image is provided. A local path or null.
-  previewImage?: string | null
 }
 
 export interface SiteSettings {
