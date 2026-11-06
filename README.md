@@ -17,7 +17,7 @@ No CMS account, token, or environment variables are required.
 
 The site is a fully static Next.js export (`output: 'export'` in `next.config.js`), so there's no server: Next.js features that need one (ISR, route handlers, middleware, the image optimizer) won't work here. A Cloudflare Worker with only static assets serves `out/`, configured in `wrangler.jsonc`, with `out/404.html` for unknown paths.
 
-Workers Builds is connected to this repo, builds with `npm run build` and deploys with `npx wrangler deploy` on every push to `master`. Other branches get preview URLs on workers.dev. alexbiba.com is attached to the `alexbiba` Worker as a custom domain in the Cloudflare dashboard, and www.alexbiba.com redirects to it with a Cloudflare redirect rule. Publishing content means committing to `master`.
+Workers Builds is connected to this repo, builds with `npm run build` and deploys with `npx wrangler deploy` on every push to `master`. Other branches get preview URLs on workers.dev. alexbiba.com is attached to the `alexanderbiba-github-io` Worker as a custom domain in the Cloudflare dashboard, and www.alexbiba.com redirects to it with a Cloudflare redirect rule. Publishing content means committing to `master`.
 
 ## Edit content
 

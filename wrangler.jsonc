@@ -3,7 +3,7 @@
 // alexbiba.com is attached as a custom domain in the Cloudflare dashboard.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "alexbiba",
+  "name": "alexanderbiba-github-io",
   "compatibility_date": "2026-11-01",
   "assets": {
     "directory": "./out",
