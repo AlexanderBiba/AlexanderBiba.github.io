@@ -1,4 +1,4 @@
-This is the process I'm using right now at the startup I work at to take a feature from a ticket to production, with Claude doing most of the writing and most of my own time going into the plan, before any code exists.
+This is the process I'm using right now to take a feature from a ticket to production, at the startup I work at and on my own projects, [Runvault](https://runvault.ai) and [Gloss](https://glossdocs.com). Claude does most of the writing and most of my own time goes into the plan, before any code exists.
 
 ![](/content/967b9e2d44f35f1a46495c5932cc9f45ca066339-1600x960.png)
 
