@@ -80,7 +80,7 @@ export default function ContentPost({
         {externalLink && (
           <p className="project-link-block">
             <a href={externalLink} target="_blank" rel="noopener noreferrer">
-              View Project →
+              Visit site →
             </a>
           </p>
         )}

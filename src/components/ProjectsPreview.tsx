@@ -15,7 +15,7 @@ export default function ProjectsPreview({ projects }: ProjectsPreviewProps) {
 
   return (
     <div className="content-container">
-      <h2>Projects</h2>
+      <h2>Things I’ve built</h2>
       <ul className="post-list">
         {projects.map((project) => (
           <li key={project.slug} className="post-list-item">
@@ -30,7 +30,7 @@ export default function ProjectsPreview({ projects }: ProjectsPreviewProps) {
         ))}
       </ul>
       <p>
-        <Link href="/projects">All projects →</Link>
+        <Link href="/projects">See all →</Link>
       </p>
     </div>
   )
