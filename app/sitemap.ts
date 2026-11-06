@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next'
-import { getAllPosts, getAllProjects } from '../src/lib/content'
+import { getAllPosts, getAllWorks } from '../src/lib/content'
 
 export const dynamic = 'force-static'
 
@@ -22,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/projects/`,
+      url: `${baseUrl}/works/`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,
@@ -30,8 +30,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/privacy/`, changeFrequency: 'yearly', priority: 0.2 },
   ]
   
-  // Get all blog posts and portfolio projects
-  const [posts, projects] = await Promise.all([getAllPosts(), getAllProjects()])
+  // Get all blog posts and works
+  const [posts, works] = await Promise.all([getAllPosts(), getAllWorks()])
   
   // Blog post pages
   const blogPages: MetadataRoute.Sitemap = posts.map((post) => {
@@ -44,17 +44,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   })
   
-  // Project pages
-  const projectPages: MetadataRoute.Sitemap = projects.map((project) => {
-    const projectDate = new Date(project.date)
+  // Work pages
+  const workPages: MetadataRoute.Sitemap = works.map((work) => {
+    const workDate = new Date(work.date)
     return {
-      url: `${baseUrl}/projects/${project.slug}/`,
-      lastModified: projectDate,
+      url: `${baseUrl}/works/${work.slug}/`,
+      lastModified: workDate,
       changeFrequency: 'monthly' as const,
       priority: 0.7,
     }
   })
 
-  return [...staticPages, ...blogPages, ...projectPages]
+  return [...staticPages, ...blogPages, ...workPages]
 }
 

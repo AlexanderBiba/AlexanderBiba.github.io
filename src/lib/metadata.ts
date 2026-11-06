@@ -8,7 +8,7 @@ interface GenerateContentMetadataProps {
   slug: string
   image?: string | { url: string } | null
   settings?: SiteSettings | null
-  baseRoute: 'blog' | 'projects'
+  baseRoute: 'blog' | 'works'
 }
 
 export function generateContentMetadata({

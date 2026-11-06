@@ -1,6 +1,6 @@
 # Alex’s house
 
-An experimental Three.js route at `/play/`. The classic homepage, blog, and projects remain in place. All content lives in the repository.
+An experimental Three.js route at `/play/`. The classic homepage, blog, and works remain in place. All content lives in the repository.
 
 ## Run
 
@@ -18,7 +18,7 @@ Run `npm run dev`, then open `http://localhost:3000/play/` (use the port printed
 
 ## Content and models
 
-- The shared `content/` indexes provide profile, project, and writing data; article bodies are Markdown and images live in `public/content/`.
+- The shared `content/` indexes provide profile, works, and writing data; article bodies are Markdown and images live in `public/content/`.
 - `content.ts` contains the room names and object stories. Alex is bald with a brown beard; Lola is a sandy Labrador–German Shepherd mix. Personal names, appearances, and details can be customized here and in `world.ts`.
 - `world.ts` builds the three original low-poly dioramas, characters, furniture, and animations from Three.js geometry. No remote model or texture downloads are needed.
 - `engine.ts` owns rendering, raycasting, movement, audio, and cleanup.

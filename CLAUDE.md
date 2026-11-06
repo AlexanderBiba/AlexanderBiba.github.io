@@ -1,6 +1,6 @@
 # Writing for this site
 
-The blog posts (`content/blog/*.md`) and project pages (`content/projects/*.md`) are written in Alex's own voice. See `README.md` for where content lives and how to verify changes.
+The blog posts (`content/blog/*.md`) and work pages (`content/works/*.md`, shown under “Things I’ve built”) are written in Alex's own voice. See `README.md` for where content lives and how to verify changes.
 
 ## Voice
 
@@ -24,13 +24,13 @@ Never use:
 
 Keep lists only for things that really are lists (steps, features, checks). Don't invent experiences, numbers or claims, and keep every existing fact, link, image, table and code block when editing.
 
-## Project page structure
+## Work page structure
 
-Every project page uses the same sections in this order, as plain paragraphs without headings:
+Every work page uses the same sections in this order, as plain paragraphs without headings:
 
 1. What it is. One or two sentences on what it is and who it's for.
 2. Why it exists. The problem it solves, the client's goal, or how it started. Leave this out if there's nothing true to say.
 3. How it works. One or two paragraphs on the interesting part.
-4. Features. Only if the project really has a list of them, introduced with "What's in it:" as a short lowercase list.
+4. Features. Only if it really has a list of them, introduced with "What's in it:" as a short lowercase list.
 5. Stack. One paragraph that starts "It's built with…" and ends with a sentence saying where it runs.
 6. Links. Only when they exist, each on its own line at the end: `Related post: [Post title](/blog/<slug>/)` first, then `Source: [github.com/...](https://github.com/...)`. Use the post title from `content/blog.json`.

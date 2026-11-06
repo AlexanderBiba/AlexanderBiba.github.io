@@ -1,5 +1,5 @@
 import posts from '../../content/blog.json'
-import projects from '../../content/projects.json'
+import works from '../../content/works.json'
 import profile from '../../content/site.json'
 
 export type RoomId = 'upstairs' | 'downstairs' | 'backyard'
@@ -10,7 +10,7 @@ export const rooms: Record<RoomId, { title: string; label: string; number: strin
   backyard: { title: 'BACKYARD', label: 'OUTSIDE', number: 'OUT' },
 }
 export const stories: Record<string, Story> = {
-  laptop: { id: 'laptop', title: 'ALEX', text: 'I build software. Here are a few things I’ve shipped.', links: projects.map(p => ({ label: p.title, href: p.url || `/projects/${p.slug}/` })) },
+  laptop: { id: 'laptop', title: 'ALEX', text: 'I build software. Here are a few things I’ve shipped.', links: works.map(w => ({ label: w.title, href: w.url || `/works/${w.slug}/` })) },
   printer: { id: 'printer', title: 'ALEX', text: 'I like making things I can actually hold. Watch my 3D prints on YouTube.', links: [{ label: 'My 3D printing channel', href: profile.youtube3dPrinting }] },
   guitar: { id: 'guitar', title: 'GUITAR', text: 'What should we play next?' },
   bookshelf: { id: 'bookshelf', title: 'ALEX', text: 'I write about what I’m building and learning.', links: posts.map(p => ({ label: p.title, href: `/blog/${p.slug}/` })) },

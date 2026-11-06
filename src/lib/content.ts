@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import posts from '../../content/blog.json'
-import projects from '../../content/projects.json'
+import works from '../../content/works.json'
 import settings from '../../content/site.json'
-import type { BlogPost, PortfolioProject, SiteSettings } from '../types/blog'
+import type { BlogPost, SiteSettings, Work } from '../types/blog'
 
 // Slugs come only from the checked-in indexes, never directly from a request path.
 async function body(folder: string, slug: string) {
@@ -19,14 +19,14 @@ export async function getAllPosts(): Promise<BlogPost[]> {
 export async function getLatestPosts(limit = 3): Promise<BlogPost[]> {
   return (await getAllPosts()).slice(0, limit)
 }
-export async function getProjectBySlug(slug: string): Promise<PortfolioProject | null> {
-  const project = projects.find(project => project.slug === slug)
-  return project ? { ...project, content: await body('projects', project.slug) } : null
+export async function getWorkBySlug(slug: string): Promise<Work | null> {
+  const work = works.find(work => work.slug === slug)
+  return work ? { ...work, content: await body('works', work.slug) } : null
 }
-export async function getAllProjects(): Promise<PortfolioProject[]> {
-  return Promise.all([...projects].sort((a, b) => b.date.localeCompare(a.date)).map(async project => ({ ...project, content: await body('projects', project.slug) })))
+export async function getAllWorks(): Promise<Work[]> {
+  return Promise.all([...works].sort((a, b) => b.date.localeCompare(a.date)).map(async work => ({ ...work, content: await body('works', work.slug) })))
 }
-export async function getLatestProjects(limit = 3): Promise<PortfolioProject[]> {
-  return (await getAllProjects()).slice(0, limit)
+export async function getLatestWorks(limit = 3): Promise<Work[]> {
+  return (await getAllWorks()).slice(0, limit)
 }
 export async function getSiteSettings(): Promise<SiteSettings> { return settings }

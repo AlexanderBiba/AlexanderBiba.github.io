@@ -1,6 +1,6 @@
-import PortfolioList from '../../../src/components/PortfolioList'
+import WorkList from '../../../src/components/WorkList'
 import { Metadata } from 'next'
-import { getAllProjects, getSiteSettings } from '../../../src/lib/content'
+import { getAllWorks, getSiteSettings } from '../../../src/lib/content'
 import Script from 'next/script'
 import { generateCollectionPageSchema } from '../../../src/lib/seo'
 
@@ -13,12 +13,12 @@ export async function generateMetadata(): Promise<Metadata> {
     title,
     description,
     alternates: {
-      canonical: 'https://alexbiba.com/projects/',
+      canonical: 'https://alexbiba.com/works/',
     },
     openGraph: {
       title,
       description,
-      url: 'https://alexbiba.com/projects/',
+      url: 'https://alexbiba.com/works/',
       type: 'website',
     },
     twitter: {
@@ -29,20 +29,20 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default async function ProjectsPage() {
-  const [projects, settings] = await Promise.all([getAllProjects(), getSiteSettings()])
-  const schema = generateCollectionPageSchema(settings, 'projects')
+export default async function WorksPage() {
+  const [works, settings] = await Promise.all([getAllWorks(), getSiteSettings()])
+  const schema = generateCollectionPageSchema(settings, 'works')
 
   return (
     <>
       {schema && (
         <Script
-          id="projects-schema"
+          id="works-schema"
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
         />
       )}
-      <PortfolioList projects={projects} />
+      <WorkList works={works} />
     </>
   )
 }

@@ -17,7 +17,7 @@ No CMS account, token, or environment variables are required.
 
 The site is a fully static Next.js export (`output: 'export'` in `next.config.js`), so there's no server: Next.js features that need one (ISR, route handlers, middleware, the image optimizer) won't work here. A Cloudflare Worker with only static assets serves `out/`, configured in `wrangler.jsonc`, with `out/404.html` for unknown paths.
 
-Workers Builds is connected to this repo, builds with `npm run build` and deploys with `npx wrangler deploy` on every push to `master`. Other branches get preview URLs on workers.dev. alexbiba.com is attached to the `alexanderbiba-github-io` Worker as a custom domain in the Cloudflare dashboard, and www.alexbiba.com redirects to it with a Cloudflare redirect rule. Publishing content means committing to `master`.
+Workers Builds is connected to this repo, builds with `npm run build` and deploys with `npx wrangler deploy` on every push to `master`. Other branches get preview URLs on workers.dev. alexbiba.com is attached to the `alexanderbiba-github-io` Worker as a custom domain in the Cloudflare dashboard, and www.alexbiba.com redirects to it with a Cloudflare redirect rule. Publishing content means committing to `master`. `public/_redirects` sends the old `/projects/` URLs to `/works/`.
 
 ## Edit content
 
@@ -25,15 +25,15 @@ Workers Builds is connected to this repo, builds with `npm run build` and deploy
   Update `chess` for the Play app’s Chess.com profile and `youtube3dPrinting` for the printer’s YouTube channel. Both accept full URLs; no code changes are needed when a username changes.
 - `content/blog.json`: blog titles, slugs, dates, and cover images.
 - `content/blog/<slug>.md`: each article’s Markdown body.
-- `content/projects.json`: project titles, slugs, dates, links, and preview images.
-- `content/projects/<slug>.md`: each project’s Markdown body.
-- `public/content/`: local article images and project previews. Reference them as `/content/filename.png`.
-- `src/house/content.ts`: house dialogue; its project/blog links use the same content indexes as the main site.
+- `content/works.json`: titles, slugs, dates, live site links, and screenshots for the “Things I’ve built” section at `/works/`.
+- `content/works/<slug>.md`: each entry’s Markdown body.
+- `public/content/`: local article images and site screenshots. Reference them as `/content/filename.png`.
+- `src/house/content.ts`: house dialogue; its works/blog links use the same content indexes as the main site.
 - `src/house/world.ts`: house models, layout, and animations.
 
-To add a post or project, add its Markdown file and matching index entry. Keep existing slugs to preserve incoming links. Entries are displayed newest first.
+To add a post or something you built, add its Markdown file and matching index entry. Keep existing slugs to preserve incoming links. Entries are displayed newest first.
 
-The repository contains all five published articles, four projects, profile settings, and their images. Both the main site and 3D mode read these local files; no external CMS or credentials are needed.
+The repository contains all five published articles, four entries under “Things I’ve built”, profile settings, and their images. Both the main site and 3D mode read these local files; no external CMS or credentials are needed.
 
 ## Analytics
 
