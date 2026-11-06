@@ -5,8 +5,6 @@ import { ReactNode } from 'react'
 import { generatePersonSchema } from '../../src/lib/seo'
 import { getSiteSettings } from '../../src/lib/content'
 
-export const revalidate = 60
-
 export default async function SiteLayout({ children }: { children: ReactNode }) {
   const settings = await getSiteSettings()
   const schema = generatePersonSchema(settings)
