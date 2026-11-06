@@ -1,5 +1,6 @@
 // Cloudflare Worker that serves the static export in `out/` (no server code).
-// Workers Builds runs `npm run build` and then `npx wrangler deploy` on every push.
+// Workers Builds runs `npm run build`, then `npx wrangler deploy` on master and
+// `npx wrangler preview` on other branches.
 // alexbiba.com is attached as a custom domain in the Cloudflare dashboard.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
@@ -13,5 +14,7 @@
     "html_handling": "auto-trailing-slash"
   },
   "workers_dev": true,
-  "preview_urls": true
+  "preview_urls": true,
+  // Required by `npx wrangler preview`, which Workers Builds runs for non-production branches.
+  "previews": {}
 }
