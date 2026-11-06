@@ -88,7 +88,7 @@ export function generateCollectionPageSchema(
       url: 'https://alexbiba.com/blog/',
     },
     projects: {
-      name: `Work | ${settings.name}`,
+      name: `Things I’ve built | ${settings.name}`,
       description: 'Things I\'ve built and worked on.',
       url: 'https://alexbiba.com/projects/',
     },

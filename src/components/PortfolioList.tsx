@@ -12,7 +12,7 @@ interface PortfolioListProps {
 export default function PortfolioList({ projects }: PortfolioListProps) {
   return (
     <div className="content-container">
-      <h1>Work</h1>
+      <h1>Things I’ve built</h1>
       {projects.length === 0 ? (
         <p>Nothing here yet.</p>
       ) : (

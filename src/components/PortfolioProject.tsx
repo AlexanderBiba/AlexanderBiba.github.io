@@ -12,7 +12,7 @@ export default function PortfolioProject({ project }: PortfolioProjectProps) {
         <h1>Not Found</h1>
         <p>The page you're looking for doesn't exist.</p>
         <p>
-          <a href="/projects">← Back to work</a>
+          <a href="/projects">← Back to things I’ve built</a>
         </p>
       </div>
     )
@@ -23,7 +23,7 @@ export default function PortfolioProject({ project }: PortfolioProjectProps) {
       title={project.title}
       date={project.date}
       content={project.content}
-      backLink={{ href: '/projects', label: 'Back to work' }}
+      backLink={{ href: '/projects', label: 'Back to things I’ve built' }}
       coverImage={project.image}
       coverImageFallback={project.previewImage}
       externalLink={project.url}
