@@ -10,7 +10,7 @@ It starts with a ticket, and I try to put as much information about the problem 
 
 Then I have Claude write a plan as an artifact, and I ask it to include mocks of everything. The mocks are what make the plan easy to review, you can see the user flows and understand them right away. Whatever comes back the first time is a starting point and nothing more.
 
-So then I go back and forth on it until I understand it fully. One thing I do a lot here is ask Claude to make the plan more high level so it's easy to read, and I usually do that several times until it's really easy to consume. I add comments directly in the artifact and Claude updates the document inline in real time.
+I go back and forth on it until I understand it fully. One thing I do a lot here is ask Claude to make the plan more high level so it's easy to read, and I usually do that several times until it's really easy to consume. I add comments directly in the artifact and Claude updates the document inline in real time.
 
 The plan should be clean and lean with as little slop as possible. It covers the big picture things like interfaces, database migrations and integrations, and it doesn't go into code detail, which doesn't matter at this point.
 
