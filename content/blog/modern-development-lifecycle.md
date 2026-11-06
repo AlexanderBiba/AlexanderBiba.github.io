@@ -8,11 +8,11 @@ The whole thing from ticket to production. The dashed loops are the steps I go a
 
 It starts with a ticket, and I try to put as much information about the problem in it as I can, since everything after it builds on that.
 
-Then I have Claude write a plan as an artifact, and I ask it to include mocks of everything. The mocks are what make the plan easy to review, you can see the user flows and understand them right away. Whatever comes back the first time is a starting point and nothing more.
+Then I have Claude write a plan as an artifact, and I ask it to include animated mocks of everything. The mocks are what make the plan easy to review, you can see the user flows and understand them right away. Whatever comes back the first time is a starting point and nothing more.
 
 I go back and forth on it until I understand it fully. One thing I do a lot here is ask Claude to make the plan more high level so it's easy to read, and I usually do that several times until it's really easy to consume. I add comments directly in the artifact and Claude updates the document inline in real time.
 
-The plan should be clean and lean with as little slop as possible. It covers the big picture things like interfaces, database migrations and integrations, and it doesn't go into code detail, which doesn't matter at this point.
+The plan should be clean and lean with as little noise as possible. It should cover the big picture things like database migrations and integrations, and it doesn't go into code detail, which doesn't matter at this point.
 
 ![](/content/350bef202d4fb20e014ed502712022ba4ebc346d-1600x1352.png)
 
@@ -34,7 +34,7 @@ When implementation is done I open a PR, and then I add screen recordings, user 
 
 ## Review
 
-I do the first round of review myself, working with an agent to find the highest leverage bugs, and I have it categorize them by priority and effort. High priority items with small to medium effort I usually just fix. Items with larger effort I need to review and understand first, the issue and its implications. Is it an architectural issue, does it affect other components, does it need its own separate piece of work, does it have to be done before this PR?
+I do the first round of review myself, working with an agent to find the highest leverage bugs, and I have it categorize them by priority and effort. I usually use a different model here like Codex, I'm not sure how critical this is, but feels like a less biased opinion. High priority items with small to medium effort I usually just fix. Items with larger effort I need to review and understand first, the issue and its implications. Is it an architectural issue, does it affect other components, does it need its own separate piece of work, does it have to be done before this PR?
 
 ![](/content/82de209ea10ed518a8c8791885294d65f2a811ff-1600x940.png)
 
