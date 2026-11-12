@@ -1,205 +1,3 @@
-/* ---------- Shared foil and tilt ---------- */
-/* Cards and packs size everything in cqw, measured on this wrapper, so they scale as one piece. */
-.box { container-type: inline-size; width: 100%; height: 100%; }
-.holo {
-  width: 100%; height: 100%;
-  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transform-style: preserve-3d;
-  will-change: transform;
-}
-.foil, .glare, .artFoil { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
-.foil {
-  background: repeating-linear-gradient(115deg, #ff7b9c 0%, #ffd36b 5%, #84ffb5 10%, #6bc4ff 15%, #c07bff 20%, #ff7b9c 25%);
-  background-size: 220% 220%;
-  background-position: var(--mx, 50%) var(--my, 50%);
-  mix-blend-mode: color-dodge;
-  opacity: .18;
-}
-.glare {
-  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, .7), rgba(255, 255, 255, 0) 55%);
-  mix-blend-mode: overlay;
-  opacity: var(--glare, .4);
-}
-
-/* Pack and card colors */
-.pack[data-pack='blog'], .card[data-pack='blog'], .rays[data-pack='blog'], .opening[data-pack='blog'], .edge[data-pack='blog'], .slab[data-pack='blog'] { --p1: #2a0624; --p2: #c0266a; --p3: #ff9a4d; --c1: #ffb18a; --c2: #e2477f; --chrome: #ffd9c2; --chrome2: #a8325a; --glow: 255, 120, 150; }
-.pack[data-pack='works'], .card[data-pack='works'], .rays[data-pack='works'], .opening[data-pack='works'], .edge[data-pack='works'], .slab[data-pack='works'] { --p1: #04142e; --p2: #0f5fae; --p3: #2ff0d0; --c1: #7cf0de; --c2: #2f6bff; --chrome: #d8fbff; --chrome2: #1c5a8c; --glow: 80, 210, 255; }
-.pack[data-pack='social'], .card[data-pack='social'], .rays[data-pack='social'], .opening[data-pack='social'], .edge[data-pack='social'], .slab[data-pack='social'] { --p1: #1d0b40; --p2: #6d3ae0; --p3: #ffc94a; --c1: #ffe7a0; --c2: #d6951a; --chrome: #fff1b8; --chrome2: #9a6a12; --glow: 255, 200, 90; }
-
-/* ---------- Pack: a crinkled foil wrapper ---------- */
-.pack {
-  position: relative; width: 100%; height: 100%;
-  overflow: hidden; color: #fff;
-  background:
-    radial-gradient(120% 60% at 50% 0%, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0) 55%),
-    linear-gradient(160deg, var(--p1) 0%, var(--p2) 55%, var(--p3) 100%);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  user-select: none;
-}
-.box:has(> .pack) { filter: drop-shadow(0 4cqw 7cqw rgba(0, 0, 0, .65)); }
-/* Pillow shading: the wrapper puffs out in the middle and darkens toward the seams. */
-.pack::before {
-  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1;
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, .45), rgba(0, 0, 0, 0) 9%, rgba(255, 255, 255, .1) 30%, rgba(0, 0, 0, 0) 50%, rgba(255, 255, 255, .08) 72%, rgba(0, 0, 0, 0) 91%, rgba(0, 0, 0, .5));
-}
-.crinkle {
-  position: absolute; inset: 0; pointer-events: none; z-index: 1;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='500'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.011 .03' numOctaves='3' seed='7'/%3E%3CfeDiffuseLighting lighting-color='%23fff' surfaceScale='4'%3E%3CfeDistantLight azimuth='235' elevation='42'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E") center / 100% 100%;
-  mix-blend-mode: soft-light; opacity: .7;
-}
-.pack .foil { opacity: .16; z-index: 6; }
-.pack .glare { z-index: 7; }
-.sheen {
-  position: absolute; inset: -20%; pointer-events: none; z-index: 7;
-  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, .55) 48%, rgba(255, 255, 255, .1) 52%, transparent 60%);
-  mix-blend-mode: soft-light;
-  animation: sheen 4.5s ease-in-out infinite;
-}
-@keyframes sheen { 0%, 55% { translate: -70% 0; } 100% { translate: 70% 0; } }
-.crimp {
-  position: absolute; left: 0; right: 0; height: 9cqw; z-index: 2;
-  background:
-    linear-gradient(rgba(255, 255, 255, .25), rgba(0, 0, 0, .25)),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, .45) 0 .9cqw, rgba(0, 0, 0, .28) .9cqw 1.8cqw);
-}
-.crimpTop { top: 0; box-shadow: 0 .6cqw 1.2cqw rgba(0, 0, 0, .35); }
-.crimpBottom { bottom: 0; box-shadow: 0 -.6cqw 1.2cqw rgba(0, 0, 0, .35); }
-.tearLine {
-  position: absolute; left: 11%; right: 4%; top: 13%; z-index: 3;
-  border-top: .6cqw dashed rgba(255, 255, 255, .7);
-}
-.scissors { position: absolute; left: -7cqw; top: -3.2cqw; width: 6.4cqw; height: 6.4cqw; filter: drop-shadow(0 .3cqw 0 rgba(0, 0, 0, .35)); }
-.tearLine em { position: absolute; right: 0; top: -4.6cqw; font: 800 2.8cqw/1 ui-monospace, Menlo, monospace; font-style: normal; letter-spacing: .2em; opacity: .75; }
-.ribbon {
-  position: absolute; left: 0; right: 0; top: 15.5%; z-index: 3; text-align: center;
-  font-size: 3.6cqw; font-weight: 800; letter-spacing: .32em;
-  text-shadow: 0 .3cqw 0 rgba(0, 0, 0, .35);
-}
-.ribbon b { color: var(--chrome); font-weight: 400; }
-.window {
-  position: absolute; left: 9%; right: 9%; top: 21%; height: 40%; z-index: 3;
-  border-radius: 5cqw; overflow: hidden;
-  background: radial-gradient(circle at 50% 40%, var(--p3), var(--p1) 80%);
-  box-shadow: 0 0 0 1.1cqw rgba(255, 255, 255, .85), 0 0 0 2cqw rgba(0, 0, 0, .25), 0 0 9cqw rgba(var(--glow), .55), inset 0 0 6cqw rgba(0, 0, 0, .55);
-  display: grid; place-items: center;
-}
-.window img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; filter: saturate(1.15) contrast(1.05); }
-.windowEmblem { width: 46%; color: #fff; filter: drop-shadow(0 1cqw 0 rgba(0, 0, 0, .3)); }
-.windowEmblem svg { width: 100%; height: auto; display: block; }
-.windowGloss {
-  position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(160deg, rgba(255, 255, 255, .55) 0%, rgba(255, 255, 255, .12) 28%, rgba(255, 255, 255, 0) 29%), linear-gradient(0deg, rgba(0, 0, 0, .35), rgba(0, 0, 0, 0) 40%);
-}
-.packTitle {
-  position: absolute; left: 0; right: 0; top: 63%; z-index: 4; text-align: center;
-  font-size: 23cqw; line-height: .95; font-weight: 900; font-style: italic; letter-spacing: -.01em;
-  transform: skewX(-6deg);
-  background: linear-gradient(180deg, #fff 0%, var(--chrome) 42%, var(--chrome2) 52%, #fff 60%, var(--chrome) 100%);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-  -webkit-text-stroke: .35cqw rgba(255, 255, 255, .7);
-  filter: drop-shadow(0 1.1cqw 0 var(--p1)) drop-shadow(0 0 4cqw rgba(var(--glow), .6));
-}
-.packSub {
-  position: absolute; left: 0; right: 0; top: 79%; z-index: 4; text-align: center;
-  font-size: 4.4cqw; font-weight: 800; letter-spacing: .22em; text-transform: uppercase;
-  text-shadow: 0 .4cqw 0 rgba(0, 0, 0, .4);
-}
-.burstSticker {
-  position: absolute; right: 2%; top: 51%; z-index: 5; width: 25cqw; height: 25cqw;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  rotate: 14deg; color: #2a1600;
-  font-size: 3.4cqw; font-weight: 900; letter-spacing: .08em; line-height: 1;
-  background: radial-gradient(circle at 40% 35%, #fffbe0, #ffd34d 55%, #f0a020);
-  clip-path: polygon(50% 0%, 61% 13%, 77% 6%, 80% 23%, 97% 25%, 89% 40%, 100% 54%, 85% 62%, 90% 79%, 73% 79%, 66% 95%, 52% 85%, 37% 97%, 31% 80%, 13% 82%, 17% 65%, 1% 55%, 13% 42%, 5% 26%, 22% 22%, 24% 5%, 40% 13%);
-  animation: stickerPulse 2.4s ease-in-out infinite;
-}
-.burstSticker b { font-size: 10cqw; line-height: .9; }
-@keyframes stickerPulse { 0%, 100% { scale: 1; } 50% { scale: 1.07; } }
-.strap {
-  position: absolute; left: 0; right: 0; bottom: 8.5%; z-index: 4; text-align: center;
-  font-size: 3cqw; font-weight: 800; letter-spacing: .3em; opacity: .85;
-}
-.sparkle {
-  position: absolute; z-index: 8; width: 5cqw; height: 5cqw; margin: -2.5cqw 0 0 -2.5cqw; pointer-events: none;
-  background: radial-gradient(circle, #fff 0 12%, transparent 13%), linear-gradient(#fff, #fff) center / 8% 100% no-repeat, linear-gradient(#fff, #fff) center / 100% 8% no-repeat;
-  filter: drop-shadow(0 0 1.4cqw #fff);
-  animation: twinkle 3.2s ease-in-out infinite both;
-}
-@keyframes twinkle { 0%, 70%, 100% { opacity: 0; scale: .2; rotate: 0deg; } 82% { opacity: 1; scale: 1; rotate: 45deg; } }
-
-/* Light behind the chosen pack */
-.rays {
-  position: absolute; pointer-events: none; border-radius: 50%;
-  background:
-    radial-gradient(circle, rgba(var(--glow), .55) 0%, rgba(var(--glow), .15) 30%, transparent 62%),
-    repeating-conic-gradient(from 0deg, rgba(var(--glow), .22) 0deg 7deg, transparent 7deg 18deg);
-  -webkit-mask: radial-gradient(circle, #000 18%, transparent 68%); mask: radial-gradient(circle, #000 18%, transparent 68%);
-  animation: spin 40s linear infinite;
-}
-@keyframes spin { to { rotate: 360deg; } }
-
-
-/* ---------- Card ---------- */
-.card {
-  position: relative; width: 100%; aspect-ratio: 63 / 88;
-  border-radius: 4.5cqw;
-  overflow: hidden;
-  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, .6);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  text-align: left;
-}
-.front { background: linear-gradient(150deg, var(--c1), var(--c2)); padding: 2.4cqw; }
-.inner {
-  height: 100%; display: flex; flex-direction: column; gap: 2.2cqw;
-  padding: 3.2cqw; border-radius: 2.4cqw;
-  background: #fbf8f1; color: #181a26;
-}
-.head { display: flex; align-items: flex-start; justify-content: space-between; gap: 2cqw; }
-.name { font-size: 7.2cqw; line-height: 1.05; font-weight: 850; letter-spacing: -.01em; }
-.longName { font-size: 5.8cqw; }
-.tag {
-  flex: none; font-size: 3.1cqw; font-weight: 800; letter-spacing: .12em;
-  color: #fff; background: var(--c2); padding: .9cqw 2.2cqw; border-radius: 99px; margin-top: .6cqw;
-}
-.art {
-  position: relative; aspect-ratio: 16 / 10; flex: none;
-  border-radius: 2.2cqw; overflow: hidden;
-  background: linear-gradient(140deg, var(--c2), var(--c1));
-  box-shadow: inset 0 0 0 .7cqw rgba(0, 0, 0, .12);
-  display: grid; place-items: center; color: #fff;
-}
-.art img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
-.art svg { width: 34%; height: auto; filter: drop-shadow(0 1.2cqw 0 rgba(0, 0, 0, .18)); }
-.art[data-icon] { background: repeating-linear-gradient(45deg, rgba(255, 255, 255, .07) 0 3cqw, transparent 3cqw 6cqw), radial-gradient(circle at 50% 45%, var(--p3), transparent 75%), linear-gradient(150deg, var(--p2), var(--p1)); }
-.artFoil {
-  background: repeating-linear-gradient(115deg, #ff7b9c 0%, #ffd36b 5%, #84ffb5 10%, #6bc4ff 15%, #c07bff 20%, #ff7b9c 25%);
-  background-size: 220% 220%; background-position: var(--mx, 50%) var(--my, 50%);
-  mix-blend-mode: color-dodge; opacity: .22;
-}
-.card[data-pack='works'] .artFoil { opacity: .4; }
-.meta { display: flex; flex-wrap: wrap; gap: .4cqw 2.4cqw; font: 700 3.1cqw/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; color: #6c6f82; letter-spacing: .04em; }
-.meta span + span::before { content: '·'; margin-right: 2.4cqw; }
-.text {
-  margin: 0; flex: 1; min-height: 0;
-  font-size: 4.3cqw; line-height: 1.38; color: #2a2c3a;
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden;
-}
-.foot {
-  display: flex; justify-content: space-between; align-items: center; gap: 2cqw;
-  padding-top: 1.8cqw; border-top: .4cqw solid #e7e1d4;
-  font: 700 3cqw/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: #6c6f82;
-}
-.foot span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.symbol { color: var(--c2); font-size: 4cqw; }
-.card[data-pack='social'] .foil { opacity: .26; }
-.card[data-pack='social']::after {
-  content: ''; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: overlay; opacity: .5;
-  background-image: radial-gradient(circle, rgba(255, 255, 255, .9) .5px, transparent 1.4px);
-  background-size: 9px 9px; background-position: var(--mx, 50%) var(--my, 50%);
-}
-
-
 /* ---------- Game layout ---------- */
 .game {
   position: fixed; inset: 0; overflow: hidden;
@@ -231,205 +29,29 @@
 .exit:hover { background: rgba(255, 255, 255, .16); text-decoration: none; }
 .brand { font-size: 12px; font-weight: 800; letter-spacing: .3em; opacity: .55; }
 
-.shelf { position: absolute; inset: 0; z-index: 2; perspective: 1400px; touch-action: pan-y; }
-/* Hidden at once: the pack is already gone by now, and fading would flash the whole pack again. */
-.game[data-stage='stack'] .shelf { visibility: hidden; pointer-events: none; }
-.rays { transition: opacity .5s, left .6s cubic-bezier(.2, .8, .2, 1), top .6s cubic-bezier(.2, .8, .2, 1), width .6s, height .6s; }
-.packSlot {
-  position: absolute;
-  transition: transform .55s cubic-bezier(.2, .8, .2, 1), opacity .45s, filter .45s;
-}
-.aside { filter: brightness(.6) saturate(.8); }
-.gone { opacity: 0; pointer-events: none; }
-.packButton {
-  all: unset; display: block; position: relative; width: 100%; height: 100%;
-  cursor: pointer; border-radius: 12px; touch-action: none;
-  -webkit-tap-highlight-color: transparent;
-}
-.aside .packButton { touch-action: pan-y; }
-.packButton:focus-visible { outline: 3px solid #ffd36b; outline-offset: 6px; }
-.focused .packButton { animation: bob 4s ease-in-out infinite; }
-@keyframes bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -8px; } }
+/* The 3D scene fills the screen under the captions and buttons. */
+.canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; z-index: 1; }
+.rays { z-index: 0; transition: opacity .5s, left .6s cubic-bezier(.2, .8, .2, 1), top .6s cubic-bezier(.2, .8, .2, 1), width .6s, height .6s; }
+.game[data-stage='opening'] .rays, .game[data-stage='closing'] .rays { opacity: .85; }
 
-@keyframes sideIn { from { translate: var(--back) 0; opacity: 0; } to { translate: 0 0; opacity: 1; } }
-@keyframes dropIn { from { translate: 0 60px; opacity: 0; } to { translate: 0 0; opacity: 1; } }
-.sideIn { animation: sideIn .7s cubic-bezier(.2, .8, .2, 1) .05s both; }
-.dropIn { animation: dropIn .7s cubic-bezier(.2, .8, .2, 1) calc(var(--i) * 90ms) both; }
+/* Pack colors for the light rays; the 3D textures take theirs from palette.ts. */
+.rays[data-pack='blog'] { --glow: 255, 120, 150; }
+.rays[data-pack='works'] { --glow: 80, 210, 255; }
+.rays[data-pack='social'] { --glow: 255, 200, 90; }
 
-/* Tear guide on the chosen pack */
-.tearGuide { position: absolute; left: 5%; right: 5%; top: 13%; height: 0; pointer-events: none; }
-.tearDot {
-  position: absolute; top: -7px; left: 0; width: 14px; height: 14px; border-radius: 50%;
-  background: #fff; box-shadow: 0 0 12px 4px rgba(255, 255, 255, .8);
-  animation: tearHint 1.6s ease-in-out infinite;
-}
-@keyframes tearHint { 0% { left: 0; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: calc(100% - 14px); opacity: 0; } }
-.nudge { animation: nudge .4s ease; }
-@keyframes nudge { 0%, 100% { translate: 0; } 25% { translate: -6px; } 75% { translate: 6px; } }
-.tearCut {
-  position: absolute; top: -3px; height: 6px; border-radius: 3px;
-  background: #fff; box-shadow: 0 0 14px 4px rgba(255, 240, 180, .9);
-}
-
-/* Opening: the strip flies off, light bursts out, the cards rise and the wrapper drops away.
-   Closing plays the same pieces backwards and seals the tear. */
-.scene { position: absolute; inset: 0; }
-.flap, .packRest { position: absolute; inset: 0; }
-.packRest { z-index: 1; }
-.burst, .seal { z-index: 2; }
-.flap { z-index: 3; }
-.scene .flap { animation: flapOff .7s cubic-bezier(.3, .6, .4, 1) both; }
-.scene .packRest { animation: restDrop .45s cubic-bezier(.5, 0, .8, .4) .8s both; }
-/* The strip keeps lifting the way it was torn: up, and off toward its hinge end. */
-@keyframes flapOff {
-  from { transform: var(--flap-from, none); opacity: 1; }
-  60% { opacity: 1; }
-  to { transform: translate(calc(var(--flap-dir, 1) * 28%), -120%) rotate(calc(var(--flap-dir, 1) * 30deg)); opacity: 0; }
-}
-@keyframes restDrop { from { transform: none; opacity: 1; } 75% { opacity: 0; } to { transform: translateY(85%); opacity: 0; } }
-.burst {
-  position: absolute; left: 50%; top: 13%; width: 160%; aspect-ratio: 1; translate: -50% -50%; pointer-events: none; border-radius: 50%;
-  background: radial-gradient(circle, #fff 0%, rgba(var(--glow), .9) 18%, rgba(var(--glow), .3) 40%, transparent 65%), repeating-conic-gradient(rgba(255, 255, 255, .5) 0deg 4deg, transparent 4deg 16deg);
-  -webkit-mask: radial-gradient(circle, #000 20%, transparent 70%); mask: radial-gradient(circle, #000 20%, transparent 70%);
-  animation: burst 1.2s cubic-bezier(.2, .8, .3, 1) .1s both;
-}
-@keyframes burst { from { scale: 0; opacity: 0; rotate: 0deg; } 25% { opacity: 1; } to { scale: 1.7; opacity: 0; rotate: 40deg; } }
-/* Shadow the front lip casts on the cards as they slide past it. */
-.lip {
-  position: absolute; left: 3%; right: 3%; top: 6%; height: 8%; pointer-events: none;
-  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, .35));
-  -webkit-mask: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
-}
-
-/* The cards and the inside of the pack. This layer sits under the pack's front, so the cards
-   slide up out of the torn top. */
-.deck { position: absolute; inset: 0; z-index: 1; pointer-events: none; perspective: 1400px; }
-.packInside {
-  position: absolute;
-  clip-path: polygon(0% 9.5%, 10% 8.6%, 22% 10%, 35% 8.8%, 50% 9.8%, 63% 8.5%, 77% 9.9%, 90% 8.7%, 100% 9.6%, 100% 100%, 0% 100%);
+/* Light behind the chosen pack */
+.rays {
+  position: absolute; pointer-events: none; border-radius: 50%;
   background:
-    linear-gradient(180deg, rgba(0, 0, 0, .55), rgba(0, 0, 0, 0) 14%),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, .14) 0 2px, transparent 2px 9px),
-    linear-gradient(180deg, #e9edf5, #9aa3b5 12%, #4d5466 30%);
+    radial-gradient(circle, rgba(var(--glow), .55) 0%, rgba(var(--glow), .15) 30%, transparent 62%),
+    repeating-conic-gradient(from 0deg, rgba(var(--glow), .22) 0deg 7deg, transparent 7deg 18deg);
+  -webkit-mask: radial-gradient(circle, #000 18%, transparent 68%); mask: radial-gradient(circle, #000 18%, transparent 68%);
+  animation: spin 40s linear infinite;
 }
-.deck[data-stage='opening'] .packInside { animation: restDrop .45s cubic-bezier(.5, 0, .8, .4) .8s both; }
-.deck[data-stage='closing'] .packInside { animation: restDrop .45s cubic-bezier(.2, .6, .5, 1) .3s reverse both; }
-.deckCard {
-  position: absolute; touch-action: pan-y; cursor: grab;
-  transform: translate(calc(var(--x) + var(--dx, 0px)), var(--y)) rotate(calc(var(--r) + var(--dr, 0deg))) rotateY(calc(var(--t) + var(--dt, 0deg))) scale(var(--s));
-  transform-style: preserve-3d;
-  transition: transform .5s cubic-bezier(.2, .8, .25, 1);
-}
-/* Dim only the printed face of the cards underneath, so the card itself stays a 3D object. */
-.deckCard .slabFront { filter: brightness(var(--b)); transition: filter .5s; }
-.deckCard[data-n='0'] { pointer-events: auto; }
-.deckCard:active { cursor: grabbing; }
-.deck[data-stage='opening'] .deckCard { animation: deckRise 1.25s calc(.3s + var(--k) * 70ms) both; }
-.deck[data-stage='closing'] .deckCard { animation: deckRise 1s calc(.15s + (3 - var(--k)) * 50ms) reverse both; }
-@keyframes deckRise {
-  0% { transform: translate(var(--fx), var(--fy0)) rotate(0deg) rotateY(0deg) scale(var(--fs)); animation-timing-function: cubic-bezier(.3, .6, .4, 1); }
-  45% { transform: translate(var(--fx), var(--fy1)) rotate(0deg) rotateY(0deg) scale(var(--fs)); animation-timing-function: linear; }
-  /* Hold at the opening while the empty wrapper drops away, then come forward. */
-  62% { transform: translate(var(--fx), var(--fy1)) rotate(0deg) rotateY(0deg) scale(var(--fs)); animation-timing-function: cubic-bezier(.45, 0, .2, 1); }
-  100% { transform: translate(var(--x), var(--y)) rotate(var(--r)) rotateY(var(--t)) scale(var(--s)); }
-}
-.seal { display: none; }
-.closing .burst { display: none; }
-.closing .packRest { animation: restDrop .45s cubic-bezier(.2, .6, .5, 1) .3s reverse both; }
-.closing .flap { animation: flapOff .55s cubic-bezier(.3, .6, .4, 1) 1.2s reverse both; }
-.closing .seal {
-  display: block; position: absolute; left: 4%; right: 4%; top: 13%; height: 4px; margin-top: -2px; border-radius: 2px; pointer-events: none;
-  background: #fff; box-shadow: 0 0 16px 6px rgba(var(--glow), .9), 0 0 4px 2px #fff;
-  animation: seal .55s ease-out 1.65s both;
-}
-@keyframes seal { from { opacity: 0; scale: 0 1; } 40% { opacity: 1; scale: 1 1; } to { opacity: 0; scale: 1 1; } }
+@keyframes spin { to { rotate: 360deg; } }
 
-/* Tearing: the strip lifts from where the finger started and light leaks out of the gap. */
-.packStage { width: 100%; height: 100%; }
-.tearable { position: relative; width: 100%; height: 100%; }
-.gapGlow {
-  position: absolute; left: -4%; right: -4%; top: 8%; height: 10%; z-index: 1; pointer-events: none;
-  background: radial-gradient(ellipse at 50% 55%, rgba(255, 252, 230, .95), rgba(var(--glow, 255, 220, 150), .45) 40%, transparent 70%);
-  filter: blur(4px);
-}
-.tearable > .flap { z-index: 2; }
-.tearZone { position: absolute; left: -4%; right: -4%; top: 0; height: 26%; z-index: 10; cursor: ew-resize; touch-action: none; }
-.tearZone .tearGuide { top: 50%; left: 7.5%; right: 7.5%; }
-.tearSpark {
-  position: absolute; top: -10px; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%; pointer-events: none;
-  background: radial-gradient(circle, #fff 0%, rgba(255, 236, 170, .9) 35%, transparent 70%);
-  box-shadow: 0 0 22px 8px rgba(255, 230, 160, .8);
-}
 
-/* Spin: drag sideways to turn a pack or card over */
-.spin { width: 100%; height: 100%; perspective: 1200px; touch-action: none; cursor: grab; }
-.spin:active { cursor: grabbing; }
-.spinner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
-.spinTilt { width: 100%; height: 100%; transform-style: preserve-3d; transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
-.holoStill { transform: none; }
-/* Cards as solid objects: about 2% of their width thick, a paper core between two printed faces. */
-.slab { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
-.slabFront, .slabBack { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-.slabFront { transform: translateZ(calc(var(--ct, 0px) / 2)); }
-.slabBack {
-  transform: rotateY(180deg) translateZ(calc(var(--ct, 0px) / 2)); border-radius: 4.5%/3.2%;
-  background: repeating-linear-gradient(45deg, rgba(255, 255, 255, .08) 0 6px, transparent 6px 12px), linear-gradient(150deg, var(--p2), var(--p1));
-}
-.cardEdge {
-  position: absolute; backface-visibility: hidden; -webkit-backface-visibility: hidden;
-  background: linear-gradient(90deg, var(--c2), #fbf8f1 35%, #e9e2d2 65%, var(--c2));
-}
-.cardEdgeLeft, .cardEdgeRight { top: 3.2%; bottom: 3.2%; width: var(--ct, 0px); }
-.cardEdgeLeft { left: calc(var(--ct, 0px) / -2); transform: rotateY(-90deg); }
-.cardEdgeRight { right: calc(var(--ct, 0px) / -2); transform: rotateY(90deg); }
-.cardEdgeTop, .cardEdgeBottom { left: 4.5%; right: 4.5%; height: var(--ct, 0px); background: linear-gradient(180deg, var(--c2), #fbf8f1 35%, #e9e2d2 65%, var(--c2)); }
-.cardEdgeTop { top: calc(var(--ct, 0px) / -2); transform: rotateX(90deg); }
-.cardEdgeBottom { bottom: calc(var(--ct, 0px) / -2); transform: rotateX(-90deg); }
-/* A shadow drawn on each face would hang off the slab's sides once it turns. */
-.spin .box:has(> .pack) { filter: none; }
-.settling { transition: transform .65s cubic-bezier(.2, .9, .25, 1.12); }
-.face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: translateZ(calc(var(--thickness, 0px) / 2)); }
-.faceBackSide { transform: rotateY(180deg) translateZ(calc(var(--thickness, 0px) / 2)); }
-/* The pack's sides and ends: foil seams in the pack's colors, crimped like the wrapper. */
-.edge {
-  position: absolute; backface-visibility: hidden; -webkit-backface-visibility: hidden; pointer-events: none;
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, .35), rgba(255, 255, 255, .22) 50%, rgba(0, 0, 0, .35)),
-    repeating-linear-gradient(180deg, rgba(255, 255, 255, .1) 0 2px, transparent 2px 6px),
-    linear-gradient(180deg, var(--p1), var(--p2) 50%, var(--p3));
-}
-.edgeLeft, .edgeRight { top: 1.2%; bottom: 1.2%; width: var(--thickness, 0px); }
-.edgeLeft { left: calc(var(--thickness, 0px) / -2); transform: rotateY(-90deg); }
-.edgeRight { right: calc(var(--thickness, 0px) / -2); transform: rotateY(90deg); }
-.edgeTop, .edgeBottom {
-  left: 0; right: 0; height: var(--thickness, 0px);
-  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .5) 0 2px, rgba(0, 0, 0, .3) 2px 4px), linear-gradient(90deg, var(--p1), var(--p2));
-}
-.edgeTop { top: calc(var(--thickness, 0px) / -2); transform: rotateX(90deg); }
-.edgeBottom { bottom: calc(var(--thickness, 0px) / -2); transform: rotateX(-90deg); }
-.swipe { width: 100%; height: 100%; touch-action: none; cursor: grab; }
-.swipe:active { cursor: grabbing; }
-
-/* Back of the pack */
-.backBrand, .backTitle { position: absolute; left: 0; right: 0; text-align: center; z-index: 3; }
-.backBrand { top: 8.5%; font-size: 3.6cqw; font-weight: 800; letter-spacing: .32em; }
-.backBrand b { color: var(--chrome); font-weight: 400; }
-.backTitle { top: 13.5%; font-size: 10cqw; font-weight: 900; font-style: italic; color: var(--chrome); text-shadow: 0 .8cqw 0 var(--p1); }
-.inside {
-  position: absolute; left: 9%; right: 9%; top: 25%; z-index: 3;
-  display: flex; flex-direction: column; gap: 1.8cqw;
-  padding: 4.5cqw 5cqw; border-radius: 4cqw;
-  background: rgba(0, 0, 0, .34); box-shadow: inset 0 0 0 .5cqw rgba(255, 255, 255, .22);
-  font-size: 4cqw; line-height: 1.25; font-weight: 650;
-}
-.inside em { font-style: normal; font-size: 3cqw; font-weight: 800; letter-spacing: .25em; opacity: .7; margin-bottom: .8cqw; }
-.inside span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.inside b { font: 700 3.2cqw ui-monospace, Menlo, monospace; opacity: .6; margin-right: 2.5cqw; }
-.barcode { position: absolute; left: 0; right: 0; bottom: 10%; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 1.4cqw; font: 700 3cqw ui-monospace, Menlo, monospace; letter-spacing: .1em; }
-.bars { display: flex; gap: .55cqw; height: 10cqw; padding: 1.6cqw 3cqw; background: #fff; border-radius: 1cqw; }
-.bars i { display: block; height: 100%; background: #121420; }
-
-.caption { position: absolute; left: 16px; right: 16px; text-align: center; }
+.caption { position: absolute; left: 16px; right: 16px; z-index: 2; text-align: center; }
 .caption h1 { font-size: 22px; line-height: 1.2; font-weight: 850; letter-spacing: .04em; margin: 0; color: #fff; }
 .caption p { margin: 6px 0 0; font-size: 15px; line-height: 1.4; opacity: .75; }
 .caption .hint { font-size: 13px; opacity: .5; }
@@ -459,27 +81,31 @@
 .arrow:focus-visible, .ghost:focus-visible, .primary:focus-visible, .exit:focus-visible { outline: 3px solid #ffd36b; outline-offset: 3px; }
 
 /* ---------- Card stack ---------- */
-.stackView { position: absolute; inset: 0; z-index: 3; pointer-events: none; animation: fadeIn .35s ease both; }
-.stackView > * { pointer-events: auto; }
-.recapMode {
-  pointer-events: auto; overflow-y: auto; overscroll-behavior: contain;
-  display: flex; flex-direction: column; align-items: center;
-  padding: calc(max(14px, env(safe-area-inset-top)) + 60px) 16px max(18px, env(safe-area-inset-bottom));
-}
-@keyframes fadeIn { from { opacity: 0; } }
-.stackControls { position: absolute; left: 16px; right: 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.stackControls { position: absolute; left: 16px; right: 16px; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .stackLinks { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 .stackNav { display: flex; align-items: center; gap: 14px; }
 .stackCount { min-width: 56px; text-align: center; font-size: 14px; font-weight: 800; letter-spacing: .1em; opacity: .75; font-variant-numeric: tabular-nums; }
 .stackHint { margin: 0; font-size: 12px; opacity: .5; text-align: center; }
 
-.recap { width: 100%; max-width: 760px; text-align: center; }
 .recap h2 { margin: 0 0 16px; font-size: 26px; font-weight: 900; font-style: italic; color: #fff; }
 .recapGrid { list-style: none; padding: 0; margin: 0 auto 20px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 @media (min-width: 700px) { .recapGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; } }
-.recapGrid li { animation: dropIn .5s cubic-bezier(.2, .8, .2, 1) calc(var(--i) * 60ms) both; }
+.recapGrid li { animation: dropIn .5s cubic-bezier(.2, .8, .2, 1) calc(.3s + var(--i) * 60ms) both; }
 .recapGrid button { all: unset; display: block; width: 100%; cursor: pointer; border-radius: 8px; }
 .recapGrid button:focus-visible { outline: 3px solid #ffd36b; outline-offset: 3px; }
+
+.recap {
+  position: absolute; inset: 0; z-index: 3; overflow-y: auto; overscroll-behavior: contain; text-align: center;
+  padding: calc(max(14px, env(safe-area-inset-top)) + 64px) 16px max(18px, env(safe-area-inset-bottom));
+  animation: fadeIn .35s ease .25s both;
+}
+@keyframes fadeIn { from { opacity: 0; } }
+.recap > * { max-width: 760px; margin-left: auto; margin-right: auto; }
+.recapGrid img { display: block; width: 100%; height: auto; aspect-ratio: 63 / 88; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .45)); }
+@keyframes dropIn { from { translate: 0 60px; opacity: 0; } to { translate: 0 0; opacity: 1; } }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.fallback { position: absolute; inset: auto 16px 40%; z-index: 3; text-align: center; font-size: 16px; }
+.fallback a { color: #ffd36b; }
 
 .noscript { position: absolute; inset: auto 16px 40px; text-align: center; }
 .noscript a { color: #ffd36b; }
@@ -488,9 +114,6 @@
 .morphOverlay { position: fixed; z-index: 1000; pointer-events: none; opacity: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .packSlot, .dots span { transition: none; }
-  .sideIn, .dropIn, .sheen, .sparkle, .burstSticker, .rays, .burst, .focused .packButton, .tearDot, .nudge, .recapGrid li, .stackView, .deck .deckCard, .deck .packInside { animation: none !important; }
-  .scene { display: none; }
-  .deckCard { transition: none; }
-  .settling { transition: none; }
+  .dots span { transition: none; }
+  .rays, .recapGrid li, .recap { animation: none; }
 }

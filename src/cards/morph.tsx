@@ -1,12 +1,10 @@
 'use client'
 
-import { flushSync } from 'react-dom'
-import { createRoot } from 'react-dom/client'
 import works from '../../content/works.json'
-import PackArt from './PackArt'
 import { packRect } from './geometry'
 import { MORPH_OVERLAY, markMorphed } from './handoff'
 import { CENTER_PACK } from './packMeta'
+import { loadImage, packOutline, paintPackFront } from './paint'
 import styles from './cards.module.css'
 
 const counts = { works: works.length } as Record<string, number>
@@ -14,7 +12,8 @@ const counts = { works: works.length } as Record<string, number>
 export const cover = [...works].sort((a, b) => b.date.localeCompare(a.date)).find(work => work.image)?.image ?? undefined
 
 // Shrinks the visible part of the page into the shape of a card pack, right where /play/ draws
-// its center pack, then swaps in the real pack art. `done` runs once the pack is fully showing.
+// its center pack, then swaps in the pack's art, painted the same way the 3D pack's texture is.
+// `done` runs once the pack is fully showing.
 export function morphIntoPack(app: HTMLElement, done: () => void) {
   const vw = window.innerWidth, vh = window.innerHeight, r = packRect(vw, vh)
   const box = app.getBoundingClientRect()
@@ -28,13 +27,20 @@ export function morphIntoPack(app: HTMLElement, done: () => void) {
   const pack = inset(top + (vh - ch) / 2, left + (vw - cw) / 2, cw, ch, (r.w * 0.035) / scale)
   const dx = r.x + r.w / 2 - vw / 2, dy = r.y + r.h / 2 - vh / 2
 
-  const overlay = document.createElement('div')
+  const overlay = document.createElement('canvas')
+  const dpr = Math.min(window.devicePixelRatio || 1, 2.5)
+  overlay.width = Math.round(r.w * dpr); overlay.height = Math.round(r.h * dpr)
   overlay.setAttribute(MORPH_OVERLAY, '')
   overlay.className = styles.morphOverlay
   Object.assign(overlay.style, { left: `${r.x}px`, top: `${r.y}px`, width: `${r.w}px`, height: `${r.h}px` })
   document.body.appendChild(overlay)
-  const root = createRoot(overlay)
-  flushSync(() => root.render(<PackArt id={CENTER_PACK} count={counts[CENTER_PACK] ?? 0} cover={cover} />))
+  const paint = (img: HTMLImageElement | null) => {
+    paintPackFront(overlay, { id: CENTER_PACK, count: counts[CENTER_PACK] ?? 0, cover: img })
+    const ctx = overlay.getContext('2d')!
+    ctx.globalCompositeOperation = 'destination-in'; packOutline(ctx, overlay.width, overlay.height); ctx.fill()
+  }
+  paint(null)
+  if (cover) void loadImage(cover).then(paint)
 
   document.documentElement.classList.add('play-morph')
   Object.assign(app.style, { transformOrigin: `${left + vw / 2}px ${top + vh / 2}px`, background: '#fff', willChange: 'transform, clip-path' })
@@ -54,5 +60,5 @@ export function morphIntoPack(app: HTMLElement, done: () => void) {
     markMorphed()
     done()
   }, done)
-  return () => { shrink.cancel(); overlay.remove(); root.unmount(); document.documentElement.classList.remove('play-morph') }
+  return () => { shrink.cancel(); overlay.remove(); document.documentElement.classList.remove('play-morph') }
 }

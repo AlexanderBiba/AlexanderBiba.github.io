@@ -54,3 +54,13 @@ test('the card stack leaves room for the header and the controls under it', () =
     assert.ok(Math.abs(s.w / s.h - 63 / 88) < 1e-9)
   }
 })
+
+test('the pack wrapper is flat at its sealed ends and side folds and puffed in the middle', async () => {
+  const { pillow, teeth, rip, TEETH } = await import('../src/cards/shapes.ts')
+  assert.equal(pillow(0.5, 0.02), 0)
+  assert.equal(pillow(0.5, 0.98), 0)
+  assert.equal(pillow(0, 0.5), 0)
+  assert.equal(pillow(0.5, 0.5), 1)
+  assert.equal(teeth(0, 1).length, TEETH * 2 + 1)
+  assert.equal(rip[0][0], 0); assert.equal(rip.at(-1)[0], 1)
+})
