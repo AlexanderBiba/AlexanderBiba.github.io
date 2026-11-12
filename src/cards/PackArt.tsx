@@ -70,10 +70,12 @@ export function PackBack({ id, names }: { id: PackId; names: string[] }) {
   )
 }
 
-// The pack's left and right sides, shown when it is spun side-on. Pinched toward the crimped ends like a real wrapper.
+// The pack's four sides, so it reads as one solid slab from any angle.
 export function PackEdges({ id }: { id: PackId }) {
   return <>
     <span className={`${styles.edge} ${styles.edgeLeft}`} data-pack={id} />
     <span className={`${styles.edge} ${styles.edgeRight}`} data-pack={id} />
+    <span className={`${styles.edge} ${styles.edgeTop}`} data-pack={id} />
+    <span className={`${styles.edge} ${styles.edgeBottom}`} data-pack={id} />
   </>
 }

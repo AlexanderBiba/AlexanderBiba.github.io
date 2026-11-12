@@ -22,9 +22,9 @@
 }
 
 /* Pack and card colors */
-.pack[data-pack='blog'], .card[data-pack='blog'], .rays[data-pack='blog'], .opening[data-pack='blog'], .edge[data-pack='blog'] { --p1: #2a0624; --p2: #c0266a; --p3: #ff9a4d; --c1: #ffb18a; --c2: #e2477f; --chrome: #ffd9c2; --chrome2: #a8325a; --glow: 255, 120, 150; }
-.pack[data-pack='works'], .card[data-pack='works'], .rays[data-pack='works'], .opening[data-pack='works'], .edge[data-pack='works'] { --p1: #04142e; --p2: #0f5fae; --p3: #2ff0d0; --c1: #7cf0de; --c2: #2f6bff; --chrome: #d8fbff; --chrome2: #1c5a8c; --glow: 80, 210, 255; }
-.pack[data-pack='social'], .card[data-pack='social'], .rays[data-pack='social'], .opening[data-pack='social'], .edge[data-pack='social'] { --p1: #1d0b40; --p2: #6d3ae0; --p3: #ffc94a; --c1: #ffe7a0; --c2: #d6951a; --chrome: #fff1b8; --chrome2: #9a6a12; --glow: 255, 200, 90; }
+.pack[data-pack='blog'], .card[data-pack='blog'], .rays[data-pack='blog'], .opening[data-pack='blog'], .edge[data-pack='blog'], .slab[data-pack='blog'] { --p1: #2a0624; --p2: #c0266a; --p3: #ff9a4d; --c1: #ffb18a; --c2: #e2477f; --chrome: #ffd9c2; --chrome2: #a8325a; --glow: 255, 120, 150; }
+.pack[data-pack='works'], .card[data-pack='works'], .rays[data-pack='works'], .opening[data-pack='works'], .edge[data-pack='works'], .slab[data-pack='works'] { --p1: #04142e; --p2: #0f5fae; --p3: #2ff0d0; --c1: #7cf0de; --c2: #2f6bff; --chrome: #d8fbff; --chrome2: #1c5a8c; --glow: 80, 210, 255; }
+.pack[data-pack='social'], .card[data-pack='social'], .rays[data-pack='social'], .opening[data-pack='social'], .edge[data-pack='social'], .slab[data-pack='social'] { --p1: #1d0b40; --p2: #6d3ae0; --p3: #ffc94a; --c1: #ffe7a0; --c2: #d6951a; --chrome: #fff1b8; --chrome2: #9a6a12; --glow: 255, 200, 90; }
 
 /* ---------- Pack: a crinkled foil wrapper ---------- */
 .pack {
@@ -303,7 +303,7 @@
 
 /* The cards and the inside of the pack. This layer sits under the pack's front, so the cards
    slide up out of the torn top. */
-.deck { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.deck { position: absolute; inset: 0; z-index: 1; pointer-events: none; perspective: 1400px; }
 .packInside {
   position: absolute;
   clip-path: polygon(0% 9.5%, 10% 8.6%, 22% 10%, 35% 8.8%, 50% 9.8%, 63% 8.5%, 77% 9.9%, 90% 8.7%, 100% 9.6%, 100% 100%, 0% 100%);
@@ -316,20 +316,22 @@
 .deck[data-stage='closing'] .packInside { animation: restDrop .45s cubic-bezier(.2, .6, .5, 1) .3s reverse both; }
 .deckCard {
   position: absolute; touch-action: pan-y; cursor: grab;
-  transform: translate(calc(var(--x) + var(--dx, 0px)), var(--y)) rotate(calc(var(--r) + var(--dr, 0deg))) scale(var(--s));
-  filter: brightness(var(--b));
-  transition: transform .5s cubic-bezier(.2, .8, .25, 1), filter .5s;
+  transform: translate(calc(var(--x) + var(--dx, 0px)), var(--y)) rotate(calc(var(--r) + var(--dr, 0deg))) rotateY(calc(var(--t) + var(--dt, 0deg))) scale(var(--s));
+  transform-style: preserve-3d;
+  transition: transform .5s cubic-bezier(.2, .8, .25, 1);
 }
+/* Dim only the printed face of the cards underneath, so the card itself stays a 3D object. */
+.deckCard .slabFront { filter: brightness(var(--b)); transition: filter .5s; }
 .deckCard[data-n='0'] { pointer-events: auto; }
 .deckCard:active { cursor: grabbing; }
 .deck[data-stage='opening'] .deckCard { animation: deckRise 1.25s calc(.3s + var(--k) * 70ms) both; }
 .deck[data-stage='closing'] .deckCard { animation: deckRise 1s calc(.15s + (3 - var(--k)) * 50ms) reverse both; }
 @keyframes deckRise {
-  0% { transform: translate(var(--fx), var(--fy0)) rotate(0deg) scale(var(--fs)); filter: brightness(1); animation-timing-function: cubic-bezier(.3, .6, .4, 1); }
-  45% { transform: translate(var(--fx), var(--fy1)) rotate(0deg) scale(var(--fs)); filter: brightness(1); animation-timing-function: linear; }
+  0% { transform: translate(var(--fx), var(--fy0)) rotate(0deg) rotateY(0deg) scale(var(--fs)); animation-timing-function: cubic-bezier(.3, .6, .4, 1); }
+  45% { transform: translate(var(--fx), var(--fy1)) rotate(0deg) rotateY(0deg) scale(var(--fs)); animation-timing-function: linear; }
   /* Hold at the opening while the empty wrapper drops away, then come forward. */
-  62% { transform: translate(var(--fx), var(--fy1)) rotate(0deg) scale(var(--fs)); filter: brightness(1); animation-timing-function: cubic-bezier(.45, 0, .2, 1); }
-  100% { transform: translate(var(--x), var(--y)) rotate(var(--r)) scale(var(--s)); filter: brightness(var(--b)); }
+  62% { transform: translate(var(--fx), var(--fy1)) rotate(0deg) rotateY(0deg) scale(var(--fs)); animation-timing-function: cubic-bezier(.45, 0, .2, 1); }
+  100% { transform: translate(var(--x), var(--y)) rotate(var(--r)) rotateY(var(--t)) scale(var(--s)); }
 }
 .seal { display: none; }
 .closing .burst { display: none; }
@@ -363,21 +365,48 @@
 .spin { width: 100%; height: 100%; perspective: 1200px; touch-action: none; cursor: grab; }
 .spin:active { cursor: grabbing; }
 .spinner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
+.spinTilt { width: 100%; height: 100%; transform-style: preserve-3d; transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
+.holoStill { transform: none; }
+/* Cards as solid objects: about 2% of their width thick, a paper core between two printed faces. */
+.slab { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
+.slabFront, .slabBack { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.slabFront { transform: translateZ(calc(var(--ct, 0px) / 2)); }
+.slabBack {
+  transform: rotateY(180deg) translateZ(calc(var(--ct, 0px) / 2)); border-radius: 4.5%/3.2%;
+  background: repeating-linear-gradient(45deg, rgba(255, 255, 255, .08) 0 6px, transparent 6px 12px), linear-gradient(150deg, var(--p2), var(--p1));
+}
+.cardEdge {
+  position: absolute; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  background: linear-gradient(90deg, var(--c2), #fbf8f1 35%, #e9e2d2 65%, var(--c2));
+}
+.cardEdgeLeft, .cardEdgeRight { top: 3.2%; bottom: 3.2%; width: var(--ct, 0px); }
+.cardEdgeLeft { left: calc(var(--ct, 0px) / -2); transform: rotateY(-90deg); }
+.cardEdgeRight { right: calc(var(--ct, 0px) / -2); transform: rotateY(90deg); }
+.cardEdgeTop, .cardEdgeBottom { left: 4.5%; right: 4.5%; height: var(--ct, 0px); background: linear-gradient(180deg, var(--c2), #fbf8f1 35%, #e9e2d2 65%, var(--c2)); }
+.cardEdgeTop { top: calc(var(--ct, 0px) / -2); transform: rotateX(90deg); }
+.cardEdgeBottom { bottom: calc(var(--ct, 0px) / -2); transform: rotateX(-90deg); }
+/* A shadow drawn on each face would hang off the slab's sides once it turns. */
+.spin .box:has(> .pack) { filter: none; }
 .settling { transition: transform .65s cubic-bezier(.2, .9, .25, 1.12); }
 .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: translateZ(calc(var(--thickness, 0px) / 2)); }
 .faceBackSide { transform: rotateY(180deg) translateZ(calc(var(--thickness, 0px) / 2)); }
-/* The pack's sides: fattest in the middle, pinched toward the crimped ends. */
+/* The pack's sides and ends: foil seams in the pack's colors, crimped like the wrapper. */
 .edge {
-  position: absolute; top: 0; bottom: 0; width: var(--thickness, 0px);
-  backface-visibility: hidden; -webkit-backface-visibility: hidden; pointer-events: none;
-  clip-path: polygon(50% 0, 100% 6%, 100% 94%, 50% 100%, 0 94%, 0 6%);
+  position: absolute; backface-visibility: hidden; -webkit-backface-visibility: hidden; pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(0, 0, 0, .5), rgba(255, 255, 255, .18) 50%, rgba(0, 0, 0, .5)),
-    repeating-linear-gradient(180deg, rgba(255, 255, 255, .08) 0 3px, transparent 3px 7px),
+    linear-gradient(90deg, rgba(0, 0, 0, .35), rgba(255, 255, 255, .22) 50%, rgba(0, 0, 0, .35)),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, .1) 0 2px, transparent 2px 6px),
     linear-gradient(180deg, var(--p1), var(--p2) 50%, var(--p3));
 }
+.edgeLeft, .edgeRight { top: 1.2%; bottom: 1.2%; width: var(--thickness, 0px); }
 .edgeLeft { left: calc(var(--thickness, 0px) / -2); transform: rotateY(-90deg); }
 .edgeRight { right: calc(var(--thickness, 0px) / -2); transform: rotateY(90deg); }
+.edgeTop, .edgeBottom {
+  left: 0; right: 0; height: var(--thickness, 0px);
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .5) 0 2px, rgba(0, 0, 0, .3) 2px 4px), linear-gradient(90deg, var(--p1), var(--p2));
+}
+.edgeTop { top: calc(var(--thickness, 0px) / -2); transform: rotateX(90deg); }
+.edgeBottom { bottom: calc(var(--thickness, 0px) / -2); transform: rotateX(-90deg); }
 .swipe { width: 100%; height: 100%; touch-action: none; cursor: grab; }
 .swipe:active { cursor: grabbing; }
 

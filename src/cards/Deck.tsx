@@ -2,7 +2,7 @@
 
 import { useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import Holo from './Holo'
-import { CardFront } from './Card'
+import { CardSlab } from './Card'
 import { CARD_RATIO } from './geometry'
 import type { CardData, PackId } from './types'
 import styles from './cards.module.css'
@@ -37,14 +37,15 @@ export default function Deck({ cards, packId, index, stage, stack, pack, onNext,
   }
 
   const el = (n: number) => layer.current?.querySelector<HTMLElement>(`[data-n="${n}"]`) ?? null
-  const set = (node: HTMLElement | null, dx: number, dr: number) => {
+  // dx moves the card, dr turns it flat on the table, dt turns it toward you so its edge shows.
+  const set = (node: HTMLElement | null, dx: number, dr: number, dt: number) => {
     if (!node) return
     node.style.transition = 'none'
-    node.style.setProperty('--dx', `${dx}px`); node.style.setProperty('--dr', `${dr}deg`)
+    node.style.setProperty('--dx', `${dx}px`); node.style.setProperty('--dr', `${dr}deg`); node.style.setProperty('--dt', `${dt}deg`)
   }
   const release = (node: HTMLElement | null) => {
     if (!node) return
-    node.style.removeProperty('transition'); node.style.removeProperty('--dx'); node.style.removeProperty('--dr')
+    node.style.removeProperty('transition'); node.style.removeProperty('--dx'); node.style.removeProperty('--dr'); node.style.removeProperty('--dt')
   }
 
   function down(event: ReactPointerEvent<HTMLDivElement>) {
@@ -63,13 +64,13 @@ export default function Deck({ cards, packId, index, stage, stack, pack, onNext,
     d.dx = dx
     if (dx <= 0) {
       // Pull the top card off to the left.
-      release(el(-1)); set(el(0), dx, dx * 0.05)
+      release(el(-1)); set(el(0), dx, dx * 0.05, Math.max(-40, dx * 0.15))
     } else if (base > 0) {
       // Drag the previous card back in from the left, over the top.
       const p = Math.min(1, dx / (stack.w * 0.9))
-      release(el(0)); set(el(-1), -offscreen * p, 18 * p)
+      release(el(0)); set(el(-1), -offscreen * p, 18 * p, -40 * p)
     } else {
-      set(el(0), dx * 0.25, dx * 0.012)
+      set(el(0), dx * 0.25, dx * 0.012, dx * 0.03)
     }
   }
   function up(event: ReactPointerEvent<HTMLDivElement>) {
@@ -94,7 +95,7 @@ export default function Deck({ cards, packId, index, stage, stack, pack, onNext,
         const style: Vars = {
           left: stack.x, top: stack.y, width: stack.w, height: stack.h, zIndex: gone ? 20 : 10 - n,
           '--x': gone ? `${offscreen}px` : '0px', '--y': gone ? '24px' : `${n * 4}px`,
-          '--r': gone ? '-18deg' : `${FAN[n]}deg`, '--s': gone ? 1 : 1 - n * 0.012, '--b': gone ? 1 : 1 - n * 0.16, '--k': Math.max(0, n),
+          '--r': gone ? '-18deg' : `${FAN[n]}deg`, '--t': gone ? '-40deg' : '0deg', '--s': gone ? 1 : 1 - n * 0.012, '--b': gone ? 1 : 1 - n * 0.16, '--k': Math.max(0, n),
           ...inside,
         }
         const top = n === 0 && stage === 'stack'
@@ -104,7 +105,7 @@ export default function Deck({ cards, packId, index, stage, stack, pack, onNext,
             role={top ? 'group' : undefined} aria-label={top ? `${card.name}, card ${base + 1} of ${total}` : undefined}
             onPointerDown={top ? down : undefined} onPointerMove={top ? move : undefined} onPointerUp={top ? up : undefined} onPointerCancel={top ? cancel : undefined}
           >
-            <Holo seed={n} idle={false} depth={top ? 1 : 0}><CardFront card={card} total={total} /></Holo>
+            <Holo seed={n} idle={false} depth={top ? 1.4 : 0}><CardSlab card={card} total={total} thickness={stack.w * 0.022} /></Holo>
           </div>
         )
       })}

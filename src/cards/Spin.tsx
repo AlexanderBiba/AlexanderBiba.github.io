@@ -84,11 +84,14 @@ export default function Spin({ front, back, edges, thickness = 0, flips = 0, dis
 
   return (
     <div className={styles.spin} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={cancel}>
+      {/* The holo tilt turns the whole object, so the faces and sides always stay joined. */}
+      <div className={styles.spinTilt}>
       <div ref={inner} className={`${styles.spinner} ${settling ? styles.settling : ''}`} style={{ '--thickness': `${thickness}px` } as CSSProperties} onTransitionEnd={event => { if (event.target === event.currentTarget) settled() }}>
         {/* Browsers can hit-test a hidden backface, so only the face that's showing takes pointer input. */}
         <div ref={frontFace} className={styles.face} style={{ pointerEvents: face === 'front' ? 'auto' : 'none' }}>{front}</div>
         <div ref={backFace} className={`${styles.face} ${styles.faceBackSide}`} style={{ pointerEvents: face === 'back' ? 'auto' : 'none' }}>{back}</div>
         {edges}
+      </div>
       </div>
     </div>
   )

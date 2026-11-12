@@ -195,11 +195,11 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
                 <span className={styles.seal} />
                 <div className={styles.flap} style={{ clipPath: flapClip, transformOrigin: flap.origin }}><PackArt id={item.id} count={item.cards.length} cover={item.cover} /></div>
               </div>
-              : focused && stage === 'tear' ? <div className={styles.packStage}>
+              : focused && stage === 'tear' ? <Holo seed={i * 2.1} still className={styles.packStage}>
                 <Spin
                   flips={packFlips} disabled={Boolean(tear)} onFace={setPackFace} onTap={() => setNudge(n => n + 1)}
                   thickness={rect.w * 0.06} edges={<PackEdges id={item.id} />}
-                  front={<Holo seed={i * 2.1}><div className={styles.tearable}>
+                  front={<div className={styles.tearable}>
                     {tear ? <>
                       <PackArt id={item.id} count={item.cards.length} cover={item.cover} opened />
                       <span className={styles.gapGlow} style={{ opacity: progress }} />
@@ -211,10 +211,10 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
                         {tear && <><span className={styles.tearCut} style={{ left: `${tear.from * 100}%`, width: `${(tear.to - tear.from) * 100}%` }} /><span className={styles.tearSpark} style={{ left: `${tear.at * 100}%` }} /></>}
                       </span>
                     </span>}
-                  </div></Holo>}
-                  back={<Holo seed={i * 2.1}><PackBack id={item.id} names={names} /></Holo>}
+                  </div>}
+                  back={<PackBack id={item.id} names={names} />}
                 />
-              </div>
+              </Holo>
               : <button className={styles.packButton} tabIndex={stage === 'shelf' ? 0 : -1} aria-label={`${item.subtitle}: ${item.cards.length} cards`} onClick={() => packClick(i)}>
                 <Holo depth={focused ? 1 : 0.4} seed={i * 2.1}><PackArt id={item.id} count={item.cards.length} cover={item.cover} /></Holo>
               </button>}

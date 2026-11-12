@@ -6,7 +6,8 @@ import styles from './cards.module.css'
 
 // Tilts its children toward the pointer or the phone's angle and moves the foil and glare with it.
 // With nothing to follow it sways slowly on its own unless `idle` is off. Reduced motion keeps it flat.
-export default function Holo({ children, className = '', depth = 1, seed = 0, idle = true, style }: { children: ReactNode; className?: string; depth?: number; seed?: number; idle?: boolean; style?: CSSProperties }) {
+// With `still` on it only sets the tilt variables, for a 3D child that applies them itself.
+export default function Holo({ children, className = '', depth = 1, seed = 0, idle = true, still = false, style }: { children: ReactNode; className?: string; depth?: number; seed?: number; idle?: boolean; still?: boolean; style?: CSSProperties }) {
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const el = ref.current
@@ -38,5 +39,5 @@ export default function Holo({ children, className = '', depth = 1, seed = 0, id
     frame = requestAnimationFrame(loop)
     return () => { cancelAnimationFrame(frame); el.removeEventListener('pointermove', move); el.removeEventListener('pointerleave', leave); el.removeEventListener('pointercancel', leave) }
   }, [depth, seed, idle])
-  return <div ref={ref} className={`${styles.holo} ${className}`} style={style}>{children}</div>
+  return <div ref={ref} className={`${styles.holo} ${still ? styles.holoStill : ''} ${className}`} style={style}>{children}</div>
 }

@@ -1,3 +1,4 @@
+import type React from 'react'
 import { Icon } from './icons'
 import type { CardData } from './types'
 import styles from './cards.module.css'
@@ -20,5 +21,18 @@ export function CardFront({ card, total }: { card: CardData; total: number }) {
       </div>
       <span className={styles.foil} /><span className={styles.glare} />
     </div></div>
+  )
+}
+
+// A card as a solid object: the printed front, a plain back and four edges `thickness` pixels
+// deep, so it shows its sides when it tilts.
+export function CardSlab({ card, total, thickness }: { card: CardData; total: number; thickness: number }) {
+  return (
+    <div className={styles.slab} data-pack={card.pack} style={{ '--ct': `${thickness}px` } as React.CSSProperties}>
+      <div className={styles.slabBack} />
+      <span className={`${styles.cardEdge} ${styles.cardEdgeLeft}`} /><span className={`${styles.cardEdge} ${styles.cardEdgeRight}`} />
+      <span className={`${styles.cardEdge} ${styles.cardEdgeTop}`} /><span className={`${styles.cardEdge} ${styles.cardEdgeBottom}`} />
+      <div className={styles.slabFront}><CardFront card={card} total={total} /></div>
+    </div>
   )
 }
