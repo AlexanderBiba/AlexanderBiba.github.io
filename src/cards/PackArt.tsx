@@ -26,7 +26,7 @@ export default function PackArt({ id, count, cover, opened = false }: { id: Pack
       <div className={styles.pack} data-pack={id} style={{ clipPath: opened ? torn : whole }}>
         <span className={styles.crinkle} />
         <span className={`${styles.crimp} ${styles.crimpTop}`} />
-        <span className={styles.tearLine}><span>✂</span><em>TEAR HERE</em></span>
+        <span className={styles.tearLine}><svg className={styles.scissors} viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="5" cy="6.5" r="3" /><circle cx="5" cy="17.5" r="3" /><path d="M7.6 8 22 15.5M7.6 16 22 8.5" /></g></svg><em>TEAR HERE</em></span>
         <span className={styles.ribbon}>ALEX BIBA <b>✦</b> SERIES 01</span>
         <span className={styles.window}>
           {cover ? <img src={cover} alt="" draggable={false} /> : <span className={styles.windowEmblem}><PackEmblem pack={id} /></span>}
@@ -39,6 +39,32 @@ export default function PackArt({ id, count, cover, opened = false }: { id: Pack
         <span className={`${styles.crimp} ${styles.crimpBottom}`} />
         {sparkles.map(([x, y, delay], i) => <span key={i} className={styles.sparkle} style={{ left: `${x}%`, top: `${y}%`, animationDelay: `${delay}s` }} />)}
         <span className={styles.foil} /><span className={styles.sheen} /><span className={styles.glare} />
+      </div>
+    </div>
+  )
+}
+
+const bars = [3, 1, 2, 1, 1, 3, 2, 1, 3, 1, 2, 2, 1, 1, 3, 1, 2, 1, 3, 2, 1, 1, 2, 3, 1, 2, 1, 1, 3, 1]
+
+export function PackBack({ id, names }: { id: PackId; names: string[] }) {
+  const meta = PACK_META[id]
+  return (
+    <div className={styles.box}>
+      <div className={`${styles.pack} ${styles.packBack}`} data-pack={id} style={{ clipPath: whole }}>
+        <span className={styles.crinkle} />
+        <span className={`${styles.crimp} ${styles.crimpTop}`} />
+        <span className={styles.backBrand}>ALEX BIBA <b>✦</b> SERIES 01</span>
+        <span className={styles.backTitle}>{meta.title} PACK</span>
+        <span className={styles.inside}>
+          <em>WHAT’S INSIDE</em>
+          {names.map((name, i) => <span key={name}><b>{String(i + 1).padStart(2, '0')}</b>{name}</span>)}
+        </span>
+        <span className={styles.barcode}>
+          <span className={styles.bars}>{bars.map((w, i) => <i key={i} style={{ width: `${w * 0.55}cqw` }} />)}</span>
+          alexbiba.com/play
+        </span>
+        <span className={`${styles.crimp} ${styles.crimpBottom}`} />
+        <span className={styles.foil} /><span className={styles.glare} />
       </div>
     </div>
   )
