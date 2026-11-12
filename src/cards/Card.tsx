@@ -22,12 +22,3 @@ export function CardFront({ card, total }: { card: CardData; total: number }) {
     </div></div>
   )
 }
-
-export function CardBack() {
-  return (
-    <div className={styles.box}><div className={`${styles.card} ${styles.back}`}>
-      <div className={styles.backInner}><span className={styles.monogram}>AB</span><span className={styles.backName}>ALEX BIBA</span></div>
-      <span className={styles.foil} /><span className={styles.glare} />
-    </div></div>
-  )
-}

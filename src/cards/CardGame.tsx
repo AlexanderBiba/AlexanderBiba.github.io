@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import Holo from './Holo'
-import PackArt, { PackBack, flapClip } from './PackArt'
+import PackArt, { PackBack, PackEdges, flapClip } from './PackArt'
 import Spin from './Spin'
-import { CardBack, CardFront } from './Card'
+import Swipe from './Swipe'
+import { CardFront } from './Card'
 import { packRect, packSpacing } from './geometry'
 import { MORPH_OVERLAY, wasMorphed } from './handoff'
 import { disableMotion, enableMotion } from './motion'
@@ -44,7 +45,7 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
   const [flap, setFlap] = useState({ transform: 'none', origin: '100% 13%' })
   const [packFlips, setPackFlips] = useState(0), [packFace, setPackFace] = useState<'front' | 'back'>('front')
   const [nudge, setNudge] = useState(0)
-  const [index, setIndex] = useState(0), [cardFlips, setCardFlips] = useState(0)
+  const [index, setIndex] = useState(0)
   const [enter, setEnter] = useState<'promote' | 'return' | null>(null)
   const [leaving, setLeaving] = useState<{ index: number; key: number } | null>(null)
   const swipe = useRef<{ x: number; y: number } | null>(null), suppressClick = useRef(false)
@@ -80,7 +81,7 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
   const pickPack = useCallback(() => { setPackFace('front'); setPackFlips(0); setTear(null); setStage('tear') }, [])
   const tearOpen = useCallback((from = { transform: 'none', origin: '100% 13%' }) => {
     tearing.current = null; setTear(null)
-    setFlap(from); setStage('opening'); setIndex(0); setEnter(null); setLeaving(null); setCardFlips(0)
+    setFlap(from); setStage('opening'); setIndex(0); setEnter(null); setLeaving(null)
     try { navigator.vibrate?.([10, 30, 18]) } catch { /* optional */ }
     later(() => setStage('stack'), reducedMotion() ? 0 : OPEN_MS)
   }, [])
@@ -91,11 +92,11 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
   const next = useCallback(() => {
     if (index >= total) return
     if (index < total - 1) { setLeaving({ index, key: Date.now() }); later(() => setLeaving(null), 500) }
-    setEnter('promote'); setCardFlips(0); setIndex(index + 1)
+    setEnter('promote'); setIndex(index + 1)
   }, [index, total])
   const prev = useCallback(() => {
     if (index <= 0) return
-    setEnter('return'); setCardFlips(0); setLeaving(null); setIndex(index - 1)
+    setEnter('return'); setLeaving(null); setIndex(index - 1)
   }, [index])
 
   useEffect(() => {
@@ -107,7 +108,6 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
       else if (stage === 'stack' && k === 'Escape') untear()
       else if (stage === 'stack' && index < total && (k === 'ArrowRight' || k === 'ArrowDown')) next()
       else if (stage === 'stack' && (k === 'ArrowLeft' || k === 'ArrowUp')) prev()
-      else if (stage === 'stack' && index < total && k.toLowerCase() === 'f') setCardFlips(n => n + 1)
       else return
       event.preventDefault()
     }
@@ -193,6 +193,7 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
               : focused && stage === 'tear' ? <div className={styles.packStage}>
                 <Spin
                   flips={packFlips} disabled={Boolean(tear)} onFace={setPackFace} onTap={() => setNudge(n => n + 1)}
+                  thickness={rect.w * 0.09} edges={<PackEdges id={item.id} />}
                   front={<Holo seed={i * 2.1}><div className={styles.tearable}>
                     {tear ? <>
                       <PackArt id={item.id} count={item.cards.length} cover={item.cover} opened />
@@ -248,18 +249,16 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
             {pack.cards.slice(index + 1, index + 4).map((c, k) => <div key={c.id} className={styles.stackBehind} style={{ '--n': k + 1, zIndex: 10 - k } as Vars} aria-hidden="true"><CardFront card={c} total={total} /></div>)}
             {leaving && <div key={leaving.key} className={styles.stackLeaving} aria-hidden="true"><CardFront card={pack.cards[leaving.index]} total={total} /></div>}
             <div key={card.id} className={`${styles.stackTop} ${enter === 'promote' ? styles.promote : enter === 'return' ? styles.returning : styles.firstCard}`} aria-label={`${card.name}, card ${index + 1} of ${total}`} role="group">
-              <Spin flips={cardFlips} onTap={next} onSwipe={direction => direction === 'up' ? next() : prev()}
-                front={<Holo seed={index}><CardFront card={card} total={total} /></Holo>}
-                back={<Holo seed={index}><CardBack /></Holo>} />
+              <Swipe onNext={next} onPrev={prev}><Holo seed={index} idle={false}><CardFront card={card} total={total} /></Holo></Swipe>
             </div>
           </div>
           <CardLinks card={card} />
           <div className={styles.stackNav}>
             <button className={styles.arrow} onClick={prev} disabled={index === 0} aria-label="Previous card"><Chevron dir="left" /></button>
-            <button className={styles.ghost} onClick={() => setCardFlips(n => n + 1)}>⟲ Flip</button>
+            <span className={styles.stackCount}>{index + 1} / {total}</span>
             <button className={styles.arrow} onClick={next} aria-label="Next card"><Chevron dir="right" /></button>
           </div>
-          <p className={styles.stackHint}>Swipe up for the next card · drag sideways to spin</p>
+          <p className={styles.stackHint}>Swipe or tap for the next card</p>
         </> : <div className={styles.recap}>
           <h2>You got {total} cards</h2>
           <ul className={styles.recapGrid}>{pack.cards.map((c, k) => <li key={c.id} style={{ '--i': k } as Vars}><button onClick={() => { setIndex(k); setEnter('return') }} aria-label={`Look at ${c.name} again`}><CardFront card={c} total={total} /></button></li>)}</ul>

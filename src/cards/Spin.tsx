@@ -1,14 +1,16 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react'
 import styles from './cards.module.css'
 
 type Gesture = { id: number; x: number; y: number; t: number; mode: 'spin' | 'swipe' | null; lastX: number; lastT: number; v: number; base: number }
 
 // A two-sided object you can spin by dragging sideways. It settles on whichever face is
 // closest when you let go, carrying the flick's speed. Vertical swipes and taps go to the parent.
-export default function Spin({ front, back, flips = 0, disabled = false, onTap, onSwipe, onFace }: {
-  front: ReactNode; back: ReactNode; flips?: number; disabled?: boolean
+// `edges` are the object's sides, drawn between the two faces `thickness` pixels apart so it
+// never turns paper-thin side-on.
+export default function Spin({ front, back, edges, thickness = 0, flips = 0, disabled = false, onTap, onSwipe, onFace }: {
+  front: ReactNode; back: ReactNode; edges?: ReactNode; thickness?: number; flips?: number; disabled?: boolean
   onTap?: () => void; onSwipe?: (direction: 'up' | 'down') => void; onFace?: (face: 'front' | 'back') => void
 }) {
   const inner = useRef<HTMLDivElement>(null), frontFace = useRef<HTMLDivElement>(null), backFace = useRef<HTMLDivElement>(null), gesture = useRef<Gesture | null>(null)
@@ -82,10 +84,11 @@ export default function Spin({ front, back, flips = 0, disabled = false, onTap, 
 
   return (
     <div className={styles.spin} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={cancel}>
-      <div ref={inner} className={`${styles.spinner} ${settling ? styles.settling : ''}`} onTransitionEnd={event => { if (event.target === event.currentTarget) settled() }}>
+      <div ref={inner} className={`${styles.spinner} ${settling ? styles.settling : ''}`} style={{ '--thickness': `${thickness}px` } as CSSProperties} onTransitionEnd={event => { if (event.target === event.currentTarget) settled() }}>
         {/* Browsers can hit-test a hidden backface, so only the face that's showing takes pointer input. */}
         <div ref={frontFace} className={styles.face} style={{ pointerEvents: face === 'front' ? 'auto' : 'none' }}>{front}</div>
         <div ref={backFace} className={`${styles.face} ${styles.faceBackSide}`} style={{ pointerEvents: face === 'back' ? 'auto' : 'none' }}>{back}</div>
+        {edges}
       </div>
     </div>
   )

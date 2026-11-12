@@ -22,9 +22,9 @@
 }
 
 /* Pack and card colors */
-.pack[data-pack='blog'], .card[data-pack='blog'], .rays[data-pack='blog'], .opening[data-pack='blog'] { --p1: #2a0624; --p2: #c0266a; --p3: #ff9a4d; --c1: #ffb18a; --c2: #e2477f; --chrome: #ffd9c2; --chrome2: #a8325a; --glow: 255, 120, 150; }
-.pack[data-pack='works'], .card[data-pack='works'], .rays[data-pack='works'], .opening[data-pack='works'] { --p1: #04142e; --p2: #0f5fae; --p3: #2ff0d0; --c1: #7cf0de; --c2: #2f6bff; --chrome: #d8fbff; --chrome2: #1c5a8c; --glow: 80, 210, 255; }
-.pack[data-pack='social'], .card[data-pack='social'], .rays[data-pack='social'], .opening[data-pack='social'] { --p1: #1d0b40; --p2: #6d3ae0; --p3: #ffc94a; --c1: #ffe7a0; --c2: #d6951a; --chrome: #fff1b8; --chrome2: #9a6a12; --glow: 255, 200, 90; }
+.pack[data-pack='blog'], .card[data-pack='blog'], .rays[data-pack='blog'], .opening[data-pack='blog'], .edge[data-pack='blog'] { --p1: #2a0624; --p2: #c0266a; --p3: #ff9a4d; --c1: #ffb18a; --c2: #e2477f; --chrome: #ffd9c2; --chrome2: #a8325a; --glow: 255, 120, 150; }
+.pack[data-pack='works'], .card[data-pack='works'], .rays[data-pack='works'], .opening[data-pack='works'], .edge[data-pack='works'] { --p1: #04142e; --p2: #0f5fae; --p3: #2ff0d0; --c1: #7cf0de; --c2: #2f6bff; --chrome: #d8fbff; --chrome2: #1c5a8c; --glow: 80, 210, 255; }
+.pack[data-pack='social'], .card[data-pack='social'], .rays[data-pack='social'], .opening[data-pack='social'], .edge[data-pack='social'] { --p1: #1d0b40; --p2: #6d3ae0; --p3: #ffc94a; --c1: #ffe7a0; --c2: #d6951a; --chrome: #fff1b8; --chrome2: #9a6a12; --glow: 255, 200, 90; }
 
 /* ---------- Pack: a crinkled foil wrapper ---------- */
 .pack {
@@ -200,22 +200,6 @@
   background-size: 9px 9px; background-position: var(--mx, 50%) var(--my, 50%);
 }
 
-.back { background: #f3efe4; padding: 4cqw; }
-.backInner {
-  height: 100%; border-radius: 3cqw; color: #fff;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4cqw;
-  background:
-    repeating-conic-gradient(from 0deg at 50% 46%, rgba(255, 255, 255, .06) 0deg 10deg, transparent 10deg 20deg),
-    radial-gradient(circle at 50% 46%, #3a4bd1, #12164a 70%);
-}
-.monogram {
-  width: 40cqw; height: 40cqw; border-radius: 50%; display: grid; place-items: center;
-  font-size: 15cqw; font-weight: 900; font-style: italic;
-  box-shadow: inset 0 0 0 1.2cqw #ffd36b, 0 0 14cqw rgba(107, 196, 255, .5);
-  background: rgba(255, 255, 255, .08);
-}
-.backName { font-size: 5cqw; font-weight: 800; letter-spacing: .35em; }
-.back .foil { opacity: .3; }
 
 /* ---------- Game layout ---------- */
 .game {
@@ -349,8 +333,22 @@
 .spin:active { cursor: grabbing; }
 .spinner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
 .settling { transition: transform .65s cubic-bezier(.2, .9, .25, 1.12); }
-.face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-.faceBackSide { transform: rotateY(180deg); }
+.face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: translateZ(calc(var(--thickness, 0px) / 2)); }
+.faceBackSide { transform: rotateY(180deg) translateZ(calc(var(--thickness, 0px) / 2)); }
+/* The pack's sides: fattest in the middle, pinched toward the crimped ends. */
+.edge {
+  position: absolute; top: 0; bottom: 0; width: var(--thickness, 0px);
+  backface-visibility: hidden; -webkit-backface-visibility: hidden; pointer-events: none;
+  clip-path: polygon(50% 0, 100% 6%, 100% 94%, 50% 100%, 0 94%, 0 6%);
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, .5), rgba(255, 255, 255, .18) 50%, rgba(0, 0, 0, .5)),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, .08) 0 3px, transparent 3px 7px),
+    linear-gradient(180deg, var(--p1), var(--p2) 50%, var(--p3));
+}
+.edgeLeft { left: calc(var(--thickness, 0px) / -2); transform: rotateY(-90deg); }
+.edgeRight { right: calc(var(--thickness, 0px) / -2); transform: rotateY(90deg); }
+.swipe { width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.swipe:active { cursor: grabbing; }
 
 /* Back of the pack */
 .backBrand, .backTitle { position: absolute; left: 0; right: 0; text-align: center; z-index: 3; }
@@ -429,6 +427,7 @@
 @keyframes flyUp { to { transform: translate(-25%, -140%) rotate(-18deg); opacity: 0; } }
 .stackLinks { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 .stackNav { display: flex; align-items: center; gap: 14px; }
+.stackCount { min-width: 56px; text-align: center; font-size: 14px; font-weight: 800; letter-spacing: .1em; opacity: .75; font-variant-numeric: tabular-nums; }
 .stackHint { margin: 0; font-size: 12px; opacity: .5; text-align: center; }
 
 .recap { width: 100%; max-width: 760px; text-align: center; }

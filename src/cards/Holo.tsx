@@ -5,8 +5,8 @@ import { tilt } from './motion'
 import styles from './cards.module.css'
 
 // Tilts its children toward the pointer or the phone's angle and moves the foil and glare with it.
-// With nothing to follow it sways slowly on its own. Reduced motion keeps it flat.
-export default function Holo({ children, className = '', depth = 1, seed = 0, style }: { children: ReactNode; className?: string; depth?: number; seed?: number; style?: CSSProperties }) {
+// With nothing to follow it sways slowly on its own unless `idle` is off. Reduced motion keeps it flat.
+export default function Holo({ children, className = '', depth = 1, seed = 0, idle = true, style }: { children: ReactNode; className?: string; depth?: number; seed?: number; idle?: boolean; style?: CSSProperties }) {
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const el = ref.current
@@ -24,7 +24,7 @@ export default function Holo({ children, className = '', depth = 1, seed = 0, st
       let target = { x: 0, y: 0 }
       if (pointer && now - pointer.t < 2500) target = pointer
       else if (tilt.active) target = tilt
-      else if (!reduced) { const t = (now - start) / 1000 + seed; target = { x: Math.sin(t * 0.8) * 0.55, y: Math.cos(t * 0.55) * 0.35 } }
+      else if (idle && !reduced) { const t = (now - start) / 1000 + seed; target = { x: Math.sin(t * 0.8) * 0.55, y: Math.cos(t * 0.55) * 0.35 } }
       current.x += (Math.max(-1, Math.min(1, target.x)) - current.x) * 0.1
       current.y += (Math.max(-1, Math.min(1, target.y)) - current.y) * 0.1
       const turn = reduced ? 0 : depth
@@ -37,6 +37,6 @@ export default function Holo({ children, className = '', depth = 1, seed = 0, st
     }
     frame = requestAnimationFrame(loop)
     return () => { cancelAnimationFrame(frame); el.removeEventListener('pointermove', move); el.removeEventListener('pointerleave', leave); el.removeEventListener('pointercancel', leave) }
-  }, [depth, seed])
+  }, [depth, seed, idle])
   return <div ref={ref} className={`${styles.holo} ${className}`} style={style}>{children}</div>
 }
