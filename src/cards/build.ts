@@ -49,5 +49,7 @@ export function buildPacks({ posts, works, settings }: { posts: Post[]; works: W
   if (settings.chess) social.push({ id: 'social-chess', pack: 'social', name: 'Chess.com', tag: 'HOBBY', meta: [handle(settings.chess).toUpperCase()], text: 'Up for a game? Find me on Chess.com.', art: { kind: 'icon', icon: 'chess' }, links: [{ label: 'Challenge me', href: settings.chess }], foot: host(settings.chess) })
   if (settings.youtube3dPrinting) social.push({ id: 'social-printing', pack: 'social', name: '3D printing', tag: 'HOBBY', meta: [`@${handle(settings.youtube3dPrinting)}`], text: 'I like making things I can actually hold. Watch my 3D prints on YouTube.', art: { kind: 'icon', icon: 'printer' }, links: [{ label: 'Watch on YouTube', href: settings.youtube3dPrinting }], foot: host(settings.youtube3dPrinting) })
   const cards = { blog, works: built, social: social.map((card, i) => ({ ...card, no: i + 1 })) }
-  return PACK_ORDER.map(id => ({ id, ...PACK_META[id], cards: cards[id] }))
+  // The pack's window shows the art of its newest card that has a picture.
+  const cover = (list: CardData[]) => list.map(card => card.art).find(art => art.kind === 'image')?.src
+  return PACK_ORDER.map(id => ({ id, ...PACK_META[id], cover: cover(cards[id]), cards: cards[id] }))
 }

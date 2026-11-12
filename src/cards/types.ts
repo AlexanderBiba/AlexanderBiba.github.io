@@ -14,4 +14,4 @@ export type CardData = {
   links: CardLink[]
   foot: string
 }
-export type PackData = { id: PackId; title: string; subtitle: string; cards: CardData[] }
+export type PackData = { id: PackId; title: string; subtitle: string; cover?: string; cards: CardData[] }

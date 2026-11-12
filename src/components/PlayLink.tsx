@@ -2,7 +2,10 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { morphIntoPack } from '../cards/morph'
+import { cover, morphIntoPack } from '../cards/morph'
+
+// Load the pack's cover art before the morph needs it.
+const warm = () => { if (cover) new Image().src = cover }
 
 export default function PlayLink() {
   const router = useRouter()
@@ -12,6 +15,8 @@ export default function PlayLink() {
       className="explore-link"
       aria-label="Open my card packs"
       title="Open my card packs"
+      onPointerEnter={warm}
+      onTouchStart={warm}
       onClick={event => {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return

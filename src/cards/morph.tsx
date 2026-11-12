@@ -10,6 +10,8 @@ import { CENTER_PACK } from './packMeta'
 import styles from './cards.module.css'
 
 const counts = { works: works.length } as Record<string, number>
+// Same cover the /play/ shelf shows on the Built pack: the newest work with a screenshot.
+export const cover = [...works].sort((a, b) => b.date.localeCompare(a.date)).find(work => work.image)?.image ?? undefined
 
 // Shrinks the visible part of the page into the shape of a card pack, right where /play/ draws
 // its center pack, then swaps in the real pack art. `done` runs once the pack is fully showing.
@@ -32,7 +34,7 @@ export function morphIntoPack(app: HTMLElement, done: () => void) {
   Object.assign(overlay.style, { left: `${r.x}px`, top: `${r.y}px`, width: `${r.w}px`, height: `${r.h}px` })
   document.body.appendChild(overlay)
   const root = createRoot(overlay)
-  flushSync(() => root.render(<PackArt id={CENTER_PACK} count={counts[CENTER_PACK] ?? 0} />))
+  flushSync(() => root.render(<PackArt id={CENTER_PACK} count={counts[CENTER_PACK] ?? 0} cover={cover} />))
 
   document.documentElement.classList.add('play-morph')
   Object.assign(app.style, { transformOrigin: `${left + vw / 2}px ${top + vh / 2}px`, background: '#fff', willChange: 'transform, clip-path' })

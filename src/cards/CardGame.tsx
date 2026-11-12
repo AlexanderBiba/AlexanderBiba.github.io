@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { flushSync } from 'react-dom'
 import Holo from './Holo'
-import PackArt from './PackArt'
+import PackArt, { flapClip } from './PackArt'
 import { CardBack, CardFront } from './Card'
 import { packRect, packSpacing } from './geometry'
 import { MORPH_OVERLAY, wasMorphed } from './handoff'
@@ -159,12 +159,13 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
 
   return (
     <main className={styles.game} data-stage={stage}>
-      <header className={styles.header}>
+      <header className={styles.header} inert={inspect !== null}>
         <Link href="/" className={styles.exit}><span aria-hidden="true">←</span> alexbiba.com</Link>
         <span className={styles.brand}>CARD PACKS</span>
       </header>
 
-      {rect && viewport && <section className={styles.shelf} aria-label="Card packs" aria-hidden={stage === 'cards'} onPointerDown={pointerDown} onPointerUp={pointerUp} onPointerCancel={() => { swipe.current = null }}>
+      {rect && viewport && <section className={styles.shelf} aria-label="Card packs" inert={stage === 'cards' || inspect !== null} onPointerDown={pointerDown} onPointerUp={pointerUp} onPointerCancel={() => { swipe.current = null }}>
+        <div className={styles.rays} data-pack={pack.id} aria-hidden="true" style={{ left: rect.x + rect.w / 2 - rect.h * 1.2, top: rect.y + rect.h / 2 - rect.h * 1.2, width: rect.h * 2.4, height: rect.h * 2.4 }} />
         {packs.map((item, i) => {
           const off = i - active, focused = off === 0
           const spread = stage === 'shelf' ? off * spacing : off * spacing * 2.6
@@ -176,18 +177,19 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
           const isOpened = opened.includes(item.id)
           return (
             <div key={item.id} className={`${styles.packSlot} ${focused ? styles.focused : styles.aside} ${introClass} ${stage !== 'shelf' && !focused ? styles.gone : ''}`} style={style}>
-              {stage === 'opening' && focused ? <div className={styles.opening}>
+              {stage === 'opening' && focused ? <div className={styles.opening} data-pack={item.id}>
                 <div className={styles.rising}>{[0, 1, 2].map(k => <div key={k} className={styles.risingCard} style={{ '--k': k } as Vars}><CardBack /></div>)}</div>
-                <div className={styles.packRest}><PackArt id={item.id} count={item.cards.length} /></div>
-                <div className={styles.flap}><PackArt id={item.id} count={item.cards.length} /></div>
+                <div className={styles.packRest}><PackArt id={item.id} count={item.cards.length} cover={item.cover} opened /></div>
+                <span className={styles.burst} />
+                <div className={styles.flap} style={{ clipPath: flapClip }}><PackArt id={item.id} count={item.cards.length} cover={item.cover} /></div>
               </div> : <button
-                className={`${styles.packButton} ${isOpened ? styles.torn : ''}`}
+                className={styles.packButton}
                 tabIndex={stage === 'cards' || (stage !== 'shelf' && !focused) ? -1 : 0}
                 aria-label={stage === 'tear' && focused ? `Tear open the ${item.title.toLowerCase()} pack` : `${item.subtitle}: ${item.cards.length} cards${isOpened ? ', opened' : ''}`}
                 onClick={event => packClick(i, event.detail === 0)}
                 onPointerDown={focused ? tearDown : undefined} onPointerMove={focused ? tearMove : undefined} onPointerUp={focused ? tearUp : undefined} onPointerCancel={focused ? tearUp : undefined}
               >
-                <Holo depth={focused ? 1 : 0.4} seed={i * 2.1}><PackArt id={item.id} count={item.cards.length} /></Holo>
+                <Holo depth={focused ? 1 : 0.4} seed={i * 2.1}><PackArt id={item.id} count={item.cards.length} cover={item.cover} opened={isOpened} /></Holo>
                 {isOpened && <span className={styles.openedBadge}>OPENED</span>}
                 {focused && stage === 'tear' && <span key={nudge} className={`${styles.tearGuide} ${nudge ? styles.nudge : ''}`} aria-hidden="true"><span className={styles.tearDot} />{tear && <span className={styles.tearCut} style={{ left: `${tear.from * 100}%`, width: `${(tear.to - tear.from) * 100}%` }} />}</span>}
               </button>}
@@ -215,7 +217,7 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
         </div>
       </section>}
 
-      {stage === 'cards' && <section className={styles.cardsView} ref={cardsView} aria-label={`${pack.subtitle} cards`}>
+      {stage === 'cards' && <section className={styles.cardsView} ref={cardsView} aria-label={`${pack.subtitle} cards`} inert={inspect !== null}>
         <div className={styles.cardsHead}>
           <button className={styles.ghost} onClick={backToShelf}>← Packs</button>
           <h1>{pack.title}<span>{pack.cards.length} cards</span></h1>
