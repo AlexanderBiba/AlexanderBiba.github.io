@@ -9,8 +9,7 @@
         "react-dom": "^19.2.3",
         "react-markdown": "^10.1.0",
         "remark-gfm": "^4.0.1",
-        "sass": "^1.52.3",
-        "three": "^0.185.1"
+        "sass": "^1.52.3"
     },
     "scripts": {
         "dev": "next dev",
@@ -21,8 +20,6 @@
         "@types/node": "^20.0.0",
         "@types/react": "^18.3.0",
         "@types/react-dom": "^18.3.0",
-        "@types/three": "^0.185.4",
-        "jsdom": "^26.1.0",
         "typescript": "^5.4.0",
         "wrangler": "^4.158.0"
     }

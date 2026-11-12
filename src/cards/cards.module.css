@@ -1,0 +1,323 @@
+/* ---------- Shared foil and tilt ---------- */
+/* Cards and packs size everything in cqw, measured on this wrapper, so they scale as one piece. */
+.box { container-type: inline-size; width: 100%; height: 100%; }
+.holo {
+  width: 100%; height: 100%;
+  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.foil, .glare, .artFoil { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
+.foil {
+  background: repeating-linear-gradient(115deg, #ff7b9c 0%, #ffd36b 5%, #84ffb5 10%, #6bc4ff 15%, #c07bff 20%, #ff7b9c 25%);
+  background-size: 220% 220%;
+  background-position: var(--mx, 50%) var(--my, 50%);
+  mix-blend-mode: color-dodge;
+  opacity: .18;
+}
+.glare {
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, .7), rgba(255, 255, 255, 0) 55%);
+  mix-blend-mode: overlay;
+  opacity: var(--glare, .4);
+}
+
+/* Pack and card colors */
+.pack[data-pack='blog'], .card[data-pack='blog'] { --p1: #3b0d2e; --p2: #b1316a; --p3: #ff9a5c; --c1: #ffb18a; --c2: #e2477f; }
+.pack[data-pack='works'], .card[data-pack='works'] { --p1: #071d3a; --p2: #1466a6; --p3: #3be0c8; --c1: #7cf0de; --c2: #2f6bff; }
+.pack[data-pack='social'], .card[data-pack='social'] { --p1: #24124a; --p2: #7246d6; --p3: #ffcf5c; --c1: #ffe7a0; --c2: #d6951a; }
+
+/* ---------- Pack ---------- */
+.pack {
+  position: relative; width: 100%; height: 100%;
+  border-radius: 3.5cqw;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, .22), rgba(255, 255, 255, 0) 38%),
+    linear-gradient(165deg, var(--p1) 0%, var(--p2) 55%, var(--p3) 100%);
+  box-shadow: 0 30px 60px -22px rgba(0, 0, 0, .8), inset 0 0 0 1px rgba(255, 255, 255, .18);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  user-select: none;
+}
+.pack .foil { opacity: .32; }
+.crimp {
+  position: absolute; left: 0; right: 0; height: 6cqw;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .32) 0 1.3cqw, rgba(0, 0, 0, .2) 1.3cqw 2.6cqw);
+}
+.crimpTop { top: 0; border-bottom: .5cqw solid rgba(255, 255, 255, .25); }
+.crimpBottom { bottom: 0; border-top: .5cqw solid rgba(255, 255, 255, .25); }
+.tearLine {
+  position: absolute; left: 5%; right: 5%; top: 13%;
+  border-top: .7cqw dashed rgba(255, 255, 255, .55);
+}
+.packBody {
+  position: absolute; inset: 17% 6% 9%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+}
+.packBrand { font-size: 5cqw; font-weight: 800; letter-spacing: .35em; opacity: .85; margin-bottom: 5cqw; }
+.packEmblem {
+  width: 38cqw; height: 38cqw; border-radius: 50%;
+  display: grid; place-items: center;
+  background: rgba(255, 255, 255, .12);
+  box-shadow: inset 0 0 0 .9cqw rgba(255, 255, 255, .5), 0 0 12cqw rgba(255, 255, 255, .25);
+}
+.packEmblem svg { width: 56%; height: 56%; }
+.packTitle { margin-top: 6cqw; font-size: 17cqw; line-height: .9; font-weight: 900; font-style: italic; letter-spacing: .02em; text-shadow: 0 1cqw 0 rgba(0, 0, 0, .25); }
+.packSub { margin-top: 2.5cqw; font-size: 5.5cqw; font-weight: 600; opacity: .9; }
+.packCount { margin-top: auto; font-size: 4.2cqw; font-weight: 800; letter-spacing: .2em; padding: 1.6cqw 4cqw; border-radius: 99px; background: rgba(0, 0, 0, .28); }
+
+/* Card art seen through the opened pack's top */
+.torn .pack { clip-path: inset(13% 0 0 0 round 0 0 3.5cqw 3.5cqw); }
+.openedBadge {
+  position: absolute; top: 18%; right: -4%; transform: rotate(8deg);
+  font: 800 12px/1 -apple-system, BlinkMacSystemFont, system-ui, sans-serif; letter-spacing: .15em;
+  color: #11132b; background: #fff3c2; padding: 6px 10px; border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .4);
+}
+
+/* ---------- Card ---------- */
+.card {
+  position: relative; width: 100%; aspect-ratio: 63 / 88;
+  border-radius: 4.5cqw;
+  overflow: hidden;
+  box-shadow: 0 18px 40px -16px rgba(0, 0, 0, .75);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  text-align: left;
+}
+.front { background: linear-gradient(150deg, var(--c1), var(--c2)); padding: 3.4cqw; }
+.inner {
+  height: 100%; display: flex; flex-direction: column; gap: 2.2cqw;
+  padding: 3.2cqw; border-radius: 3cqw;
+  background: #fbf8f1; color: #181a26;
+}
+.head { display: flex; align-items: flex-start; justify-content: space-between; gap: 2cqw; }
+.name { font-size: 7.2cqw; line-height: 1.05; font-weight: 850; letter-spacing: -.01em; }
+.longName { font-size: 5.8cqw; }
+.tag {
+  flex: none; font-size: 3.1cqw; font-weight: 800; letter-spacing: .12em;
+  color: #fff; background: var(--c2); padding: .9cqw 2.2cqw; border-radius: 99px; margin-top: .6cqw;
+}
+.art {
+  position: relative; aspect-ratio: 16 / 10; flex: none;
+  border-radius: 2.2cqw; overflow: hidden;
+  background: linear-gradient(140deg, var(--c2), var(--c1));
+  box-shadow: inset 0 0 0 .7cqw rgba(0, 0, 0, .12);
+  display: grid; place-items: center; color: #fff;
+}
+.art img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+.art svg { width: 34%; height: auto; filter: drop-shadow(0 1.2cqw 0 rgba(0, 0, 0, .18)); }
+.art[data-icon] { background: repeating-linear-gradient(45deg, rgba(255, 255, 255, .07) 0 3cqw, transparent 3cqw 6cqw), radial-gradient(circle at 50% 45%, var(--p3), transparent 75%), linear-gradient(150deg, var(--p2), var(--p1)); }
+.artFoil {
+  background: repeating-linear-gradient(115deg, #ff7b9c 0%, #ffd36b 5%, #84ffb5 10%, #6bc4ff 15%, #c07bff 20%, #ff7b9c 25%);
+  background-size: 220% 220%; background-position: var(--mx, 50%) var(--my, 50%);
+  mix-blend-mode: color-dodge; opacity: .22;
+}
+.card[data-pack='works'] .artFoil { opacity: .4; }
+.meta { display: flex; flex-wrap: wrap; gap: .4cqw 2.4cqw; font: 700 3.1cqw/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; color: #6c6f82; letter-spacing: .04em; }
+.meta span + span::before { content: '·'; margin-right: 2.4cqw; }
+.text {
+  margin: 0; flex: 1; min-height: 0;
+  font-size: 4.3cqw; line-height: 1.38; color: #2a2c3a;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden;
+}
+.foot {
+  display: flex; justify-content: space-between; align-items: center; gap: 2cqw;
+  padding-top: 1.8cqw; border-top: .4cqw solid #e7e1d4;
+  font: 700 3cqw/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: #6c6f82;
+}
+.foot span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.symbol { color: var(--c2); font-size: 4cqw; }
+.card[data-pack='social'] .foil { opacity: .26; }
+.card[data-pack='social']::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: overlay; opacity: .5;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, .9) .5px, transparent 1.4px);
+  background-size: 9px 9px; background-position: var(--mx, 50%) var(--my, 50%);
+}
+
+.back { background: #f3efe4; padding: 4cqw; }
+.backInner {
+  height: 100%; border-radius: 3cqw; color: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4cqw;
+  background:
+    repeating-conic-gradient(from 0deg at 50% 46%, rgba(255, 255, 255, .06) 0deg 10deg, transparent 10deg 20deg),
+    radial-gradient(circle at 50% 46%, #3a4bd1, #12164a 70%);
+}
+.monogram {
+  width: 40cqw; height: 40cqw; border-radius: 50%; display: grid; place-items: center;
+  font-size: 15cqw; font-weight: 900; font-style: italic;
+  box-shadow: inset 0 0 0 1.2cqw #ffd36b, 0 0 14cqw rgba(107, 196, 255, .5);
+  background: rgba(255, 255, 255, .08);
+}
+.backName { font-size: 5cqw; font-weight: 800; letter-spacing: .35em; }
+.back .foil { opacity: .3; }
+
+/* ---------- Game layout ---------- */
+.game {
+  position: fixed; inset: 0; overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, .7), transparent),
+    radial-gradient(1px 1px at 82% 12%, rgba(255, 255, 255, .6), transparent),
+    radial-gradient(1.5px 1.5px at 68% 78%, rgba(255, 255, 255, .5), transparent),
+    radial-gradient(1px 1px at 22% 72%, rgba(255, 255, 255, .5), transparent),
+    radial-gradient(1px 1px at 46% 8%, rgba(255, 255, 255, .5), transparent),
+    radial-gradient(ellipse at 50% 42%, #262c63 0%, #0b0d1c 68%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none; -webkit-user-select: none;
+}
+.game button { font: inherit; color: inherit; }
+.header {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: max(14px, env(safe-area-inset-top)) 16px 0;
+  pointer-events: none;
+}
+.header > * { pointer-events: auto; }
+.exit, .exit:visited {
+  color: rgba(255, 255, 255, .85); font-size: 14px; font-weight: 600;
+  padding: 8px 14px; border-radius: 99px; background: rgba(255, 255, 255, .08);
+  border: 1px solid rgba(255, 255, 255, .14); text-decoration: none;
+}
+.exit:hover { background: rgba(255, 255, 255, .16); text-decoration: none; }
+.brand { font-size: 12px; font-weight: 800; letter-spacing: .3em; opacity: .55; }
+
+.shelf { position: absolute; inset: 0; perspective: 1400px; touch-action: pan-y; }
+.game[data-stage='cards'] .shelf { opacity: 0; pointer-events: none; transition: opacity .3s; }
+.packSlot {
+  position: absolute;
+  transition: transform .55s cubic-bezier(.2, .8, .2, 1), opacity .45s, filter .45s;
+}
+.aside { filter: brightness(.6) saturate(.8); }
+.gone { opacity: 0; pointer-events: none; }
+.packButton {
+  all: unset; display: block; position: relative; width: 100%; height: 100%;
+  cursor: pointer; border-radius: 12px; touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.aside .packButton { touch-action: pan-y; }
+.packButton:focus-visible { outline: 3px solid #ffd36b; outline-offset: 6px; }
+.focused .packButton { filter: drop-shadow(0 0 40px rgba(120, 160, 255, .25)); }
+
+@keyframes sideIn { from { translate: var(--back) 0; opacity: 0; } to { translate: 0 0; opacity: 1; } }
+@keyframes dropIn { from { translate: 0 60px; opacity: 0; } to { translate: 0 0; opacity: 1; } }
+.sideIn { animation: sideIn .7s cubic-bezier(.2, .8, .2, 1) .05s both; }
+.dropIn { animation: dropIn .7s cubic-bezier(.2, .8, .2, 1) calc(var(--i) * 90ms) both; }
+
+/* Tear guide on the chosen pack */
+.tearGuide { position: absolute; left: 5%; right: 5%; top: 13%; height: 0; pointer-events: none; }
+.tearDot {
+  position: absolute; top: -7px; left: 0; width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; box-shadow: 0 0 12px 4px rgba(255, 255, 255, .8);
+  animation: tearHint 1.6s ease-in-out infinite;
+}
+@keyframes tearHint { 0% { left: 0; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: calc(100% - 14px); opacity: 0; } }
+.nudge { animation: nudge .4s ease; }
+@keyframes nudge { 0%, 100% { translate: 0; } 25% { translate: -6px; } 75% { translate: 6px; } }
+.tearCut {
+  position: absolute; top: -3px; height: 6px; border-radius: 3px;
+  background: #fff; box-shadow: 0 0 14px 4px rgba(255, 240, 180, .9);
+}
+
+/* Opening: the top flies off, cards rise, the wrapper drops away */
+.opening { position: absolute; inset: 0; }
+.flap, .packRest { position: absolute; inset: 0; }
+.flap { clip-path: inset(0 0 87% 0); animation: flapOff .65s cubic-bezier(.3, .6, .4, 1) forwards; transform-origin: 90% 13%; }
+.packRest { clip-path: inset(13% 0 0 0); animation: restDrop .55s cubic-bezier(.5, 0, .8, .4) .6s forwards; }
+@keyframes flapOff { to { transform: translate(35%, -70%) rotate(24deg); opacity: 0; } }
+@keyframes restDrop { to { transform: translateY(85%); opacity: 0; } }
+.rising { position: absolute; inset: 0; display: grid; place-items: center; }
+.risingCard {
+  grid-area: 1 / 1; width: 86%;
+  animation: rise .7s cubic-bezier(.2, .8, .2, 1) calc(.2s + var(--k) * 70ms) both;
+  rotate: calc((var(--k) - 1) * 4deg);
+}
+@keyframes rise { from { transform: translateY(22%); } to { transform: translateY(-14%); } }
+
+.caption { position: absolute; left: 16px; right: 16px; text-align: center; }
+.caption h1 { font-size: 22px; line-height: 1.2; font-weight: 850; letter-spacing: .04em; margin: 0; color: #fff; }
+.caption p { margin: 6px 0 0; font-size: 15px; line-height: 1.4; opacity: .75; }
+.caption .hint { font-size: 13px; opacity: .5; }
+.captionRow { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.captionActions { display: flex; justify-content: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.dots { display: flex; justify-content: center; gap: 8px; margin-top: 14px; }
+.dots span { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, .25); transition: background .3s, transform .3s; }
+.dots .dotOn { background: #fff; transform: scale(1.3); }
+
+.arrow {
+  width: 40px; height: 40px; border-radius: 50%; display: inline-grid; place-items: center;
+  border: 1px solid rgba(255, 255, 255, .2); background: rgba(255, 255, 255, .08);
+  font-size: 24px !important; line-height: 1; cursor: pointer; padding: 0 0 3px;
+}
+.arrow:disabled { opacity: .25; cursor: default; }
+.arrow:not(:disabled):hover { background: rgba(255, 255, 255, .18); }
+.ghost, .ghost:visited, .primary, .primary:visited {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 44px; padding: 0 18px; border-radius: 99px; cursor: pointer;
+  font-size: 15px !important; font-weight: 700; text-decoration: none;
+}
+.ghost, .ghost:visited { color: #fff; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .22); }
+.ghost:hover { background: rgba(255, 255, 255, .16); text-decoration: none; }
+.primary, .primary:visited { color: #12142c; background: #fff; border: 1px solid #fff; }
+.primary:hover { background: #ffe9a8; text-decoration: none; }
+.arrow:focus-visible, .ghost:focus-visible, .primary:focus-visible, .exit:focus-visible, .close:focus-visible, .slotCard:focus-visible { outline: 3px solid #ffd36b; outline-offset: 3px; }
+
+/* ---------- Cards grid ---------- */
+.cardsView {
+  position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain;
+  padding: calc(max(14px, env(safe-area-inset-top)) + 56px) 16px max(32px, env(safe-area-inset-bottom));
+}
+.cardsHead { max-width: 1040px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+.cardsHead h1 { margin: 0; font-size: 24px; font-weight: 900; font-style: italic; color: #fff; letter-spacing: .02em; }
+.cardsHead h1 span { font-size: 14px; font-style: normal; font-weight: 600; opacity: .6; margin-left: 10px; letter-spacing: 0; }
+.grid {
+  list-style: none; padding: 0; margin: 18px auto 0; max-width: 1040px;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;
+}
+@media (min-width: 700px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; } }
+@media (min-width: 1000px) { .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.slotCard { all: unset; display: block; width: 100%; cursor: pointer; border-radius: 10px; -webkit-tap-highlight-color: transparent; }
+.flipper { position: relative; aspect-ratio: 63 / 88; transform-style: preserve-3d; }
+.faceFront, .faceBack { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.faceBack { transform: rotateY(180deg); }
+.deal { animation: deal .75s cubic-bezier(.2, .8, .2, 1) calc(var(--i) * 85ms) both; }
+.deal .flipper { animation: reveal .6s cubic-bezier(.3, .7, .3, 1) calc(.55s + var(--i) * 85ms) both; }
+@keyframes deal {
+  from { transform: translate(var(--dx, 0), var(--dy, 0)) scale(.75) rotate(-6deg); opacity: 0; }
+  12% { opacity: 1; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes reveal { from { transform: rotateY(180deg); } to { transform: rotateY(0deg); } }
+@media (hover: hover) { .slotCard:hover .faceFront { translate: 0 -4px; transition: translate .2s; } }
+
+/* ---------- Full-screen card ---------- */
+.inspect {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+  padding: calc(max(14px, env(safe-area-inset-top)) + 44px) 16px max(20px, env(safe-area-inset-bottom));
+  background: rgba(6, 7, 18, .86);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  touch-action: pan-y;
+  animation: fadeIn .25s ease both;
+}
+@keyframes fadeIn { from { opacity: 0; } }
+.inspectCard { width: min(88vw, calc((100dvh - 230px) * 63 / 88), 440px); touch-action: none; }
+.inspectLinks { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.inspectNav { display: flex; align-items: center; gap: 16px; font-size: 14px; font-weight: 700; opacity: .8; font-variant-numeric: tabular-nums; }
+.close {
+  position: absolute; top: max(12px, env(safe-area-inset-top)); right: 14px;
+  width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, .2); background: rgba(255, 255, 255, .08);
+  font-size: 26px !important; line-height: 1; padding: 0 0 3px;
+}
+
+.noscript { position: absolute; inset: auto 16px 40px; text-align: center; }
+.noscript a { color: #ffd36b; }
+
+/* The homepage morph's stand-in pack */
+.morphOverlay { position: fixed; z-index: 1000; pointer-events: none; opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .packSlot, .dots span { transition: none; }
+  .sideIn, .dropIn, .deal, .deal .flipper, .flap, .packRest, .risingCard, .tearDot, .nudge, .inspect { animation: none; }
+}

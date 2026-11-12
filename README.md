@@ -21,19 +21,18 @@ Workers Builds is connected to this repo, builds with `npm run build` and deploy
 
 ## Edit content
 
-- `content/site.json`: name, bio, and social links, shared by the homepage and house.
-  Update `chess` for the Play app’s Chess.com profile and `youtube3dPrinting` for the printer’s YouTube channel. Both accept full URLs; no code changes are needed when a username changes.
+- `content/site.json`: name, bio, and social links, shared by the homepage and the card packs.
+  `chess` (Chess.com profile) and `youtube3dPrinting` (3D printing YouTube channel) become cards in the Social pack. Both accept full URLs; no code changes are needed when a username changes.
 - `content/blog.json`: blog titles, slugs, dates, and cover images.
 - `content/blog/<slug>.md`: each article’s Markdown body.
 - `content/works.json`: titles, slugs, dates, live site links, and screenshots for the “Things I’ve built” section at `/works/`.
 - `content/works/<slug>.md`: each entry’s Markdown body.
 - `public/content/`: local article images and site screenshots. Reference them as `/content/filename.png`.
-- `src/house/content.ts`: house dialogue; its works/blog links use the same content indexes as the main site.
-- `src/house/world.ts`: house models, layout, and animations.
+- `src/cards/build.ts`: turns posts, works and `site.json` into the cards at `/play/`. The short lines on the Social cards live here too.
 
 To add a post or something you built, add its Markdown file and matching index entry. Keep existing slugs to preserve incoming links. Entries are displayed newest first.
 
-The repository contains all five published articles, four entries under “Things I’ve built”, profile settings, and their images. Both the main site and 3D mode read these local files; no external CMS or credentials are needed.
+The repository contains all the published articles, four entries under “Things I’ve built”, profile settings, and their images. Both the main site and the card packs read these local files; no external CMS or credentials are needed.
 
 ## Analytics
 
@@ -54,4 +53,10 @@ node --test tests/*.test.mjs
 npm run build
 ```
 
-The experimental game is at `/play/`; see `src/house/README.md` for controls.
+## Card packs (`/play/`)
+
+The 🎮 link in the navbar (`src/components/PlayLink.tsx`) shrinks the visible page into a card pack (`src/cards/morph.tsx`) and then navigates to `/play/`, which draws the same pack in the same spot (`src/cards/geometry.ts`) so the hand-off doesn't jump. People with reduced motion turned on, or who open the link in a new tab, go straight to `/play/`.
+
+On `/play/` (`src/cards/CardGame.tsx`) you swipe between three packs (Blog, Built and Social), tap one to pick it, swipe across its top to tear it open, and the cards are dealt into a grid. Tapping a card opens it full screen with its links. Cards and packs tilt toward the pointer or the phone's angle (`src/cards/Holo.tsx`, `src/cards/motion.ts`); on iPhone the first tap asks for motion access. Nothing is stored on the visitor's device, so opened packs reset on reload.
+
+New posts and works show up as cards automatically.
