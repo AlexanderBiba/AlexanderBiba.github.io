@@ -12,3 +12,15 @@ export function packRect(vw: number, vh: number) {
 export function packSpacing(vw: number, w: number) {
   return vw < 700 ? w * 0.82 : w * 1.18
 }
+
+export const CARD_RATIO = 63 / 88
+// Room kept above the card stack for the header, and below it for the links and arrows.
+const STACK_TOP = 116, STACK_BOTTOM = 170
+
+// Where the top card of the stack sits. The opening animation ends on exactly this rect,
+// so the cards that come out of the pack are the same ones you then swipe through.
+export function stackRect(vw: number, vh: number) {
+  let h = Math.min(vh - STACK_TOP - STACK_BOTTOM, 540), w = h * CARD_RATIO
+  if (w > Math.min(vw - 64, 380)) { w = Math.min(vw - 64, 380); h = w / CARD_RATIO }
+  return { w, h, x: (vw - w) / 2, y: STACK_TOP + Math.max(0, (vh - STACK_TOP - STACK_BOTTOM - h) / 2) }
+}

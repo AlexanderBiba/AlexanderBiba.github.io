@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { buildPacks, readingMinutes } from '../src/cards/build.ts'
-import { packRect } from '../src/cards/geometry.ts'
+import { packRect, stackRect } from '../src/cards/geometry.ts'
 
 const read = (folder, entries) => entries.map(entry => ({ ...entry, content: readFileSync(`content/${folder}/${entry.slug}.md`, 'utf8') }))
 const posts = read('blog', JSON.parse(readFileSync('content/blog.json', 'utf8')))
@@ -44,5 +44,13 @@ test('the center pack fits on a phone and a desktop screen', () => {
   for (const [vw, vh] of [[390, 844], [360, 640], [1440, 900], [844, 390]]) {
     const r = packRect(vw, vh)
     assert.ok(r.x >= 0 && r.x + r.w <= vw && r.y >= 0 && r.y + r.h <= vh, `${vw}x${vh}`)
+  }
+})
+
+test('the card stack leaves room for the header and the controls under it', () => {
+  for (const [vw, vh] of [[390, 844], [360, 640], [390, 664], [1440, 900]]) {
+    const s = stackRect(vw, vh)
+    assert.ok(s.x >= 16 && s.x + s.w <= vw - 16 && s.y >= 100 && s.y + s.h + 150 <= vh, `${vw}x${vh}`)
+    assert.ok(Math.abs(s.w / s.h - 63 / 88) < 1e-9)
   }
 })
