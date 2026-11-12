@@ -17,7 +17,7 @@ export function packSpacing(vw: number, w: number) {
 // A standard trading card is 63 × 88 mm.
 export const CARD_RATIO = 63 / 88
 // Room kept above the card stack for the header, and below it for the links and arrows.
-const STACK_TOP = 116, STACK_BOTTOM = 170
+const STACK_TOP = 76, STACK_BOTTOM = 170
 
 // Where the top card of the stack sits. The opening animation ends on exactly this rect,
 // so the cards that come out of the pack are the same ones you then swipe through.

@@ -224,7 +224,7 @@
 }
 .header > * { pointer-events: auto; }
 .exit, .exit:visited {
-  color: rgba(255, 255, 255, .85); font-size: 14px; font-weight: 600;
+  color: rgba(255, 255, 255, .85); font-size: 14px; font-weight: 600; cursor: pointer;
   padding: 8px 14px; border-radius: 99px; background: rgba(255, 255, 255, .08);
   border: 1px solid rgba(255, 255, 255, .14); text-decoration: none;
 }
@@ -435,14 +435,9 @@
 .recapMode {
   pointer-events: auto; overflow-y: auto; overscroll-behavior: contain;
   display: flex; flex-direction: column; align-items: center;
-  padding: calc(max(14px, env(safe-area-inset-top)) + 104px) 16px max(18px, env(safe-area-inset-bottom));
+  padding: calc(max(14px, env(safe-area-inset-top)) + 60px) 16px max(18px, env(safe-area-inset-bottom));
 }
 @keyframes fadeIn { from { opacity: 0; } }
-.stackHead {
-  position: absolute; top: calc(max(14px, env(safe-area-inset-top)) + 46px); left: 16px; right: 16px;
-  display: flex; align-items: center; justify-content: space-between;
-  font-size: 13px; font-weight: 800; letter-spacing: .14em; color: rgba(255, 255, 255, .8);
-}
 .stackControls { position: absolute; left: 16px; right: 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .stackLinks { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 .stackNav { display: flex; align-items: center; gap: 14px; }

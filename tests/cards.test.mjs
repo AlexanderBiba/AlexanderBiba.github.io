@@ -50,7 +50,7 @@ test('the center pack fits on a phone and a desktop screen', () => {
 test('the card stack leaves room for the header and the controls under it', () => {
   for (const [vw, vh] of [[390, 844], [360, 640], [390, 664], [1440, 900]]) {
     const s = stackRect(vw, vh)
-    assert.ok(s.x >= 16 && s.x + s.w <= vw - 16 && s.y >= 100 && s.y + s.h + 150 <= vh, `${vw}x${vh}`)
+    assert.ok(s.x >= 16 && s.x + s.w <= vw - 16 && s.y >= 64 && s.y + s.h + 150 <= vh, `${vw}x${vh}`)
     assert.ok(Math.abs(s.w / s.h - 63 / 88) < 1e-9)
   }
 })

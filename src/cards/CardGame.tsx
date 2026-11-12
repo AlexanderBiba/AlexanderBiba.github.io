@@ -165,9 +165,12 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
 
   return (
     <main className={styles.game} data-stage={stage}>
+      {/* One bar: it leaves the game on the shelf, and goes back to the packs once you've opened one. */}
       <header className={styles.header}>
-        <Link href="/" className={styles.exit}><span aria-hidden="true">←</span> alexbiba.com</Link>
-        <span className={styles.brand}>CARD PACKS</span>
+        {stage === 'stack'
+          ? <button className={styles.exit} onClick={untear}><span aria-hidden="true">←</span> Packs</button>
+          : <Link href="/" className={styles.exit}><span aria-hidden="true">←</span> alexbiba.com</Link>}
+        <span className={styles.brand}>{stage === 'stack' ? `${pack.title} PACK` : 'CARD PACKS'}</span>
       </header>
 
       {glow && <div className={styles.rays} data-pack={pack.id} aria-hidden="true" style={{ left: glow.x - glow.r, top: glow.y - glow.r, width: glow.r * 2, height: glow.r * 2 }} />}
@@ -242,10 +245,6 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
       </section>}
 
       {stage === 'stack' && stack && <section className={`${styles.stackView} ${card ? '' : styles.recapMode}`} aria-label={`${pack.subtitle} cards`}>
-        <div className={styles.stackHead}>
-          <button className={styles.ghost} onClick={untear}>← Packs</button>
-          <span>{pack.title} · {card ? `${index + 1} / ${total}` : `${total} cards`}</span>
-        </div>
         {card ? <div className={styles.stackControls} style={{ top: stack.y + stack.h + 22 }}>
           <CardLinks card={card} />
           <div className={styles.stackNav}>
