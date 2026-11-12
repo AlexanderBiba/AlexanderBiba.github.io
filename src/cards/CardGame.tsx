@@ -25,6 +25,11 @@ function flapTransform(progress: number, fromLeft: boolean) {
   return `translateY(${(-progress * 2.5).toFixed(2)}%) rotate(${((fromLeft ? -1 : 1) * progress * 13).toFixed(2)}deg)`
 }
 
+// Drawn rather than typed: the ‹ › glyphs sit off-center in a round button in most fonts.
+function Chevron({ dir }: { dir: 'left' | 'right' }) {
+  return <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d={dir === 'left' ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+}
+
 function CardLinks({ card }: { card: CardData }) {
   if (!card.links.length) return null
   return <div className={styles.stackLinks}>{card.links.map((link, i) => <a key={link.href} className={i === 0 ? styles.primary : styles.ghost} href={link.href} target={external(link.href) ? '_blank' : undefined} rel={external(link.href) ? 'noopener noreferrer' : undefined}>{link.label}{external(link.href) && <span aria-hidden="true"> ↗</span>}</a>)}</div>
@@ -213,9 +218,9 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
         <div className={styles.caption} style={{ top: rect.y + rect.h * 1.06 + 22 }}>
           {stage === 'shelf' && <>
             <div className={styles.captionRow}>
-              <button className={styles.arrow} onClick={() => goTo(active - 1)} disabled={active === 0} aria-label="Previous pack">‹</button>
+              <button className={styles.arrow} onClick={() => goTo(active - 1)} disabled={active === 0} aria-label="Previous pack"><Chevron dir="left" /></button>
               <h1>{pack.title} PACK</h1>
-              <button className={styles.arrow} onClick={() => goTo(active + 1)} disabled={active === packs.length - 1} aria-label="Next pack">›</button>
+              <button className={styles.arrow} onClick={() => goTo(active + 1)} disabled={active === packs.length - 1} aria-label="Next pack"><Chevron dir="right" /></button>
             </div>
             <p>{pack.subtitle} · {pack.cards.length} cards</p>
             <p className={styles.hint}>Swipe to browse · tap a pack to pick it</p>
@@ -250,9 +255,9 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
           </div>
           <CardLinks card={card} />
           <div className={styles.stackNav}>
-            <button className={styles.arrow} onClick={prev} disabled={index === 0} aria-label="Previous card">‹</button>
+            <button className={styles.arrow} onClick={prev} disabled={index === 0} aria-label="Previous card"><Chevron dir="left" /></button>
             <button className={styles.ghost} onClick={() => setCardFlips(n => n + 1)}>⟲ Flip</button>
-            <button className={styles.arrow} onClick={next} aria-label="Next card">›</button>
+            <button className={styles.arrow} onClick={next} aria-label="Next card"><Chevron dir="right" /></button>
           </div>
           <p className={styles.stackHint}>Swipe up for the next card · drag sideways to spin</p>
         </> : <div className={styles.recap}>
