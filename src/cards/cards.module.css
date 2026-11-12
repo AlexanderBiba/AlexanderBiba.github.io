@@ -145,14 +145,14 @@
   position: relative; width: 100%; aspect-ratio: 63 / 88;
   border-radius: 4.5cqw;
   overflow: hidden;
-  box-shadow: 0 18px 40px -16px rgba(0, 0, 0, .75);
+  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, .6);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   text-align: left;
 }
-.front { background: linear-gradient(150deg, var(--c1), var(--c2)); padding: 3.4cqw; }
+.front { background: linear-gradient(150deg, var(--c1), var(--c2)); padding: 2.4cqw; }
 .inner {
   height: 100%; display: flex; flex-direction: column; gap: 2.2cqw;
-  padding: 3.2cqw; border-radius: 3cqw;
+  padding: 3.2cqw; border-radius: 2.4cqw;
   background: #fbf8f1; color: #181a26;
 }
 .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 2cqw; }
@@ -279,14 +279,14 @@
 .burst, .seal { z-index: 2; }
 .flap { z-index: 3; }
 .scene .flap { animation: flapOff .7s cubic-bezier(.3, .6, .4, 1) both; }
-.scene .packRest { animation: restDrop .55s cubic-bezier(.5, 0, .8, .4) .95s both; }
+.scene .packRest { animation: restDrop .45s cubic-bezier(.5, 0, .8, .4) .8s both; }
 /* The strip keeps lifting the way it was torn: up, and off toward its hinge end. */
 @keyframes flapOff {
   from { transform: var(--flap-from, none); opacity: 1; }
   60% { opacity: 1; }
   to { transform: translate(calc(var(--flap-dir, 1) * 28%), -120%) rotate(calc(var(--flap-dir, 1) * 30deg)); opacity: 0; }
 }
-@keyframes restDrop { from { transform: none; opacity: 1; } to { transform: translateY(85%); opacity: 0; } }
+@keyframes restDrop { from { transform: none; opacity: 1; } 75% { opacity: 0; } to { transform: translateY(85%); opacity: 0; } }
 .burst {
   position: absolute; left: 50%; top: 13%; width: 160%; aspect-ratio: 1; translate: -50% -50%; pointer-events: none; border-radius: 50%;
   background: radial-gradient(circle, #fff 0%, rgba(var(--glow), .9) 18%, rgba(var(--glow), .3) 40%, transparent 65%), repeating-conic-gradient(rgba(255, 255, 255, .5) 0deg 4deg, transparent 4deg 16deg);
@@ -312,8 +312,8 @@
     repeating-linear-gradient(90deg, rgba(255, 255, 255, .14) 0 2px, transparent 2px 9px),
     linear-gradient(180deg, #e9edf5, #9aa3b5 12%, #4d5466 30%);
 }
-.deck[data-stage='opening'] .packInside { animation: restDrop .55s cubic-bezier(.5, 0, .8, .4) .95s both; }
-.deck[data-stage='closing'] .packInside { animation: restDrop .5s cubic-bezier(.2, .6, .5, 1) reverse both; }
+.deck[data-stage='opening'] .packInside { animation: restDrop .45s cubic-bezier(.5, 0, .8, .4) .8s both; }
+.deck[data-stage='closing'] .packInside { animation: restDrop .45s cubic-bezier(.2, .6, .5, 1) .3s reverse both; }
 .deckCard {
   position: absolute; touch-action: pan-y; cursor: grab;
   transform: translate(calc(var(--x) + var(--dx, 0px)), var(--y)) rotate(calc(var(--r) + var(--dr, 0deg))) scale(var(--s));
@@ -326,12 +326,14 @@
 .deck[data-stage='closing'] .deckCard { animation: deckRise 1s calc(.15s + (3 - var(--k)) * 50ms) reverse both; }
 @keyframes deckRise {
   0% { transform: translate(var(--fx), var(--fy0)) rotate(0deg) scale(var(--fs)); filter: brightness(1); animation-timing-function: cubic-bezier(.3, .6, .4, 1); }
-  50% { transform: translate(var(--fx), var(--fy1)) rotate(0deg) scale(var(--fs)); filter: brightness(1); animation-timing-function: cubic-bezier(.45, 0, .2, 1); }
+  45% { transform: translate(var(--fx), var(--fy1)) rotate(0deg) scale(var(--fs)); filter: brightness(1); animation-timing-function: linear; }
+  /* Hold at the opening while the empty wrapper drops away, then come forward. */
+  62% { transform: translate(var(--fx), var(--fy1)) rotate(0deg) scale(var(--fs)); filter: brightness(1); animation-timing-function: cubic-bezier(.45, 0, .2, 1); }
   100% { transform: translate(var(--x), var(--y)) rotate(var(--r)) scale(var(--s)); filter: brightness(var(--b)); }
 }
 .seal { display: none; }
 .closing .burst { display: none; }
-.closing .packRest { animation: restDrop .5s cubic-bezier(.2, .6, .5, 1) reverse both; }
+.closing .packRest { animation: restDrop .45s cubic-bezier(.2, .6, .5, 1) .3s reverse both; }
 .closing .flap { animation: flapOff .55s cubic-bezier(.3, .6, .4, 1) 1.2s reverse both; }
 .closing .seal {
   display: block; position: absolute; left: 4%; right: 4%; top: 13%; height: 4px; margin-top: -2px; border-radius: 2px; pointer-events: none;

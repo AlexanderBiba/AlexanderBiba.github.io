@@ -195,7 +195,7 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
               : focused && stage === 'tear' ? <div className={styles.packStage}>
                 <Spin
                   flips={packFlips} disabled={Boolean(tear)} onFace={setPackFace} onTap={() => setNudge(n => n + 1)}
-                  thickness={rect.w * 0.09} edges={<PackEdges id={item.id} />}
+                  thickness={rect.w * 0.06} edges={<PackEdges id={item.id} />}
                   front={<Holo seed={i * 2.1}><div className={styles.tearable}>
                     {tear ? <>
                       <PackArt id={item.id} count={item.cards.length} cover={item.cover} opened />

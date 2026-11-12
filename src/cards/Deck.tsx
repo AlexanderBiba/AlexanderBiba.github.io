@@ -12,7 +12,7 @@ type Vars = CSSProperties & Record<`--${string}`, string | number>
 export type DeckStage = 'opening' | 'stack' | 'closing'
 
 // How the cards under the top one fan out, by depth.
-const FAN = [0, -2.4, 2, -1.4]
+const FAN = [0, -1.6, 1.3, -0.9]
 
 // The cards you get from a pack. During the opening they start inside the pack (this layer sits
 // between the pack's back and its front), slide up out of the torn top, then settle into the
@@ -26,8 +26,8 @@ export default function Deck({ cards, packId, index, stage, stack, pack, onNext,
   const base = stage === 'closing' && index >= total ? 0 : index
   const offscreen = -(stack.x + stack.w * 1.3 + 40)
 
-  // Inside the pack: a card a little narrower than the wrapper, sitting under the torn edge.
-  const cw = pack.w * 0.84, ch = cw / CARD_RATIO
+  // Inside the pack: a real pack is 66 mm wide around a 63 mm card, so the card nearly fills it.
+  const cw = pack.w * 0.92, ch = cw / CARD_RATIO
   const sx = stack.x + stack.w / 2, sy = stack.y + stack.h / 2
   const inside = {
     '--fx': `${pack.x + pack.w / 2 - sx}px`,
@@ -93,8 +93,8 @@ export default function Deck({ cards, packId, index, stage, stack, pack, onNext,
         const gone = n < 0
         const style: Vars = {
           left: stack.x, top: stack.y, width: stack.w, height: stack.h, zIndex: gone ? 20 : 10 - n,
-          '--x': gone ? `${offscreen}px` : '0px', '--y': gone ? '24px' : `${n * 11}px`,
-          '--r': gone ? '-18deg' : `${FAN[n]}deg`, '--s': gone ? 1 : 1 - n * 0.045, '--b': gone ? 1 : 1 - n * 0.16, '--k': Math.max(0, n),
+          '--x': gone ? `${offscreen}px` : '0px', '--y': gone ? '24px' : `${n * 4}px`,
+          '--r': gone ? '-18deg' : `${FAN[n]}deg`, '--s': gone ? 1 : 1 - n * 0.012, '--b': gone ? 1 : 1 - n * 0.16, '--k': Math.max(0, n),
           ...inside,
         }
         const top = n === 0 && stage === 'stack'

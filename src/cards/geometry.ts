@@ -1,3 +1,4 @@
+// A modern booster pack is about 66 × 120 mm.
 export const PACK_RATIO = 0.55
 
 // Where the center pack sits on the pack shelf. The homepage morph lands on exactly this rect,
@@ -13,6 +14,7 @@ export function packSpacing(vw: number, w: number) {
   return vw < 700 ? w * 0.82 : w * 1.18
 }
 
+// A standard trading card is 63 × 88 mm.
 export const CARD_RATIO = 63 / 88
 // Room kept above the card stack for the header, and below it for the links and arrows.
 const STACK_TOP = 116, STACK_BOTTOM = 170
