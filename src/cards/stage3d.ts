@@ -8,6 +8,7 @@ import { paintCardBack, paintCardFoil, paintCardFront, paintPackBack, paintPackF
 import { PALETTE } from './palette.ts'
 import { RIP_Y, pillow } from './shapes.ts'
 import { tilt as deviceTilt } from './motion.ts'
+import { FoilStrip } from './strip.ts'
 import type { PackData } from './types.ts'
 
 export type Stage = 'shelf' | 'tear' | 'opening' | 'stack' | 'closing'
@@ -134,23 +135,6 @@ function cutMaterial(glow: [number, number, number]) {
   })
 }
 
-// Bends the torn strip into a ribbon as it flies: it twists more toward its far end.
-function twistStrip(material: THREE.Material, twist: { value: number }, w: number, yc: number) {
-  const W = w.toFixed(3), Y = yc.toFixed(3)
-  material.onBeforeCompile = shader => {
-    shader.uniforms.uTwist = twist
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', `#include <common>
-        uniform float uTwist;
-        vec3 twistAround(vec3 v, float a, float yc) { float y = v.y - yc; return vec3(v.x, yc + y * cos(a) - v.z * sin(a), y * sin(a) + v.z * cos(a)); }`)
-      .replace('#include <beginnormal_vertex>', `#include <beginnormal_vertex>
-        objectNormal = twistAround(objectNormal, uTwist * (position.x / ${W} + 0.5), 0.0);`)
-      .replace('#include <begin_vertex>', `#include <begin_vertex>
-        transformed = twistAround(transformed, uTwist * (position.x / ${W} + 0.5), ${Y});`)
-  }
-  material.customProgramCacheKey = () => `strip-twist-${W}-${Y}`
-}
-
 // A card: a thin slab with rounded corners. Groups: 0 front, 1 edges, 2 back.
 export function cardGeometry(w: number, h: number, depth: number) {
   const r = w * 0.045, shape = new THREE.Shape()
@@ -175,9 +159,9 @@ export function cardGeometry(w: number, h: number, depth: number) {
 }
 
 type PackObj = {
-  root: THREE.Group; spin: THREE.Group; whole: THREE.Mesh; body: THREE.Mesh; hingeAt: THREE.Group; flapPivot: THREE.Group; flap: THREE.Mesh
+  root: THREE.Group; spin: THREE.Group; whole: THREE.Mesh; body: THREE.Mesh; flap: THREE.Mesh
   mats: THREE.MeshPhysicalMaterial[]; current: Pose; spinAngle: number; spinTarget: number; spinVel: number
-  cut: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>; twist: { value: number }
+  cut: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>; strip: FoilStrip
 }
 type CardObj = { mesh: THREE.Mesh; current: Pose; front: THREE.MeshPhysicalMaterial; image: string }
 export type StageOptions = { active: number; intro: boolean }
@@ -202,8 +186,6 @@ export class CardStage {
   private clock = 0
   // ?slowmo=10 plays every animation ten times slower, for checking them frame by frame.
   private timeScale = 1
-  private flapFrom = pose()
-  private flapDir = 1
   private tear: { start: number; min: number; max: number; left: number; width: number; at: number; fromLeft: boolean; ticks: number } | null = null
   private gesture: { id: number; x: number; y: number; t: number; mode: 'swipe' | 'spin' | 'tear' | 'card' | null; lastX: number; lastT: number; v: number; base: number; target: 'pack' | 'body' | 'none' } | null = null
   private drag = { dx: 0, active: false }
@@ -315,20 +297,20 @@ export class CardStage {
         const mats = [foil(frontTex, alpha), foil(backTex, alpha), inside(alpha), inside(alpha)]
         return new THREE.Mesh(geo, mats)
       }
-      const whole = make(masks[0]), body = make(masks[2]), flap = make(masks[1])
-      const twist = { value: 0 }
-      for (const m of flap.material as THREE.Material[]) twistStrip(m, twist, w, (0.5 - RIP_Y / 2) * h)
+      const whole = make(masks[0]), body = make(masks[2])
+      // The strip you tear off is its own soft piece of foil (strip.ts).
+      const strip = new FoilStrip(w, h, w * PUFF)
+      const flap = new THREE.Mesh(strip.geometry, [foil(frontTex, masks[1]), foil(backTex, masks[1])])
       const cut = new THREE.Mesh(cutGeo, cutMaterial(PALETTE[data.id].glow))
       // Makes the bright head at the finger round: the band is this many times longer than half its height.
       cut.material.uniforms.uAspect.value = 2 * PACK_RATIO / CUT_BAND
       cut.renderOrder = 10; cut.visible = false
-      // hingeAt sits on the untorn end of the tear line, flapPivot turns the strip around it.
-      const root = new THREE.Group(), spin = new THREE.Group(), hingeAt = new THREE.Group(), flapPivot = new THREE.Group()
+      const root = new THREE.Group(), spin = new THREE.Group()
       body.visible = flap.visible = false
-      flapPivot.add(flap); hingeAt.add(flapPivot); spin.add(whole, body, hingeAt, cut); root.add(spin)
+      spin.add(whole, body, flap, cut); root.add(spin)
       this.scene.add(root)
       const mats = [whole, body, flap].flatMap(m => m.material as THREE.MeshPhysicalMaterial[])
-      const obj: PackObj = { root, spin, whole, body, hingeAt, flapPivot, flap, mats, current: pose(), spinAngle: 0, spinTarget: 0, spinVel: 0, cut, twist }
+      const obj: PackObj = { root, spin, whole, body, flap, mats, current: pose(), spinAngle: 0, spinTarget: 0, spinVel: 0, cut, strip }
       obj.current = this.packTarget(i, 0)
       // After the homepage morph only the middle pack is showing; the others come in from the sides.
       if (this.intro && !this.reduced && i !== this.state.active) obj.current = { ...obj.current, x: obj.current.x + Math.sign(i - this.state.active) * packSpacing(this.vw, w) * 0.7, o: 0 }
@@ -485,7 +467,7 @@ export class CardStage {
   }
   async openNow() {
     if (this.state.stage !== 'tear') return
-    this.startOpening(pose({ x: 0, y: 0 }), 1)
+    this.startOpening(1)
   }
   next() { const n = this.count(); if (this.state.stage === 'stack' && this.state.index < n) this.set({ index: this.state.index + 1 }) }
   prev() { if (this.state.stage === 'stack' && this.state.index > 0) this.set({ index: this.state.index - 1 }) }
@@ -501,8 +483,7 @@ export class CardStage {
     const p = this.packs[this.state.active]
     if (!p) return
     p.whole.visible = true; p.body.visible = p.flap.visible = false
-    p.hingeAt.position.set(0, 0, 0); p.flapPivot.position.set(0, 0, 0); p.flapPivot.rotation.set(0, 0, 0); p.flap.position.set(0, 0, 0)
-    p.twist.value = 0
+    p.strip.reset()
     this.setOpacity(p, 1)
   }
   private setOpacity(p: PackObj, o: number, part: 'all' | 'flap' | 'body' = 'all') {
@@ -510,25 +491,11 @@ export class CardStage {
     for (const m of meshes) for (const mat of m.material as THREE.Material[]) mat.opacity = o
   }
 
-  // Pivots the strip around the end you haven't torn yet, lifting the loose end up and toward you.
-  private flapPose(progress: number, fromLeft: boolean) {
-    const r = packRect(this.vw, this.vh)
-    const dir = fromLeft ? 1 : -1
-    // Three.js has y up, so turning counterclockwise (positive z) would push the loose left end down.
-    return pose({ y: progress * r.h * 0.008, rz: -dir * progress * 3 * DEG, rx: progress * 8 * DEG })
-  }
-  private hinge(fromLeft: boolean) {
-    const r = packRect(this.vw, this.vh), p = this.packs[this.state.active]
-    const hx = (fromLeft ? 0.5 : -0.5) * r.w, hy = (0.5 - RIP_Y) * r.h
-    p.hingeAt.position.set(hx, hy, 0); p.flap.position.set(-hx, -hy, 0)
-  }
-
-  private async startOpening(from: Pose, dir: number) {
+  private async startOpening(dir: number) {
     const p = this.packs[this.state.active]
     this.tear = null
-    this.flapFrom = from; this.flapDir = dir
-    this.hinge(dir === 1)
     p.whole.visible = false; p.body.visible = p.flap.visible = true
+    p.strip.release(dir)
     p.spinAngle = p.spinTarget = 0
     await this.prepareCards(this.state.active)
     try { navigator.vibrate?.([10, 30, 18]) } catch { /* optional */ }
@@ -587,8 +554,8 @@ export class CardStage {
       const step = Math.floor(progress * 12)
       if (step > t.ticks) { t.ticks = step; try { navigator.vibrate?.(4) } catch { /* optional */ } }
       if (t.max - t.min > 0.02 && !this.state.tearing) { p.whole.visible = false; p.body.visible = p.flap.visible = true; this.set({ tearing: true }) }
-      if (this.state.tearing) { this.hinge(t.fromLeft); apply(p.flapPivot, this.flapPose(progress, t.fromLeft)) }
-      if (progress >= 1) { this.gesture = null; void this.startOpening(this.flapPose(1, t.fromLeft), t.fromLeft ? 1 : -1) }
+      if (this.state.tearing) p.strip.peel(t.min, t.max)
+      if (progress >= 1) { this.gesture = null; void this.startOpening(t.fromLeft ? 1 : -1) }
       return
     }
     if (!g.mode && Math.hypot(dx, dy) > 8) {
@@ -715,18 +682,16 @@ export class CardStage {
     const r = packRect(this.vw, this.vh), mouthY = (0.5 - RIP_Y) * r.h
     this.burst.visible = false; this.seal.visible = false
     this.updateCut(p, now, dt, elapsed)
+    // The strip moves on its own: peeling while you cut, then flying off. It fades as it leaves.
+    if (p.flap.visible && stage !== 'closing') {
+      p.strip.step(dt)
+      if (p.strip.flying) this.setOpacity(p, 1 - clamp((p.strip.flying - 0.6) / 0.4), 'flap')
+    }
     if (stage === 'opening' || stage === 'closing') {
       // Closing plays the opening backwards, then seals the tear.
       const t = stage === 'opening' ? elapsed : OPEN_MS - elapsed
-      // The strip pops up off the pack, tumbling and twisting into a ribbon, and fades as it goes.
-      const fly = clamp(t / 900), up = easeOut(fly), side = ease(fly), from = this.flapFrom, dir = this.flapDir
-      const sealed = stage === 'closing' && elapsed > OPEN_MS
-      apply(p.flapPivot, sealed ? pose() : pose({
-        x: from.x + dir * r.w * 0.5 * side, y: from.y + r.h * 0.95 * up, z: from.z + 140 * up,
-        rx: from.rx + 65 * DEG * side, ry: from.ry + dir * 35 * DEG * side, rz: from.rz - dir * 55 * DEG * side,
-      }))
-      p.twist.value = sealed ? 0 : -dir * 1.3 * ease(fly)
-      this.setOpacity(p, 1 - clamp((fly - 0.6) / 0.4), 'flap')
+      // The torn strip is gone by the time the pack closes again; it comes back when it seals.
+      if (stage === 'closing') p.flap.visible = false
       const drop = clamp((t - 800) / 450)
       p.body.position.y = -easeIn(drop) * r.h * 0.85
       p.body.position.z = 0
