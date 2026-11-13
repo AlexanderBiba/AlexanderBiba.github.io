@@ -131,12 +131,17 @@ function cutMaterial(glow: [number, number, number]) {
         float dx = (vUv.x - uTo) * uAspect;
         float head = exp(-(dx * dx + d * d) * 4.0);
         float cut = uCut * (inCut * (0.45 + 0.55 * along * along) * (core * 2.4 + halo * 0.9) + head * 2.4);
-        float seam = uSeam * (0.3 + 0.2 * sin(uTime * 3.5)) * (core + halo * 0.25);
+        // Before the first swipe a flash runs along the seam, left to right, every couple of seconds.
+        float phase = mod(uTime, 2.4) / 1.1;
+        float sx = mix(-0.15, 1.15, smoothstep(0.0, 1.0, phase)) ;
+        float sdx = (vUv.x - sx) * uAspect;
+        float sweep = phase < 1.0 ? exp(-(sdx * sdx * 0.35 + d * d * 5.0)) : 0.0;
+        float seam = uSeam * ((0.3 + 0.15 * sin(uTime * 3.5)) * (core + halo * 0.25) + sweep * (1.4 + core * 1.6));
         float flash = uFlash * (core * 2.0 + halo * 0.8);
         // Fade to nothing before the band's edges and ends so it never shows as a rectangle.
         float edge = (1.0 - smoothstep(0.5, 1.0, abs(d))) * smoothstep(0.0, 0.04, vUv.x) * (1.0 - smoothstep(0.96, 1.0, vUv.x));
         float a = (cut + seam + flash) * edge;
-        vec3 col = mix(uColor, vec3(1.0), clamp(core * 0.9 + head * 0.8, 0.0, 1.0));
+        vec3 col = mix(uColor, vec3(1.0), clamp(core * 0.9 + head * 0.8 + uSeam * sweep * 0.7, 0.0, 1.0));
         gl_FragColor = vec4(col * a, a);
       }`,
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false,
