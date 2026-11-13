@@ -140,6 +140,11 @@ export class CardStage {
   private drag = { dx: 0, active: false }
   private pointer: { x: number; y: number; t: number } | null = null
   private tilt = { x: 0, y: 0 }
+  // The cards live in a deck that turns about the stack's center, so the stack leans as one
+  // piece and the cards never cut through each other.
+  private deckPivot = new THREE.Group()
+  private deck = new THREE.Group()
+  private deckLean = { x: 0, y: 0 }
   private reduced: boolean
   private disposed = false
   private pendingPick = false
@@ -162,8 +167,13 @@ export class CardStage {
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture
     this.scene.environmentIntensity = 0.45
     pmrem.dispose()
-    const key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(-0.5, 0.8, 1); this.scene.add(key)
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.7))
+    const key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(-0.5, 0.8, 1)
+    const ambient = new THREE.AmbientLight(0xffffff, 0.7)
+    // Lights shine in both render passes (see loop).
+    key.layers.enableAll(); ambient.layers.enableAll()
+    this.scene.add(key, ambient)
+    this.deckPivot.add(this.deck); this.scene.add(this.deckPivot)
+    this.renderer.autoClear = false
 
     this.burst = this.glowSprite(); this.seal = this.glowSprite(true)
     this.resize(window.innerWidth, window.innerHeight)
@@ -257,7 +267,7 @@ export class CardStage {
       })
       const mesh = new THREE.Mesh(geo, [front, edgeMat, backMat])
       mesh.visible = false
-      this.scene.add(mesh)
+      this.deck.add(mesh)
       placeholder.push({ mesh, current: pose(), front, image: face.toDataURL('image/png') })
     })
     this.emit()
@@ -296,7 +306,7 @@ export class CardStage {
   private stackPose(n: number): Pose {
     const s = stackRect(this.vw, this.vh), c = this.world(s.x + s.w / 2, s.y + s.h / 2)
     const k = this.cardScale
-    if (n < 0) return pose({ x: c.x - (this.vw / 2 + s.w * 1.5), y: c.y - 24, z: 30, rz: -18 * DEG, ry: -40 * DEG, s: k })
+    if (n < 0) return pose({ x: c.x - (this.vw / 2 + s.w * 0.9), y: c.y - 24, z: 30, rz: -18 * DEG, ry: -40 * DEG, s: k })
     return pose({ x: c.x, y: c.y - n * 4, z: -n * s.w * CARD_DEPTH * 1.6, rz: FAN[Math.min(n, 3)] * DEG, s: (1 - n * 0.012) * k, o: n > 3 ? 0 : 1 })
   }
 
@@ -514,7 +524,12 @@ export class CardStage {
     this.updateTilt(dt)
     this.updatePacks(this.clock, dt)
     this.updateCards(this.clock, dt)
-    this.renderer.render(this.scene, this.camera)
+    // Two passes: the top card of the stack, and the one being swiped away, go on layer 1 and are
+    // drawn over everything else, so a card moving past the stack never dips into it.
+    this.renderer.clear()
+    this.camera.layers.set(0); this.renderer.render(this.scene, this.camera)
+    this.renderer.clearDepth()
+    this.camera.layers.set(1); this.renderer.render(this.scene, this.camera)
   }
 
   private updateTilt(dt: number) {
@@ -601,8 +616,16 @@ export class CardStage {
     if (!list) return
     const elapsed = now - this.stageStart
     const s = stackRect(this.vw, this.vh)
+    // The whole stack leans toward the pointer or the phone's tilt.
+    const c = this.world(s.x + s.w / 2, s.y + s.h / 2), lean = stage === 'stack' && !this.reduced
+    const follow = 1 - Math.exp(-12 * dt)
+    this.deckLean.x += ((lean ? this.tilt.x : 0) - this.deckLean.x) * follow
+    this.deckLean.y += ((lean ? this.tilt.y : 0) - this.deckLean.y) * follow
+    this.deckPivot.position.set(c.x, c.y, 0); this.deck.position.set(-c.x, -c.y, 0)
+    this.deckPivot.rotation.set(this.deckLean.y * 12 * DEG, this.deckLean.x * 16 * DEG, 0)
     list.forEach((card, k) => {
       const n = k - index
+      card.mesh.layers.set(stage === 'stack' && n <= 0 ? 1 : 0)
       if (stage === 'opening' || stage === 'closing') {
         // Cards rise out of the pack, wait at the opening while the wrapper drops, then come forward.
         const t = stage === 'opening' ? elapsed : OPEN_MS - elapsed
@@ -628,8 +651,6 @@ export class CardStage {
           target = mix(this.stackPose(-1), pose({ ...home, z: 30 }), p)
         }
       }
-      // The top card leans toward the pointer or the phone's tilt.
-      if (n === 0 && !this.reduced) target = pose({ ...target, rx: target.rx + this.tilt.y * 12 * DEG, ry: target.ry + this.tilt.x * 16 * DEG })
       card.current = this.drag.active && (n === 0 || n === -1) ? damp(card.current, target, dt, 30) : damp(card.current, target, dt, this.reduced ? 60 : index >= list.length ? 16 : 10)
       apply(card.mesh, card.current)
       card.mesh.renderOrder = n < 0 ? 5 : 4 - n
