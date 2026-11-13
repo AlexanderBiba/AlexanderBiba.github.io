@@ -1,15 +1,23 @@
 'use client'
 
+import posts from '../../content/blog.json'
 import works from '../../content/works.json'
 import { packRect } from './geometry'
 import { MORPH_OVERLAY, markMorphed } from './handoff'
-import { CENTER_PACK } from './packMeta'
+import { AVATAR, CENTER_PACK } from './packMeta'
 import { loadImage, packOutline, paintPackFront } from './paint'
 import styles from './cards.module.css'
 
 const counts = { works: works.length } as Record<string, number>
 // Same cover the /play/ shelf shows on the Built pack: the newest work with a screenshot.
 export const cover = [...works].sort((a, b) => b.date.localeCompare(a.date)).find(work => work.image)?.image ?? undefined
+
+// The pictures /play/ needs first: the three packs' covers and the Built pack's card art. Asking
+// for them the moment 🎮 is tapped gives them the length of the morph as a head start.
+function warmArt() {
+  const newestPost = [...posts].sort((a, b) => b.date.localeCompare(a.date)).find(post => post.ogImage)
+  for (const src of [newestPost?.ogImage?.url, AVATAR, ...works.map(work => work.image)]) if (src) void loadImage(src)
+}
 
 const RETURN = 'data-pack-return'
 const EASE = 'cubic-bezier(.7, 0, .25, 1)'
@@ -70,6 +78,7 @@ function shapes(app: HTMLElement) {
 // so /play/ starts setting up its 3D scene while the pack finishes its little bounce.
 export function morphIntoPack(app: HTMLElement, done: () => void) {
   primeMorph()
+  warmArt()
   const overlay = primed!.canvas
   primed = null
   document.body.appendChild(overlay)

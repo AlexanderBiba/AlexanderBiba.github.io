@@ -8,6 +8,10 @@ const NX = 24, NY = 4
 // The strip reaches a bit below the tear line so the jagged rip (cut by the alpha mask) fits.
 const DEPTH_Y = RIP_Y + 0.016
 const STEP = 1 / 120
+// It runs a third faster than real time: the pace its springs and speeds were tuned at.
+const PACE = 1.35
+// How long a strip that was let go takes to lie back down, in its own seconds (about 0.2 real ones).
+const SETTLE = 0.27
 
 type Link = [number, number, number, number] // a, b, rest length, stiffness
 
@@ -27,8 +31,10 @@ export class FoilStrip {
   private looseDir = 0
   private lo = 0
   private hi = 0
-  private mode: 'rest' | 'peel' | 'fly' = 'rest'
+  private mode: 'rest' | 'peel' | 'settle' | 'fly' = 'rest'
   private time = 0
+  // Frame time not yet simulated: the simulation runs in fixed steps, whatever the frame rate.
+  private owed = 0
   private spin = 0
 
   constructor(private w: number, private h: number, depth: number) {
@@ -76,7 +82,7 @@ export class FoilStrip {
   // Back on the pack, flat and attached.
   reset() {
     this.p.set(this.rest); this.prev.set(this.rest); this.pinned.fill(1)
-    this.mode = 'rest'; this.time = 0
+    this.mode = 'rest'; this.time = 0; this.owed = 0
     this.updateGeometry()
   }
 
@@ -95,6 +101,11 @@ export class FoilStrip {
     this.attachX = ((this.looseDir < 0 ? hi : lo) - 0.5) * this.w
     this.lo = lo; this.hi = hi
   }
+
+  // Let go before the cut was finished: the loose part lies back down flat onto the pack.
+  settle() { if (this.mode === 'peel') { this.mode = 'settle'; this.time = 0 } }
+  // Flat on the pack, nothing loose.
+  get resting() { return this.mode === 'rest' }
 
   // Where a loose point wants to be while peeling: the strip curls away from the pack in an arc
   // starting where it's still attached, lifting a little as it goes, like a sticker being peeled.
@@ -126,23 +137,36 @@ export class FoilStrip {
 
   step(dt: number) {
     if (this.mode === 'rest') return
-    let left = Math.min(dt, 0.1)
-    while (left > 0) { this.substep(); left -= STEP; this.time += STEP }
+    // Whole steps only, carrying the remainder over, so it moves at the same pace at any frame
+    // rate (and in slow motion) instead of rounding every frame up to a full step.
+    this.owed += Math.min(dt, 0.1) * PACE
+    if (this.owed < STEP) return
+    while (this.owed >= STEP) { this.substep(); this.owed -= STEP; this.time += STEP }
+    if (this.mode === 'settle' && this.time > SETTLE && (this.time > SETTLE + 0.25 || this.offRest() < 0.5)) { this.reset(); return }
     this.updateGeometry()
   }
 
+  // How far the loosest point is from where it sits on the pack.
+  private offRest() {
+    let max = 0
+    for (let i = 0; i < this.p.length; i++) max = Math.max(max, Math.abs(this.p[i] - this.rest[i]))
+    return max
+  }
+
   private substep() {
-    const { p, prev, pinned } = this
-    const peel = this.mode === 'peel'
-    // Peeling: the loose foil springs up and toward you, more toward its free end. Flying: a
-    // little gravity, drag and flutter.
+    const { p, prev, pinned, rest } = this
+    const peel = this.mode === 'peel' || this.mode === 'settle'
+    // Peeling: the loose foil springs up and toward you, more toward its free end. Let go, the
+    // curl it's pulled toward eases back down to flat. Flying: a little gravity, drag and flutter.
     const damping = peel ? 0.88 : 0.985, target = [0, 0, 0]
+    const u = Math.min(1, this.time / SETTLE), curl = this.mode === 'settle' ? 1 - u * u * (3 - 2 * u) : 1
     for (let k = 0; k < this.n; k++) {
       if (pinned[k]) continue
       const o = k * 3
       let ax = 0, ay = 0, az = 0
       if (peel) {
         this.peelTarget(k, target)
+        for (let c = 0; c < 3; c++) target[c] = rest[o + c] + (target[c] - rest[o + c]) * curl
         ax = (target[0] - p[o]) * 0.06; ay = (target[1] - p[o + 1]) * 0.06; az = (target[2] - p[o + 2]) * 0.06
       } else {
         ay = -0.06

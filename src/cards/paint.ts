@@ -71,13 +71,24 @@ function spaced(ctx: Ctx, text: string, x: number, y: number, spacing: number, a
   ctx.letterSpacing = '0px'
 }
 
+// Each picture is fetched and decoded once: the homepage asks for the first ones while it turns
+// into the pack (morph.tsx), and the scene gets the very same ones.
+const images = new Map<string, Promise<HTMLImageElement | null>>()
 export function loadImage(src: string): Promise<HTMLImageElement | null> {
-  return new Promise(resolve => {
-    const img = new Image()
-    img.decoding = 'async'
-    img.onload = () => resolve(img); img.onerror = () => resolve(null)
-    img.src = src
-  })
+  let job = images.get(src)
+  if (!job) {
+    job = new Promise(resolve => {
+      const img = new Image()
+      img.decoding = 'async'
+      // Decoded before it's handed over, off the main thread, so drawing it doesn't stall a frame.
+      img.onload = () => { if (img.decode) img.decode().then(() => resolve(img), () => resolve(img)); else resolve(img) }
+      // (One that failed gets another try next time.)
+      img.onerror = () => { images.delete(src); resolve(null) }
+      img.src = src
+    })
+    images.set(src, job)
+  }
+  return job
 }
 
 // ---------- Packs ----------

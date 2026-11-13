@@ -25,10 +25,12 @@ const CARD_DEPTH = 0.014
 // How much of the width the cut has to cover before the strip comes off. Reaching the far edge
 // also finishes it, so a cut started in the middle still works.
 const TEAR_DISTANCE = 0.88
-export const OPEN_MS = 1900, CLOSE_MS = 2300
+// The opening ends as the last card lands on the stack; closing plays it backwards, then seals.
+export const OPEN_MS = 1720, CLOSE_MS = OPEN_MS + 400
 const FAN = [0, -1.6, 1.3, -0.9]
-// Putting the laid-out cards back: each flies from its spot into the deck, the last card first.
-const GATHER_FLY = 560, GATHER_STAGGER = 70
+// Putting the laid-out cards back: each flies from its spot into the deck, the last card first,
+// after a beat in which the pictures on the page dissolve into the 3D cards under them.
+const GATHER_HOLD = 50, GATHER_FLY = 560, GATHER_STAGGER = 70
 const DEG = Math.PI / 180
 
 type Pose = { x: number; y: number; z: number; rx: number; ry: number; rz: number; s: number; o: number }
@@ -56,8 +58,9 @@ const idle = () => new Promise<void>(resolve => {
 function canvas(w: number, h: number) {
   const c = document.createElement('canvas'); c.width = Math.max(2, Math.round(w)); c.height = Math.max(2, Math.round(h)); return c
 }
-function texture(c: HTMLCanvasElement, color = true) {
-  const t = new THREE.CanvasTexture(c)
+// `upload: false` for a canvas that's painted later: it's sent to the GPU when it's marked changed.
+function texture(c: HTMLCanvasElement, color = true, upload = true) {
+  const t = upload ? new THREE.CanvasTexture(c) : new THREE.Texture(c)
   if (color) t.colorSpace = THREE.SRGBColorSpace
   t.anisotropy = 4
   return t
@@ -175,9 +178,16 @@ export function cardGeometry(w: number, h: number, depth: number) {
 type PackObj = {
   root: THREE.Group; spin: THREE.Group; whole: THREE.Mesh; body: THREE.Mesh; flap: THREE.Mesh
   mats: THREE.MeshPhysicalMaterial[]; current: Pose; spinAngle: number; spinTarget: number; spinVel: number
+  // How much this pack leans with the pointer or the phone right now (0 to 1).
+  lean: number
   cut: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>; strip: FoilStrip
 }
-type CardObj = { mesh: THREE.Mesh; current: Pose; front: THREE.MeshPhysicalMaterial; image: string }
+// `flat`: how much the card shows as its plain picture instead of a lit, shiny thing (see shade).
+// `away`: how much of the way from its picture on the page to the stack it still has to go.
+type CardObj = { mesh: THREE.Mesh; current: Pose; front: THREE.MeshPhysicalMaterial; image: string; flat: number; away: number }
+// A card flying in from its picture keeps looking like it for the first part of the way, and
+// takes on the light over the rest: up by the pictures it would catch a glare and wash out.
+const flatFor = (away: number) => { const x = clamp(away / 0.6); return x * x * (3 - 2 * x) }
 export type StageOptions = { active: number; intro: boolean }
 
 export class CardStage {
@@ -198,12 +208,14 @@ export class CardStage {
   // Where the cards start when they're gathered back up from the recap grid, and how long it takes.
   private gather: Pose[] | null = null
   private gatherMs = 0
+  // When the cards last set off from the recap grid toward the stack (they start gently).
+  private showAt = -1e9
   // Scene time in ms. It advances by at most 50 ms a frame, so a slow frame or a busy tab
   // slows the animations down instead of skipping them.
   private clock = 0
   // ?slowmo=10 plays every animation ten times slower, for checking them frame by frame.
   private timeScale = 1
-  private tear: { start: number; min: number; max: number; left: number; width: number; at: number; fromLeft: boolean; ticks: number } | null = null
+  private tear: { start: number; min: number; max: number; at: number; fromLeft: boolean; ticks: number } | null = null
   private gesture: { id: number; x: number; y: number; t: number; mode: 'swipe' | 'spin' | 'tear' | 'card' | null; lastX: number; lastT: number; v: number; base: number; target: 'pack' | 'body' | 'none' } | null = null
   private drag = { dx: 0, active: false }
   private pointer: { x: number; y: number; t: number } | null = null
@@ -216,13 +228,25 @@ export class CardStage {
   private reduced: boolean
   private disposed = false
   private pendingPick = false
+  // Set from the moment the strip comes off until the cards start coming out (they may still be
+  // painting). Nothing else can be started in between.
+  private pendingOpen = false
+  // Called once the picked pack is back in its place on the shelf, on the way to the homepage,
+  // or at this scene time if it somehow isn't by then.
+  private onSettled: (() => void) | null = null
+  private settleBy = 0
+  // Painting is held off until this scene time, while things are moving (see quiet).
+  private busyUntil = 0
+  private backPainted: boolean[] = []
   private compiled = false
   // Set when the page arrived through the homepage morph: the side packs slide in once it's drawn.
   private intro = false
   // Set while leaving for the homepage: the side packs slide away and the pick pack holds still.
   private exiting = false
   private cardJobs = new Map<string, Promise<CardObj[]>>()
-  private covers: Promise<(HTMLImageElement | null)[]>
+  // Each pack's cover art, and the same after a short wait at most (see the constructor).
+  private covers: Promise<HTMLImageElement | null>[]
+  private coversSoon: Promise<(HTMLImageElement | null | undefined)[]>
   private fronts: HTMLCanvasElement[] = []
   // Sizes the meshes were built at; a resize scales them instead of rebuilding.
   private builtPackW = 0
@@ -232,10 +256,17 @@ export class CardStage {
 
   constructor(private canvasEl: HTMLCanvasElement, private data: PackData[], private onChange: (state: StageState) => void, { active, intro }: StageOptions) {
     // Start loading the cover art right away, so it arrives while the scene is set up.
-    this.covers = Promise.all(data.map(p => p.cover ? loadImage(p.cover) : Promise.resolve(null)))
+    // The scene waits for it, but not for long: a slow cover is painted in when it arrives instead
+    // of holding up the first frame. The pack in front gets more patience than the ones beside it.
+    this.covers = data.map(p => p.cover ? loadImage(p.cover) : Promise.resolve(null))
+    const patience = (i: number) => new Promise<undefined>(resolve => setTimeout(resolve, i === active ? 1500 : 400))
+    this.coversSoon = Promise.all(this.covers.map((cover, i) => Promise.race([cover, patience(i)])))
     this.intro = intro
     this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    this.timeScale = 1 / Math.max(1, Number(new URLSearchParams(window.location.search).get('slowmo')) || 1)
+    const params = new URLSearchParams(window.location.search)
+    this.timeScale = 1 / Math.max(1, Number(params.get('slowmo')) || 1)
+    // With ?slowmo the scene is also reachable from the console and from test scripts, to read its clock.
+    if (params.has('slowmo')) (window as unknown as { cardStage?: CardStage }).cardStage = this
     this.state.active = active
     this.renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true, alpha: true, powerPreference: 'high-performance' })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
@@ -260,8 +291,8 @@ export class CardStage {
     this.build().then(async () => {
       // Compile the shaders before the first frame, without blocking where the browser can do it
       // in the background, so the hand-off from the homepage doesn't stall on it.
-      // The torn parts and the cut light are hidden until a tear, but compile them now too.
-      const hidden = this.packs.flatMap(p => [p.body, p.flap, p.cut])
+      // The torn parts, the cut light and the glows are hidden until a tear, but compile them now too.
+      const hidden: THREE.Object3D[] = [...this.packs.flatMap(p => [p.body, p.flap, p.cut]), this.burst, this.seal]
       hidden.forEach(m => { m.visible = true })
       await this.renderer.compileAsync(this.scene, this.camera)
       hidden.forEach(m => { m.visible = false })
@@ -294,17 +325,26 @@ export class CardStage {
   private async build() {
     const { w, h } = packRect(this.vw, this.vh)
     this.builtPackW = w
-    const dpr = Math.min(window.devicePixelRatio || 1, 2.5)
-    const tw = Math.min(1024, Math.round(w * PICKED_SCALE * dpr)), th = tw / PACK_RATIO
+    // Painted big enough to stay sharp up close, at the resolution the scene is drawn at.
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const tw = Math.min(1024, Math.round(Math.max(w * PICKED_SCALE, zoomRect(this.vw, this.vh).w) * dpr)), th = tw / PACK_RATIO
     const geo = pillowGeometry(w, h, w * PUFF), cutGeo = cutGeometry(w, h, w * PUFF)
     const masks = (['whole', 'flap', 'body'] as const).map(part => { const c = canvas(512, 512 / PACK_RATIO); paintPackMask(c, part); return texture(c, false) })
-    const covers = await this.covers
+    // Sent to the GPU now rather than on the first frame of a tear.
+    masks.forEach(mask => this.renderer.initTexture(mask))
+    const covers = await this.coversSoon
     this.data.forEach((data, i) => {
       // The back only shows once a pack is picked and spun, so it's painted later (paintBacks).
       const front = canvas(tw, th), back = canvas(tw, th)
       paintPackFront(front, { id: data.id, count: data.cards.length, cover: covers[i] })
       this.fronts[i] = front
-      const frontTex = texture(front), backTex = texture(back)
+      const frontTex = texture(front), backTex = texture(back, true, false)
+      // A cover that wasn't there in time is painted in once it is.
+      if (covers[i] === undefined) void this.covers[i].then(cover => {
+        if (!cover || this.disposed) return
+        paintPackFront(front, { id: data.id, count: data.cards.length, cover })
+        frontTex.needsUpdate = true
+      })
       const foil = (map: THREE.Texture, alphaMap: THREE.Texture) => new THREE.MeshPhysicalMaterial({
         map, alphaMap, alphaTest: 0.5, transparent: true, metalness: 0.2, roughness: 0.45,
         clearcoat: 0.35, clearcoatRoughness: 0.3, iridescence: 0.4, iridescenceIOR: 1.4, iridescenceThicknessRange: [250, 750],
@@ -327,7 +367,7 @@ export class CardStage {
       spin.add(whole, body, flap, cut); root.add(spin)
       this.scene.add(root)
       const mats = [whole, body, flap].flatMap(m => m.material as THREE.MeshPhysicalMaterial[])
-      const obj: PackObj = { root, spin, whole, body, flap, mats, current: pose(), spinAngle: 0, spinTarget: 0, spinVel: 0, cut, strip }
+      const obj: PackObj = { root, spin, whole, body, flap, mats, current: pose(), spinAngle: 0, spinTarget: 0, spinVel: 0, lean: 0, cut, strip }
       obj.current = this.packTarget(i, 0)
       // After the homepage morph only the middle pack is showing; the others come in from the sides.
       if (this.intro && !this.reduced && i !== this.state.active) obj.current = { ...obj.current, x: obj.current.x + Math.sign(i - this.state.active) * packSpacing(this.vw, w) * 0.7, o: 0 }
@@ -339,28 +379,59 @@ export class CardStage {
   // The scene is on screen: the homepage's painted pack can go, and the rest is painted between
   // frames, pack backs first, then the cards of the pack in front.
   private async onFirstFrame() {
+    // Nothing is painted while the scene comes in: the light blooms, the words rise, the packs slide in.
+    this.busyUntil = this.clock + (this.intro ? 900 : 500)
     this.state.ready = true; this.emit()
     if (this.pendingPick) { this.pendingPick = false; this.pick() }
     await this.paintBacks()
     void this.prepareCards(this.state.active)
   }
 
+  // Painting takes long enough to drop a frame or two, so it waits for a moment when nothing is
+  // moving: every change of stage, pack or zoom holds it off for a while (see set).
+  private async quiet() {
+    // A torn pack waiting for its cards doesn't wait for anything.
+    while (this.clock < this.busyUntil && !this.pendingOpen && !this.disposed) await new Promise(resolve => setTimeout(resolve, 50))
+    if (this.pendingOpen) await new Promise(resolve => setTimeout(resolve, 0)); else await idle()
+  }
+
+  private paintBack(i: number) {
+    if (this.backPainted[i] || !this.packs[i]) return
+    this.backPainted[i] = true
+    const data = this.data[i], tex = (this.packs[i].whole.material as THREE.MeshPhysicalMaterial[])[1].map!
+    paintPackBack(tex.image as HTMLCanvasElement, { id: data.id, names: data.cards.map(c => c.name) })
+    tex.needsUpdate = true
+  }
+
+  // The pack in front first: it's the one that can be turned around.
   private async paintBacks() {
-    for (const [i, p] of this.packs.entries()) {
-      await idle()
+    const order = [...this.packs.keys()].sort((a, b) => Math.abs(a - this.state.active) - Math.abs(b - this.state.active))
+    for (const i of order) {
+      await this.quiet()
       if (this.disposed) return
-      const data = this.data[i], mat = (p.whole.material as THREE.MeshPhysicalMaterial[])[1]
-      const tex = mat.map!
-      paintPackBack(tex.image as HTMLCanvasElement, { id: data.id, names: data.cards.map(c => c.name) })
-      tex.needsUpdate = true
+      this.paintBack(i)
     }
   }
 
   // The front art of pack i, as painted for its texture (the homepage morph reuses it on the way back).
   packFront(i: number) { return this.fronts[i] ?? null }
 
-  // Before going back to the homepage: the side packs slide away and the middle one settles.
-  exit() { this.exiting = true }
+  // Before going back to the homepage: the side packs slide away and the picked one goes back to
+  // its place on the shelf, where the homepage grows out of it. Resolves once it's there.
+  exit() {
+    this.exiting = true
+    this.gesture = null
+    if (this.tear) { this.tear = null; this.set({ tearing: false }) }
+    const p = this.packs[this.state.active]
+    if (p) p.spinTarget = Math.round(p.spinAngle / (Math.PI * 2)) * Math.PI * 2
+    if (this.state.stage === 'tear' && !this.pendingOpen) p?.strip.settle()
+    this.settleBy = this.clock + 700
+    return new Promise<void>(resolve => {
+      // (The timer is for a tab that stopped drawing.)
+      const timer = setTimeout(resolve, 3000)
+      this.onSettled = () => { clearTimeout(timer); resolve() }
+    })
+  }
 
   // Paints pack i's cards one at a time between frames. Opening the pack waits for this.
   private prepareCards(i: number) {
@@ -377,21 +448,29 @@ export class CardStage {
     if (!this.builtCardW) this.builtCardW = s.w
     const tw = Math.min(900, Math.round(s.w * dpr)), th = tw / CARD_RATIO
     const geo = cardGeometry(this.builtCardW, this.builtCardW / CARD_RATIO, this.builtCardW * CARD_DEPTH)
+    await this.quiet()
+    if (this.disposed) return list
     const back = canvas(tw * 0.5, th * 0.5); paintCardBack(back, data.id)
-    const backMat = new THREE.MeshStandardMaterial({ map: texture(back), roughness: 0.5, metalness: 0.2 })
+    const backTex = texture(back); this.renderer.initTexture(backTex)
+    const backMat = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5, metalness: 0.2 })
     const edgeMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(PALETTE[data.id].c2).lerp(new THREE.Color(0xf6f1e4), 0.55), roughness: 0.75 })
     const arts = await Promise.all(data.cards.map(card => card.art.kind === 'image' ? loadImage(card.art.src) : Promise.resolve(null)))
     const holder = new THREE.Group()
     for (const [k, card] of data.cards.entries()) {
-      await idle()
+      await this.quiet()
       if (this.disposed) return list
       const face = canvas(tw, th), foil = canvas(tw / 4, th / 4)
       paintCardFront(face, card, data.cards.length, arts[k]); paintCardFoil(foil, card)
+      const faceTex = texture(face), foilTex = texture(foil, false)
+      // Send them to the GPU now, between frames, instead of on the first frame that shows the card.
+      this.renderer.initTexture(faceTex); this.renderer.initTexture(foilTex)
       const front = new THREE.MeshPhysicalMaterial({
-        map: texture(face), roughness: 0.62, metalness: 0, clearcoat: 0.25, clearcoatRoughness: 0.3, envMapIntensity: 0.35,
-        iridescence: 1, iridescenceMap: texture(foil, false), iridescenceIOR: 1.8, iridescenceThicknessRange: [120, 900],
+        map: faceTex, roughness: 0.62, metalness: 0, clearcoat: 0.25, clearcoatRoughness: 0.3, envMapIntensity: 0.35,
+        iridescence: 1, iridescenceMap: foilTex, iridescenceIOR: 1.8, iridescenceThicknessRange: [120, 900],
+        // Its own picture as a light source, off until the card has to pass for that picture (see shade).
+        emissive: 0xffffff, emissiveMap: faceTex, emissiveIntensity: 0,
       })
-      const obj: CardObj = { mesh: new THREE.Mesh(geo, [front, edgeMat, backMat]), current: pose(), front, image: '' }
+      const obj: CardObj = { mesh: new THREE.Mesh(geo, [front, edgeMat, backMat]), current: pose(), front, image: '', flat: 0, away: 0 }
       holder.add(obj.mesh)
       list.push(obj)
       // The recap grid shows the same painting; encoding it off the main thread keeps frames smooth.
@@ -464,7 +543,13 @@ export class CardStage {
   // ---------- State ----------
 
   private emit() { this.onChange({ ...this.state }) }
-  private set(patch: Partial<StageState>) { Object.assign(this.state, patch); this.emit() }
+  private set(patch: Partial<StageState>) {
+    // Something is about to move: keep the painting out of its way (see quiet).
+    if (patch.stage !== undefined || patch.active !== undefined || patch.zoom !== undefined) {
+      this.busyUntil = this.clock + (patch.stage === 'opening' ? OPEN_MS : patch.stage === 'closing' ? CLOSE_MS + this.gatherMs : 400)
+    }
+    Object.assign(this.state, patch); this.emit()
+  }
   get stageName() { return this.state.stage }
 
   goTo(i: number) {
@@ -480,31 +565,58 @@ export class CardStage {
     p.spinAngle = p.spinTarget = 0; p.spinVel = 0
     this.set({ stage: 'tear', face: 'front' })
   }
-  backToShelf() { if (this.state.stage === 'tear') { this.resetFlap(); this.set({ stage: 'shelf', zoom: false }) } }
+  backToShelf() {
+    if (this.state.stage !== 'tear' || this.pendingOpen) return
+    this.dropTear()
+    this.set({ stage: 'shelf', zoom: false })
+  }
+  // Stops a cut that's under way: the loose strip springs back onto the pack.
+  private dropTear() {
+    if (this.gesture?.mode === 'tear') this.gesture = null
+    this.tear = null
+    this.packs[this.state.active]?.strip.settle()
+    if (this.state.tearing) this.set({ tearing: false })
+  }
   // Up close with the front showing, ready to tear; and back out to spinning it around.
   zoomIn() {
-    if (this.state.stage !== 'tear' || this.state.zoom) return
+    if (this.state.stage !== 'tear' || this.state.zoom || this.pendingOpen) return
     const p = this.packs[this.state.active]
     p.spinTarget = Math.round(p.spinAngle / (Math.PI * 2)) * Math.PI * 2
     this.set({ zoom: true, face: 'front' })
   }
   zoomOut() {
-    if (this.state.stage !== 'tear' || !this.state.zoom || this.tear) return
+    if (this.state.stage !== 'tear' || !this.state.zoom || this.pendingOpen) return
+    this.dropTear()
     this.set({ zoom: false })
   }
   flip() {
-    if (this.state.stage !== 'tear' || this.tear || this.state.zoom) return
+    if (this.state.stage !== 'tear' || this.tear || this.state.zoom || this.pendingOpen) return
     const p = this.packs[this.state.active]
+    this.paintBack(this.state.active)
     p.spinTarget = Math.round(p.spinAngle / Math.PI) * Math.PI + Math.PI
     this.set({ face: Math.round(p.spinTarget / Math.PI) % 2 ? 'back' : 'front' })
   }
-  async openNow() {
-    if (this.state.stage !== 'tear') return
-    this.startOpening(1)
+  openNow() {
+    if (this.state.stage !== 'tear' || this.pendingOpen) return
+    void this.startOpening(1)
   }
   next() { const n = this.count(); if (this.state.stage === 'stack' && this.state.index < n) this.set({ index: this.state.index + 1 }) }
   prev() { if (this.state.stage === 'stack' && this.state.index > 0) this.set({ index: this.state.index - 1 }) }
-  show(index: number) { if (this.state.stage === 'stack') this.set({ index }) }
+  // Jumps to a card. `from` is where the cards are drawn on the page (the recap grid): the ones
+  // that end up on the stack fly over from there.
+  show(index: number, from?: { x: number; y: number; w: number }[]) {
+    if (this.state.stage !== 'stack') return
+    const list = this.cards.get(this.data[this.state.active].id)
+    if (from && list && from.length === list.length && !this.reduced && this.builtCardW) list.forEach((card, k) => {
+      const n = k - index
+      if (n < 0 || n > 3) return
+      const c = this.world(from[k].x, from[k].y)
+      card.current = pose({ x: c.x, y: c.y, s: from[k].w / this.builtCardW }); card.mesh.visible = true
+      card.away = 1; this.shade(card, 1)
+      this.showAt = this.clock
+    })
+    this.set({ index })
+  }
   // `from` is where each card is drawn on the page (the recap grid), so they can be gathered from there.
   untear(from?: { x: number; y: number; w: number }[]) {
     if (this.state.stage !== 'stack') return
@@ -512,7 +624,7 @@ export class CardStage {
     this.gather = from && from.length === n && !this.reduced && this.builtCardW
       ? from.map(r => { const c = this.world(r.x, r.y); return pose({ x: c.x, y: c.y, s: r.w / this.builtCardW }) })
       : null
-    this.gatherMs = this.gather ? GATHER_FLY + GATHER_STAGGER * (n - 1) + 120 : 0
+    this.gatherMs = this.gather ? GATHER_HOLD + GATHER_FLY + GATHER_STAGGER * (n - 1) + 120 : 0
     // The closing starts once the deck is together, so time before that runs negative.
     this.stageStart = this.clock + this.gatherMs
     this.set({ stage: 'closing', index: this.state.index < this.count() ? this.state.index : 0 })
@@ -526,19 +638,37 @@ export class CardStage {
     p.strip.reset()
     this.setOpacity(p, 1)
   }
+  // A card taking over from its picture on the page starts out looking exactly like it (flat = 1):
+  // unlit, with no shine. The light and the foil come in as it flies off (flat = 0).
+  private shade(card: CardObj, flat: number) {
+    if (card.flat === flat) return
+    card.flat = flat
+    const m = card.front, lit = 1 - flat
+    m.color.setScalar(lit); m.specularIntensity = lit
+    // Never quite zero, which would switch to another shader.
+    m.iridescence = Math.max(0.001, lit); m.clearcoat = Math.max(0.001, 0.25 * lit)
+    // (A touch over 1 makes up for what the tone mapping takes off.)
+    m.emissiveIntensity = flat * 1.03
+  }
   private setOpacity(p: PackObj, o: number, part: 'all' | 'flap' | 'body' = 'all') {
     const meshes = part === 'flap' ? [p.flap] : part === 'body' ? [p.body, p.whole] : [p.whole, p.body, p.flap]
-    for (const m of meshes) for (const mat of m.material as THREE.Material[]) mat.opacity = o
+    // The cut-out threshold fades along with it; left alone, anything under half opacity would vanish at once.
+    for (const m of meshes) for (const mat of m.material as THREE.Material[]) { mat.opacity = o; mat.alphaTest = Math.max(0.02, 0.5 * o) }
   }
 
   private async startOpening(dir: number) {
+    if (this.pendingOpen) return
+    this.pendingOpen = true
     const p = this.packs[this.state.active]
-    this.tear = null
+    this.gesture = null; this.tear = null
     p.whole.visible = false; p.body.visible = p.flap.visible = true
     p.strip.release(dir)
-    p.spinAngle = p.spinTarget = 0
-    await this.prepareCards(this.state.active)
+    // Face the front the short way round, if it was still turning.
+    p.spinTarget = Math.round(p.spinAngle / (Math.PI * 2)) * Math.PI * 2
     try { navigator.vibrate?.([10, 30, 18]) } catch { /* optional */ }
+    await this.prepareCards(this.state.active)
+    this.pendingOpen = false
+    if (this.disposed) return
     this.stageStart = this.clock
     this.set({ stage: 'opening', index: 0, tearing: false })
   }
@@ -553,7 +683,7 @@ export class CardStage {
   }
 
   private down = (event: PointerEvent) => {
-    if (event.button !== 0) return
+    if (event.button !== 0 || this.pendingOpen || this.exiting) return
     const { stage } = this.state
     let target: 'pack' | 'body' | 'none' = 'none', mode: 'tear' | null = null
     if (stage === 'tear') {
@@ -574,10 +704,19 @@ export class CardStage {
     this.canvasEl.setPointerCapture(event.pointerId)
   }
 
+  // How far across the picked pack the pointer is: 0 at its left edge, 1 at its right. Read off the
+  // pack itself, so the cut stays under the finger while the pack moves or leans.
+  private tearX(event: PointerEvent) {
+    const p = this.packs[this.state.active]
+    const hit = this.hit(event, [p.whole])
+    if (hit?.uv && hit.face && hit.face.normal.z > 0) return hit.uv.x
+    const c = p.current, w = this.builtPackW * c.s
+    return clamp((event.clientX - (c.x + this.vw / 2 - w / 2)) / w)
+  }
+
   private beginTear(event: PointerEvent) {
-    const p = this.packs[this.state.active].current, w = this.builtPackW * p.s, left = p.x + this.vw / 2 - w / 2
-    const x = clamp((event.clientX - left) / w)
-    this.tear = { start: x, min: x, max: x, left, width: w, at: x, fromLeft: true, ticks: 0 }
+    const x = this.tearX(event)
+    this.tear = { start: x, min: x, max: x, at: x, fromLeft: true, ticks: 0 }
   }
 
   private move = (event: PointerEvent) => {
@@ -586,7 +725,7 @@ export class CardStage {
     if (!g || g.id !== event.pointerId) return
     const dx = event.clientX - g.x, dy = event.clientY - g.y, now = performance.now()
     if (g.mode === 'tear' && this.tear) {
-      const t = this.tear, x = clamp((event.clientX - t.left) / t.width)
+      const t = this.tear, x = this.tearX(event)
       t.min = Math.min(t.min, x); t.max = Math.max(t.max, x); t.at = x; t.fromLeft = x >= t.start
       const span = t.max - t.min, atEdge = span > 0.4 && (t.fromLeft ? x >= 0.97 : x <= 0.03)
       const progress = atEdge ? 1 : Math.min(1, span / TEAR_DISTANCE)
@@ -596,7 +735,7 @@ export class CardStage {
       if (step > t.ticks) { t.ticks = step; try { navigator.vibrate?.(4) } catch { /* optional */ } }
       if (t.max - t.min > 0.02 && !this.state.tearing) { p.whole.visible = false; p.body.visible = p.flap.visible = true; this.set({ tearing: true }) }
       if (this.state.tearing) p.strip.peel(t.min, t.max)
-      if (progress >= 1) { this.gesture = null; void this.startOpening(t.fromLeft ? 1 : -1) }
+      if (progress >= 1) void this.startOpening(t.fromLeft ? 1 : -1)
       return
     }
     if (!g.mode && Math.hypot(dx, dy) > 8) {
@@ -606,6 +745,7 @@ export class CardStage {
       if (!g.mode) { this.gesture = null; return }
       g.x = g.lastX = event.clientX; g.lastT = now
       g.base = this.packs[this.state.active]?.spinAngle ?? 0
+      if (g.mode === 'spin') this.paintBack(this.state.active)
       return
     }
     if (g.mode === 'spin') {
@@ -624,11 +764,8 @@ export class CardStage {
     this.gesture = null
     const dx = event.clientX - g.x, dy = event.clientY - g.y
     const { stage } = this.state
-    if (g.mode === 'tear') {
-      if (this.tear && this.tear.max - this.tear.min < 0.02) this.set({ tearing: false })
-      if (this.state.stage === 'tear') { this.tear = null; this.resetFlap(); this.set({ tearing: false }) }
-      return
-    }
+    // Let go before the cut was finished: the strip springs back.
+    if (g.mode === 'tear') { this.dropTear(); return }
     if (!g.mode) {
       // A tap.
       if (stage === 'shelf') {
@@ -658,7 +795,7 @@ export class CardStage {
 
   private cancel = () => {
     this.gesture = null; this.drag = { dx: 0, active: false }
-    if (this.tear) { this.tear = null; this.resetFlap(); this.set({ tearing: false }) }
+    if (this.tear) this.dropTear()
   }
   private leave = () => { this.pointer = null }
 
@@ -705,7 +842,7 @@ export class CardStage {
       let target = this.packTarget(i, now)
       const focused = i === active
       if (focused && (stage === 'opening' || stage === 'closing' || stage === 'stack')) target = pose({ ...this.packTarget(i, now) })
-      if (this.state.ready) p.current = damp(p.current, target, dt, this.reduced ? 60 : this.exiting && !focused ? 14 : 9)
+      if (this.state.ready) p.current = damp(p.current, target, dt, this.reduced ? 60 : this.exiting ? 14 : 9)
       apply(p.root, p.current)
       p.root.visible = p.current.o > 0.02 && !(focused && stage === 'stack')
       if (!focused) this.setOpacity(p, p.current.o)
@@ -718,8 +855,11 @@ export class CardStage {
         p.spinAngle = Math.atan2(Math.sin(p.spinAngle), Math.cos(p.spinAngle))
         p.spinAngle += (0 - p.spinAngle) * (1 - Math.exp(-10 * dt)); p.spinTarget = 0
       }
-      const tiltOn = focused && (stage === 'shelf' || stage === 'tear') && !this.reduced
-      p.spin.rotation.set(tiltOn ? this.tilt.y * 10 * DEG : 0, p.spinAngle + (tiltOn ? this.tilt.x * 14 * DEG : 0), 0)
+      // The pack in front leans with the pointer or the phone: less up close, and not at all while
+      // it's being cut. It eases in and out so nothing snaps when the pack or the stage changes.
+      const steady = this.reduced || this.exiting || this.tear || this.pendingOpen || !focused || (stage !== 'shelf' && stage !== 'tear')
+      p.lean += ((steady ? 0 : this.state.zoom ? 0.4 : 1) - p.lean) * (1 - Math.exp(-10 * dt))
+      p.spin.rotation.set(this.tilt.y * 10 * DEG * p.lean, p.spinAngle + this.tilt.x * 14 * DEG * p.lean, 0)
     })
 
     const p = this.packs[active]
@@ -731,12 +871,20 @@ export class CardStage {
     if (p.flap.visible && stage !== 'closing') {
       p.strip.step(dt)
       if (p.strip.flying) this.setOpacity(p, 1 - clamp((p.strip.flying - 0.6) / 0.4), 'flap')
+      // A strip that was let go has sprung back flat: the pack is whole again.
+      else if (p.strip.resting && !this.tear && !this.pendingOpen && (stage === 'tear' || stage === 'shelf')) this.resetFlap()
+    }
+    // On the way to the homepage: say when the pack is back in its place, facing front and whole.
+    if (this.exiting && this.onSettled) {
+      const to = this.packTarget(active, now), at = p.current
+      const there = Math.abs(at.x - to.x) + Math.abs(at.y - to.y) < 2.5 && Math.abs(at.s - to.s) < 0.008 * to.s && Math.abs(p.spinAngle - p.spinTarget) < 0.03
+      if ((there && (!p.flap.visible || stage !== 'tear')) || now >= this.settleBy) { const done = this.onSettled; this.onSettled = null; done() }
     }
     if (stage === 'opening' || stage === 'closing') {
       // Closing plays the opening backwards, then seals the tear.
       const t = stage === 'opening' ? elapsed : OPEN_MS - elapsed
       // The torn strip is gone by the time the pack closes again; it comes back when it seals.
-      if (stage === 'closing') p.flap.visible = false
+      if (stage === 'closing' && elapsed <= OPEN_MS) p.flap.visible = false
       const drop = clamp((t - 800) / 450)
       p.body.position.y = -easeIn(drop) * r.h * 0.85
       p.body.position.z = 0
@@ -752,8 +900,11 @@ export class CardStage {
       }
       if (stage === 'closing') {
         const sealT = clamp((elapsed - OPEN_MS) / 400)
+        // The strip fades back in along the tear line as the seal runs across it.
         if (elapsed > OPEN_MS) {
-          p.flap.visible = p.body.visible = false; p.whole.visible = true; this.setOpacity(p, 1)
+          if (!p.strip.resting) p.strip.reset()
+          p.flap.visible = true
+          this.setOpacity(p, 1, 'body'); this.setOpacity(p, clamp(sealT / 0.5), 'flap')
         }
         this.seal.visible = sealT > 0 && sealT < 1
         this.seal.position.copy(new THREE.Vector3(0, mouthY, r.w * PUFF).applyMatrix4(p.root.matrixWorld))
@@ -776,8 +927,9 @@ export class CardStage {
     u.uTime.value = now / 1000
     const seam = stage === 'tear' && this.state.zoom && !tearing && face === 'front' && !this.exiting ? 1 : 0
     u.uSeam.value += (seam - u.uSeam.value) * (1 - Math.exp(-5 * dt))
-    u.uCut.value = stage === 'tear' && tearing && t ? 1 : 0
-    if (u.uCut.value && t) { u.uFrom.value = t.fromLeft ? t.min : t.max; u.uTo.value = t.at }
+    // The cut's light holds while cutting and fades out where it was when the finger lets go.
+    if (stage === 'tear' && tearing && t) { u.uCut.value = 1; u.uFrom.value = t.fromLeft ? t.min : t.max; u.uTo.value = t.at }
+    else u.uCut.value = u.uCut.value < 0.01 ? 0 : u.uCut.value * Math.exp(-14 * dt)
     u.uFlash.value = stage === 'opening' ? Math.max(0, 1 - elapsed / 420) : 0
     p.cut.visible = u.uSeam.value > 0.01 || u.uCut.value > 0 || u.uFlash.value > 0
   }
@@ -791,7 +943,8 @@ export class CardStage {
     const elapsed = now - this.stageStart
     const s = stackRect(this.vw, this.vh)
     // The whole stack leans toward the pointer or the phone's tilt.
-    const c = this.world(s.x + s.w / 2, s.y + s.h / 2), lean = (stage === 'stack' || (stage === 'closing' && elapsed < 0)) && !this.reduced
+    // (Not while the recap is up: the cards fly to and from flat pictures on the page.)
+    const c = this.world(s.x + s.w / 2, s.y + s.h / 2), lean = ((stage === 'stack' && index < list.length) || (stage === 'closing' && elapsed < 0)) && !this.reduced
     const follow = 1 - Math.exp(-12 * dt)
     this.deckLean.x += ((lean ? this.tilt.x : 0) - this.deckLean.x) * follow
     this.deckLean.y += ((lean ? this.tilt.y : 0) - this.deckLean.y) * follow
@@ -804,23 +957,27 @@ export class CardStage {
         // Gathering: each card slides from the grid onto the deck, lifting a little on the way,
         // the last one first so the first card ends on top.
         const from = this.gather[k], g = elapsed + this.gatherMs
-        const u = ease(clamp((g - (list.length - 1 - k) * GATHER_STAGGER) / GATHER_FLY))
-        const home = k <= 2 ? this.stackPose(k) : pose({ ...this.stackPose(2), z: this.stackPose(3).z })
+        const u = ease(clamp((g - GATHER_HOLD - (list.length - 1 - k) * GATHER_STAGGER) / GATHER_FLY))
+        // (Past the fourth they tuck in behind it, each a little deeper.)
+        const home = k <= 3 ? this.stackPose(k) : pose({ ...this.stackPose(3), z: this.stackPose(k).z })
         const p = mix(from, home, u)
         p.z += Math.sin(Math.PI * u) * s.w * 0.35
         p.rz += Math.sin(Math.PI * u) * (k % 2 ? 6 : -6) * DEG
         card.current = p
+        this.shade(card, flatFor(1 - u))
         card.mesh.visible = true
         card.mesh.renderOrder = u > 0 && u < 1 ? 20 + list.length - k : 4 - Math.min(k, 4)
         apply(card.mesh, card.current)
         return
       }
+      if (stage !== 'stack') { card.away = 0; this.shade(card, 0) }
       if (stage === 'opening' || stage === 'closing') {
         // Cards rise out of the pack, wait at the opening while the wrapper drops, then come forward.
         const t = stage === 'opening' ? elapsed : OPEN_MS - elapsed
-        const visible = n >= 0 && n <= 2
+        const visible = n >= 0 && n <= 3
         card.mesh.visible = visible && t > 0
-        if (!visible) return
+        // The rest wait where the stack will want them, so none flies in from somewhere stale.
+        if (!visible) { card.current = this.stackPose(n < 0 ? -1 : 3); return }
         const local = clamp((t - 300 - n * 70) / 1250)
         const inside = this.inPackPose(n, false), risen = this.inPackPose(n, true), stacked = this.stackPose(n)
         card.current = local < 0.45 ? mix(inside, risen, easeOut(local / 0.45)) : local < 0.62 ? risen : mix(risen, stacked, ease((local - 0.62) / 0.38))
@@ -829,7 +986,11 @@ export class CardStage {
       }
       if (stage !== 'stack') { card.mesh.visible = false; return }
       card.mesh.visible = n >= -1 && n <= 3
-      if (!card.mesh.visible) { card.current = this.stackPose(n < 0 ? -1 : 3); return }
+      if (!card.mesh.visible) { card.current = this.stackPose(n < 0 ? -1 : 3); card.away = 0; this.shade(card, 0); return }
+      // Cards coming over from the recap grid set off gently rather than at full speed.
+      const ramp = clamp((now - this.showAt) / 220)
+      const speed = this.reduced ? 60 : index >= list.length ? 16 : 10 * ramp * ramp * (3 - 2 * ramp)
+      if (card.away) { card.away = card.away < 0.005 ? 0 : card.away * Math.exp(-speed * dt); this.shade(card, flatFor(card.away)) }
       let target = this.stackPose(n)
       if (this.drag.active) {
         const dx = this.drag.dx
@@ -840,7 +1001,7 @@ export class CardStage {
           target = mix(this.stackPose(-1), pose({ ...home, z: 30 }), p)
         }
       }
-      card.current = this.drag.active && (n === 0 || n === -1) ? damp(card.current, target, dt, 30) : damp(card.current, target, dt, this.reduced ? 60 : index >= list.length ? 16 : 10)
+      card.current = this.drag.active && (n === 0 || n === -1) ? damp(card.current, target, dt, 30) : damp(card.current, target, dt, speed)
       apply(card.mesh, card.current)
       card.mesh.renderOrder = n < 0 ? 5 : 4 - n
     })

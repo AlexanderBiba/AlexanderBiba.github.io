@@ -1,6 +1,6 @@
 import { extractDescription } from '../lib/description.ts'
 import type { CardData, PackData } from './types.ts'
-import { PACK_META, PACK_ORDER } from './packMeta.ts'
+import { AVATAR, PACK_META, PACK_ORDER } from './packMeta.ts'
 
 type Entry = { slug: string; title: string; date: string; content: string }
 type Post = Entry & { ogImage: { url: string } | string | null }
@@ -40,7 +40,7 @@ export function buildPacks({ posts, works, settings }: { posts: Post[]; works: W
     foot: work.url ? host(work.url) : 'alexbiba.com/works',
   }))
   const social: Omit<CardData, 'no'>[] = [
-    { id: 'social-alex', pack: 'social', name: settings.name, tag: 'ME', meta: ['ENGINEER', 'HUSBAND', 'DAD'], text: settings.aboutBlurb, art: { kind: 'image', src: '/avatar.png' }, links: [], foot: 'alexbiba.com' },
+    { id: 'social-alex', pack: 'social', name: settings.name, tag: 'ME', meta: ['ENGINEER', 'HUSBAND', 'DAD'], text: settings.aboutBlurb, art: { kind: 'image', src: AVATAR }, links: [], foot: 'alexbiba.com' },
   ]
   if (settings.github) social.push({ id: 'social-github', pack: 'social', name: 'GitHub', tag: 'CODE', meta: [`@${handle(settings.github)}`], text: 'The code behind my projects.', art: { kind: 'icon', icon: 'github' }, links: [{ label: 'Open GitHub', href: settings.github }], foot: host(settings.github) })
   if (settings.linkedin) social.push({ id: 'social-linkedin', pack: 'social', name: 'LinkedIn', tag: 'WORK', meta: ['PROFILE'], text: 'Where I’ve worked and what I’ve done there.', art: { kind: 'icon', icon: 'linkedin' }, links: [{ label: 'Open LinkedIn', href: settings.linkedin }], foot: host(settings.linkedin) })
