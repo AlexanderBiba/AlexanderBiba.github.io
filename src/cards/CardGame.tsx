@@ -127,7 +127,7 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
   const images = s && (inStack || leaving) ? s.cardImages(state.active) : []
 
   return (
-    <main className={styles.game} data-stage={state.stage} data-exiting={exiting || undefined} data-tearing={state.tearing || undefined}>
+    <main className={styles.game} data-stage={state.stage} data-ready={state.ready || failed || undefined} data-exiting={exiting || undefined} data-tearing={state.tearing || undefined}>
       {glow && <div className={styles.rays} data-pack={pack.id} aria-hidden="true" style={{ left: glow.x - glow.r, top: glow.y - glow.r, width: glow.r * 2, height: glow.r * 2 }} />}
       {/* Dims everything but the pack while you tear it. */}
       <div className={styles.dim} aria-hidden="true" />

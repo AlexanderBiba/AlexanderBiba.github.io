@@ -25,9 +25,13 @@ function packCanvas(art: (canvas: HTMLCanvasElement) => void) {
   canvas.className = styles.morphOverlay
   Object.assign(canvas.style, { left: `${r.x}px`, top: `${r.y}px`, width: `${r.w}px`, height: `${r.h}px` })
   art(canvas)
+  // Cut it to the pack's outline. The fill has to be opaque: whatever style the painting left
+  // behind would otherwise set how much of the pack survives.
   const ctx = canvas.getContext('2d')!
+  ctx.save()
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.fillStyle = '#000'
   ctx.globalCompositeOperation = 'destination-in'; packOutline(ctx, canvas.width, canvas.height); ctx.fill()
-  ctx.globalCompositeOperation = 'source-over'
+  ctx.restore()
   return canvas
 }
 

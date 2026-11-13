@@ -54,6 +54,15 @@
 }
 @keyframes spin { to { rotate: 360deg; } }
 
+/* Until the 3D scene has drawn its first frame only the pack is on screen (the homepage's painted
+   stand-in). Then the light blooms behind it and the words fade in, while the other packs slide in. */
+.game:not([data-ready]) .rays, .game:not([data-ready]) .caption, .game:not([data-ready]) .header { opacity: 0; }
+.game[data-ready] .rays { animation: spin 40s linear infinite, bloom .9s cubic-bezier(.2, .8, .2, 1) backwards; }
+.game[data-ready] .header { animation: fadeIn .5s ease .2s backwards; }
+.game[data-ready] .caption { animation: rise .55s cubic-bezier(.2, .8, .2, 1) .3s backwards; }
+@keyframes bloom { from { opacity: 0; scale: .5; } }
+@keyframes rise { from { opacity: 0; translate: 0 14px; } }
+
 
 .caption { position: absolute; left: 16px; right: 16px; z-index: 2; text-align: center; transition: opacity .3s ease; }
 .dim { position: absolute; inset: 0; z-index: 0; background: rgba(3, 4, 12, .62); opacity: 0; transition: opacity .35s ease; pointer-events: none; }
@@ -126,5 +135,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .dots span { transition: none; }
-  .game, .rays, .recapGrid li, .recap { animation: none; }
+  .game, .rays, .recapGrid li, .recap, .game[data-ready] .rays, .game[data-ready] .header, .game[data-ready] .caption { animation: none; }
 }
