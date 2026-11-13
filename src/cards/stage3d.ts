@@ -24,6 +24,8 @@ const CARD_DEPTH = 0.014
 const TEAR_DISTANCE = 0.6
 export const OPEN_MS = 1900, CLOSE_MS = 2300
 const FAN = [0, -1.6, 1.3, -0.9]
+// Putting the laid-out cards back: each flies from its spot into the deck, the last card first.
+const GATHER_FLY = 560, GATHER_STAGGER = 70
 const DEG = Math.PI / 180
 
 type Pose = { x: number; y: number; z: number; rx: number; ry: number; rz: number; s: number; o: number }
@@ -123,11 +125,13 @@ function cutMaterial(glow: [number, number, number]) {
         float inCut = smoothstep(lo - 0.004, lo + 0.004, vUv.x) * (1.0 - smoothstep(hi - 0.004, hi + 0.004, vUv.x));
         float along = clamp((vUv.x - uFrom) / max(0.0001, uTo - uFrom), 0.0, 1.0);
         float dx = (vUv.x - uTo) * uAspect;
-        float head = exp(-(dx * dx + d * d) * 1.6);
+        float head = exp(-(dx * dx + d * d) * 4.0);
         float cut = uCut * (inCut * (0.45 + 0.55 * along * along) * (core * 2.4 + halo * 0.9) + head * 2.4);
         float seam = uSeam * (0.3 + 0.2 * sin(uTime * 3.5)) * (core + halo * 0.25);
         float flash = uFlash * (core * 2.0 + halo * 0.8);
-        float a = cut + seam + flash;
+        // Fade to nothing before the band's edges and ends so it never shows as a rectangle.
+        float edge = (1.0 - smoothstep(0.5, 1.0, abs(d))) * smoothstep(0.0, 0.04, vUv.x) * (1.0 - smoothstep(0.96, 1.0, vUv.x));
+        float a = (cut + seam + flash) * edge;
         vec3 col = mix(uColor, vec3(1.0), clamp(core * 0.9 + head * 0.8, 0.0, 1.0));
         gl_FragColor = vec4(col * a, a);
       }`,
@@ -181,6 +185,9 @@ export class CardStage {
   private vh = 1
   private state: StageState = { stage: 'shelf', active: 1, index: 0, face: 'front', tearing: false, ready: false }
   private stageStart = 0
+  // Where the cards start when they're gathered back up from the recap grid, and how long it takes.
+  private gather: Pose[] | null = null
+  private gatherMs = 0
   // Scene time in ms. It advances by at most 50 ms a frame, so a slow frame or a busy tab
   // slows the animations down instead of skipping them.
   private clock = 0
@@ -472,9 +479,16 @@ export class CardStage {
   next() { const n = this.count(); if (this.state.stage === 'stack' && this.state.index < n) this.set({ index: this.state.index + 1 }) }
   prev() { if (this.state.stage === 'stack' && this.state.index > 0) this.set({ index: this.state.index - 1 }) }
   show(index: number) { if (this.state.stage === 'stack') this.set({ index }) }
-  untear() {
+  // `from` is where each card is drawn on the page (the recap grid), so they can be gathered from there.
+  untear(from?: { x: number; y: number; w: number }[]) {
     if (this.state.stage !== 'stack') return
-    this.stageStart = this.clock
+    const n = this.count()
+    this.gather = from && from.length === n && !this.reduced && this.builtCardW
+      ? from.map(r => { const c = this.world(r.x, r.y); return pose({ x: c.x, y: c.y, s: r.w / this.builtCardW }) })
+      : null
+    this.gatherMs = this.gather ? GATHER_FLY + GATHER_STAGGER * (n - 1) + 120 : 0
+    // The closing starts once the deck is together, so time before that runs negative.
+    this.stageStart = this.clock + this.gatherMs
     this.set({ stage: 'closing', index: this.state.index < this.count() ? this.state.index : 0 })
   }
   private count() { return this.data[this.state.active].cards.length }
@@ -594,6 +608,8 @@ export class CardStage {
         const hit = this.hit(event, this.packs.map(p => p.whole))
         if (hit) { const i = this.packs.findIndex(p => p.whole === hit.object); if (i === this.state.active) this.pick(); else this.goTo(i) }
       }
+      // Tapping anywhere off the picked pack puts it back on the shelf.
+      if (stage === 'tear' && g.target === 'none') this.backToShelf()
       return
     }
     if (g.mode === 'swipe') { if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) this.goTo(this.state.active + (dx < 0 ? 1 : -1)); return }
@@ -746,7 +762,7 @@ export class CardStage {
     const elapsed = now - this.stageStart
     const s = stackRect(this.vw, this.vh)
     // The whole stack leans toward the pointer or the phone's tilt.
-    const c = this.world(s.x + s.w / 2, s.y + s.h / 2), lean = stage === 'stack' && !this.reduced
+    const c = this.world(s.x + s.w / 2, s.y + s.h / 2), lean = (stage === 'stack' || (stage === 'closing' && elapsed < 0)) && !this.reduced
     const follow = 1 - Math.exp(-12 * dt)
     this.deckLean.x += ((lean ? this.tilt.x : 0) - this.deckLean.x) * follow
     this.deckLean.y += ((lean ? this.tilt.y : 0) - this.deckLean.y) * follow
@@ -755,6 +771,21 @@ export class CardStage {
     list.forEach((card, k) => {
       const n = k - index
       card.mesh.layers.set(stage === 'stack' && n <= 0 ? 1 : 0)
+      if (stage === 'closing' && this.gather && elapsed < 0) {
+        // Gathering: each card slides from the grid onto the deck, lifting a little on the way,
+        // the last one first so the first card ends on top.
+        const from = this.gather[k], g = elapsed + this.gatherMs
+        const u = ease(clamp((g - (list.length - 1 - k) * GATHER_STAGGER) / GATHER_FLY))
+        const home = k <= 2 ? this.stackPose(k) : pose({ ...this.stackPose(2), z: this.stackPose(3).z })
+        const p = mix(from, home, u)
+        p.z += Math.sin(Math.PI * u) * s.w * 0.35
+        p.rz += Math.sin(Math.PI * u) * (k % 2 ? 6 : -6) * DEG
+        card.current = p
+        card.mesh.visible = true
+        card.mesh.renderOrder = u > 0 && u < 1 ? 20 + list.length - k : 4 - Math.min(k, 4)
+        apply(card.mesh, card.current)
+        return
+      }
       if (stage === 'opening' || stage === 'closing') {
         // Cards rise out of the pack, wait at the opening while the wrapper drops, then come forward.
         const t = stage === 'opening' ? elapsed : OPEN_MS - elapsed

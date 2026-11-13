@@ -109,6 +109,9 @@
 }
 @keyframes fadeIn { from { opacity: 0; } }
 .recap > * { max-width: 760px; margin-left: auto; margin-right: auto; }
+.recap[data-leaving] { pointer-events: none; }
+.recap[data-leaving] .recapGrid li { visibility: hidden; }
+.recap[data-leaving] > :not(ul) { opacity: 0; transition: opacity .2s ease; }
 .recapGrid img { display: block; width: 100%; height: auto; aspect-ratio: 63 / 88; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .45)); }
 @keyframes dropIn { from { translate: 0 60px; opacity: 0; } to { translate: 0 0; opacity: 1; } }
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

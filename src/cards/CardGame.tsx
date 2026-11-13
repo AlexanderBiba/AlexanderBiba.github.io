@@ -33,6 +33,18 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
   const [viewport, setViewport] = useState<{ w: number; h: number } | null>(null)
   const [failed, setFailed] = useState(false)
   const [exiting, setExiting] = useState(false)
+  // The recap grid stays up, minus its cards, while the cards are gathered back into the deck.
+  const [leaving, setLeaving] = useState(false)
+  const grid = useRef<HTMLUListElement>(null)
+  useEffect(() => { if (state.stage !== 'closing') setLeaving(false) }, [state.stage])
+  const putBack = () => {
+    const s = stage.current
+    if (!s) return
+    const imgs = grid.current ? [...grid.current.querySelectorAll('img')] : []
+    const from = imgs.map(img => { const r = img.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2, w: r.width } })
+    setLeaving(from.length > 0)
+    s.untear(from)
+  }
   const router = useRouter()
   const pack = packs[state.active], total = pack.cards.length
 
@@ -96,7 +108,7 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
       else if (state.stage === 'shelf' && k === 'Enter' && !(event.target instanceof HTMLButtonElement || event.target instanceof HTMLAnchorElement)) s.pick()
       else if (state.stage === 'tear' && k === 'Escape') s.backToShelf()
       else if (state.stage === 'tear' && k.toLowerCase() === 'f') s.flip()
-      else if (state.stage === 'stack' && k === 'Escape') s.untear()
+      else if (state.stage === 'stack' && k === 'Escape') putBack()
       else if (state.stage === 'stack' && k === 'ArrowRight') s.next()
       else if (state.stage === 'stack' && k === 'ArrowLeft') s.prev()
       else return
@@ -112,7 +124,7 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
   const card = state.index < total ? pack.cards[state.index] : null
   const inStack = state.stage === 'stack'
   const glow = inStack && stack ? { x: stack.x + stack.w / 2, y: stack.y + stack.h / 2, r: stack.h * 1.1 } : rect ? { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2, r: rect.h * 1.2 } : null
-  const images = s && inStack ? s.cardImages(state.active) : []
+  const images = s && (inStack || leaving) ? s.cardImages(state.active) : []
 
   return (
     <main className={styles.game} data-stage={state.stage} data-exiting={exiting || undefined} data-tearing={state.tearing || undefined}>
@@ -154,7 +166,7 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
         </>}
       </div>}
 
-      {inStack && stack && (card ? <div className={styles.stackControls} style={{ top: stack.y + stack.h + 22 }}>
+      {inStack && stack && card && !leaving && <div className={styles.stackControls} style={{ top: stack.y + stack.h + 22 }}>
         <p className={styles.srOnly} aria-live="polite">{card.name}, card {state.index + 1} of {total}. {card.text}</p>
         <CardLinks card={card} />
         <div className={styles.stackNav}>
@@ -163,14 +175,15 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
           <button className={styles.arrow} onClick={() => s?.next()} aria-label="Next card"><Chevron dir="right" /></button>
         </div>
         <p className={styles.stackHint}>Swipe the card left for the next one</p>
-      </div> : <div className={styles.recap}>
+      </div>}
+      {((inStack && stack && !card) || leaving) && <div className={styles.recap} data-leaving={leaving || undefined}>
         <h2>You got {total} cards</h2>
-        <ul className={styles.recapGrid}>{pack.cards.map((c, k) => <li key={c.id} style={{ '--i': k } as Vars}><button onClick={() => s?.show(k)} aria-label={`Look at ${c.name} again`}>{images[k] && <img src={images[k]} alt="" />}</button></li>)}</ul>
+        <ul ref={grid} className={styles.recapGrid}>{pack.cards.map((c, k) => <li key={c.id} style={{ '--i': k } as Vars}><button onClick={() => s?.show(k)} aria-label={`Look at ${c.name} again`}>{images[k] && <img src={images[k]} alt="" />}</button></li>)}</ul>
         <div className={styles.captionActions}>
-          <button className={styles.primary} onClick={() => s?.untear()}>Put them back</button>
+          <button className={styles.primary} onClick={putBack}>Put them back</button>
           <button className={styles.ghost} onClick={() => s?.show(0)}>Look again</button>
         </div>
-      </div>)}
+      </div>}
 
       <noscript><p className={styles.noscript}>The card packs need JavaScript. <a href="/">Go to the homepage</a> for my posts, projects and links.</p></noscript>
     </main>
