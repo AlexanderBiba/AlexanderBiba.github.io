@@ -71,7 +71,9 @@ export function pillowGeometry(w: number, h: number, depth: number, segX = 28, s
     const base = pos.length / 3
     for (let j = 0; j <= segY; j++) for (let i = 0; i <= segX; i++) {
       const fx = i / segX, fy = j / segY
-      pos.push((fx - 0.5) * w, (0.5 - fy) * h, side * depth / 2 * pillow(fx, fy))
+      // Never quite flat, even at the crimped ends and folds: where the front and the back's inside
+      // meet at the same depth, the silver inside would show through instead of the print.
+      pos.push((fx - 0.5) * w, (0.5 - fy) * h, side * (depth / 2 * pillow(fx, fy) + 0.4))
       uv.push(side === 1 ? fx : 1 - fx, 1 - fy)
     }
     return base
