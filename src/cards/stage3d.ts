@@ -41,6 +41,12 @@ function apply(obj: THREE.Object3D, p: Pose) {
   obj.position.set(p.x, p.y, p.z); obj.rotation.set(p.rx, p.ry, p.rz); obj.scale.setScalar(p.s)
 }
 
+// Waits for a quiet moment, so slow painting runs between frames instead of freezing an animation.
+const idle = () => new Promise<void>(resolve => {
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(() => resolve(), { timeout: 250 })
+  else setTimeout(resolve, 16)
+})
+
 function canvas(w: number, h: number) {
   const c = document.createElement('canvas'); c.width = Math.max(2, Math.round(w)); c.height = Math.max(2, Math.round(h)); return c
 }
@@ -112,6 +118,7 @@ type PackObj = {
   mats: THREE.MeshPhysicalMaterial[]; current: Pose; spinAngle: number; spinTarget: number; spinVel: number
 }
 type CardObj = { mesh: THREE.Mesh; current: Pose; front: THREE.MeshPhysicalMaterial; image: string }
+export type StageOptions = { active: number; intro: boolean }
 
 export class CardStage {
   private renderer: THREE.WebGLRenderer
@@ -148,13 +155,24 @@ export class CardStage {
   private reduced: boolean
   private disposed = false
   private pendingPick = false
+  private compiled = false
+  // Set when the page arrived through the homepage morph: the side packs slide in once it's drawn.
+  private intro = false
+  // Set while leaving for the homepage: the side packs slide away and the pick pack holds still.
+  private exiting = false
+  private cardJobs = new Map<string, Promise<CardObj[]>>()
+  private covers: Promise<(HTMLImageElement | null)[]>
+  private fronts: HTMLCanvasElement[] = []
   // Sizes the meshes were built at; a resize scales them instead of rebuilding.
   private builtPackW = 0
   private builtCardW = 0
   private get packScale() { return this.builtPackW ? packRect(this.vw, this.vh).w / this.builtPackW : 1 }
   private get cardScale() { return this.builtCardW ? stackRect(this.vw, this.vh).w / this.builtCardW : 1 }
 
-  constructor(private canvasEl: HTMLCanvasElement, private data: PackData[], private onChange: (state: StageState) => void, active: number) {
+  constructor(private canvasEl: HTMLCanvasElement, private data: PackData[], private onChange: (state: StageState) => void, { active, intro }: StageOptions) {
+    // Start loading the cover art right away, so it arrives while the scene is set up.
+    this.covers = Promise.all(data.map(p => p.cover ? loadImage(p.cover) : Promise.resolve(null)))
+    this.intro = intro
     this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     this.timeScale = 1 / Math.max(1, Number(new URLSearchParams(window.location.search).get('slowmo')) || 1)
     this.state.active = active
@@ -164,7 +182,8 @@ export class CardStage {
     this.renderer.toneMapping = THREE.NeutralToneMapping
     this.renderer.toneMappingExposure = 1.05
     const pmrem = new THREE.PMREMGenerator(this.renderer)
-    this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture
+    // A small environment map is plenty for the soft reflections and is quick to make.
+    this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.03, 0.1, 100, { size: 128 }).texture
     this.scene.environmentIntensity = 0.45
     pmrem.dispose()
     const key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(-0.5, 0.8, 1)
@@ -177,10 +196,11 @@ export class CardStage {
 
     this.burst = this.glowSprite(); this.seal = this.glowSprite(true)
     this.resize(window.innerWidth, window.innerHeight)
-    this.build().then(() => {
-      if (this.disposed) return
-      this.state.ready = true; this.emit()
-      if (this.pendingPick) { this.pendingPick = false; this.pick() }
+    this.build().then(async () => {
+      // Compile the shaders before the first frame, without blocking where the browser can do it
+      // in the background, so the hand-off from the homepage doesn't stall on it.
+      await this.renderer.compileAsync(this.scene, this.camera)
+      this.compiled = true
     })
     canvasEl.addEventListener('pointerdown', this.down)
     canvasEl.addEventListener('pointermove', this.move)
@@ -213,11 +233,12 @@ export class CardStage {
     const tw = Math.min(1024, Math.round(w * PICKED_SCALE * dpr)), th = tw / PACK_RATIO
     const geo = pillowGeometry(w, h, w * PUFF)
     const masks = (['whole', 'flap', 'body'] as const).map(part => { const c = canvas(512, 512 / PACK_RATIO); paintPackMask(c, part); return texture(c, false) })
-    const covers = await Promise.all(this.data.map(p => p.cover ? loadImage(p.cover) : Promise.resolve(null)))
+    const covers = await this.covers
     this.data.forEach((data, i) => {
+      // The back only shows once a pack is picked and spun, so it's painted later (paintBacks).
       const front = canvas(tw, th), back = canvas(tw, th)
       paintPackFront(front, { id: data.id, count: data.cards.length, cover: covers[i] })
-      paintPackBack(back, { id: data.id, names: data.cards.map(c => c.name) })
+      this.fronts[i] = front
       const frontTex = texture(front), backTex = texture(back)
       const foil = (map: THREE.Texture, alphaMap: THREE.Texture) => new THREE.MeshPhysicalMaterial({
         map, alphaMap, alphaTest: 0.5, transparent: true, metalness: 0.2, roughness: 0.45,
@@ -237,18 +258,50 @@ export class CardStage {
       const mats = [whole, body, flap].flatMap(m => m.material as THREE.MeshPhysicalMaterial[])
       const obj: PackObj = { root, spin, whole, body, hingeAt, flapPivot, flap, mats, current: pose(), spinAngle: 0, spinTarget: 0, spinVel: 0 }
       obj.current = this.packTarget(i, 0)
+      // After the homepage morph only the middle pack is showing; the others come in from the sides.
+      if (this.intro && !this.reduced && i !== this.state.active) obj.current = { ...obj.current, x: obj.current.x + Math.sign(i - this.state.active) * packSpacing(this.vw, w) * 0.7, o: 0 }
       apply(root, obj.current)
       this.packs.push(obj)
     })
-    // Paint the picked pack's cards ahead of time so they're ready by the time it's torn.
+  }
+
+  // The scene is on screen: the homepage's painted pack can go, and the rest is painted between
+  // frames, pack backs first, then the cards of the pack in front.
+  private async onFirstFrame() {
+    this.state.ready = true; this.emit()
+    if (this.pendingPick) { this.pendingPick = false; this.pick() }
+    await this.paintBacks()
     void this.prepareCards(this.state.active)
   }
 
-  private async prepareCards(i: number) {
+  private async paintBacks() {
+    for (const [i, p] of this.packs.entries()) {
+      await idle()
+      if (this.disposed) return
+      const data = this.data[i], mat = (p.whole.material as THREE.MeshPhysicalMaterial[])[1]
+      const tex = mat.map!
+      paintPackBack(tex.image as HTMLCanvasElement, { id: data.id, names: data.cards.map(c => c.name) })
+      tex.needsUpdate = true
+    }
+  }
+
+  // The front art of pack i, as painted for its texture (the homepage morph reuses it on the way back).
+  packFront(i: number) { return this.fronts[i] ?? null }
+
+  // Before going back to the homepage: the side packs slide away and the middle one settles.
+  exit() { this.exiting = true }
+
+  // Paints pack i's cards one at a time between frames. Opening the pack waits for this.
+  private prepareCards(i: number) {
+    const id = this.data[i].id
+    let job = this.cardJobs.get(id)
+    if (!job) { job = this.paintCards(i); this.cardJobs.set(id, job) }
+    return job
+  }
+
+  private async paintCards(i: number) {
     const data = this.data[i]
-    if (this.cards.has(data.id)) return this.cards.get(data.id)!
-    const placeholder: CardObj[] = []
-    this.cards.set(data.id, placeholder)
+    const list: CardObj[] = []
     const s = stackRect(this.vw, this.vh), dpr = Math.min(window.devicePixelRatio || 1, 2.5)
     if (!this.builtCardW) this.builtCardW = s.w
     const tw = Math.min(900, Math.round(s.w * dpr)), th = tw / CARD_RATIO
@@ -257,21 +310,29 @@ export class CardStage {
     const backMat = new THREE.MeshStandardMaterial({ map: texture(back), roughness: 0.5, metalness: 0.2 })
     const edgeMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(PALETTE[data.id].c2).lerp(new THREE.Color(0xf6f1e4), 0.55), roughness: 0.75 })
     const arts = await Promise.all(data.cards.map(card => card.art.kind === 'image' ? loadImage(card.art.src) : Promise.resolve(null)))
-    if (this.disposed) return placeholder
-    data.cards.forEach((card, k) => {
+    const holder = new THREE.Group()
+    for (const [k, card] of data.cards.entries()) {
+      await idle()
+      if (this.disposed) return list
       const face = canvas(tw, th), foil = canvas(tw / 4, th / 4)
       paintCardFront(face, card, data.cards.length, arts[k]); paintCardFoil(foil, card)
       const front = new THREE.MeshPhysicalMaterial({
         map: texture(face), roughness: 0.62, metalness: 0, clearcoat: 0.25, clearcoatRoughness: 0.3, envMapIntensity: 0.35,
         iridescence: 1, iridescenceMap: texture(foil, false), iridescenceIOR: 1.8, iridescenceThicknessRange: [120, 900],
       })
-      const mesh = new THREE.Mesh(geo, [front, edgeMat, backMat])
-      mesh.visible = false
-      this.deck.add(mesh)
-      placeholder.push({ mesh, current: pose(), front, image: face.toDataURL('image/png') })
-    })
+      const obj: CardObj = { mesh: new THREE.Mesh(geo, [front, edgeMat, backMat]), current: pose(), front, image: '' }
+      holder.add(obj.mesh)
+      list.push(obj)
+      // The recap grid shows the same painting; encoding it off the main thread keeps frames smooth.
+      face.toBlob(blob => { if (blob && !this.disposed) { obj.image = URL.createObjectURL(blob); this.emit() } })
+    }
+    // Compile the card shaders now, so the first frame of the opening doesn't stall on them.
+    await this.renderer.compileAsync(holder, this.camera, this.scene)
+    if (this.disposed) return list
+    for (const c of list) { c.mesh.visible = false; this.deck.add(c.mesh) }
+    this.cards.set(data.id, list)
     this.emit()
-    return placeholder
+    return list
   }
 
   // The painted card faces as images, for the recap grid.
@@ -294,6 +355,9 @@ export class CardStage {
     const r = packRect(this.vw, this.vh), c = this.world(r.x + r.w / 2, r.y + r.h / 2)
     const off = i - this.state.active, focused = off === 0, spacing = packSpacing(this.vw, r.w)
     const { stage } = this.state
+    if (this.exiting) {
+      return focused ? pose({ x: c.x, y: c.y, s: this.packScale }) : pose({ x: c.x + off * spacing * 1.7, y: c.y, z: -160, ry: off * -20 * DEG, s: 0.8 * this.packScale, o: 0 })
+    }
     if (stage === 'shelf') {
       const bob = focused && !this.reduced ? Math.sin(t / 640) * 4 : 0
       return pose({ x: c.x + off * spacing, y: c.y + bob, z: focused ? 0 : -160, ry: off * -20 * DEG, s: (focused ? 1 : 0.8) * this.packScale })
@@ -524,12 +588,15 @@ export class CardStage {
     this.updateTilt(dt)
     this.updatePacks(this.clock, dt)
     this.updateCards(this.clock, dt)
+    // Nothing is drawn until the shaders are compiled; until then the homepage's painted pack shows.
+    if (!this.compiled || this.disposed) return
     // Two passes: the top card of the stack, and the one being swiped away, go on layer 1 and are
     // drawn over everything else, so a card moving past the stack never dips into it.
     this.renderer.clear()
     this.camera.layers.set(0); this.renderer.render(this.scene, this.camera)
     this.renderer.clearDepth()
     this.camera.layers.set(1); this.renderer.render(this.scene, this.camera)
+    if (!this.state.ready) this.onFirstFrame()
   }
 
   private updateTilt(dt: number) {
@@ -537,7 +604,8 @@ export class CardStage {
     if (this.pointer && performance.now() - this.pointer.t < 2500 && !this.gesture) {
       target = { x: (this.pointer.x / this.vw) * 2 - 1, y: (this.pointer.y / this.vh) * 2 - 1 }
     } else if (deviceTilt.active) target = { x: deviceTilt.x, y: deviceTilt.y }
-    const k = 1 - Math.exp(-6 * dt)
+    if (this.exiting) target = { x: 0, y: 0 }
+    const k = 1 - Math.exp(-(this.exiting ? 14 : 6) * dt)
     this.tilt.x += (clamp(target.x, -1, 1) - this.tilt.x) * k
     this.tilt.y += (clamp(target.y, -1, 1) - this.tilt.y) * k
   }
@@ -549,7 +617,7 @@ export class CardStage {
       let target = this.packTarget(i, now)
       const focused = i === active
       if (focused && (stage === 'opening' || stage === 'closing' || stage === 'stack')) target = pose({ ...this.packTarget(i, now) })
-      p.current = damp(p.current, target, dt, this.reduced ? 60 : 9)
+      if (this.state.ready) p.current = damp(p.current, target, dt, this.reduced ? 60 : this.exiting && !focused ? 14 : 9)
       apply(p.root, p.current)
       p.root.visible = p.current.o > 0.02 && !(focused && stage === 'stack')
       if (!focused) this.setOpacity(p, p.current.o)
@@ -659,6 +727,7 @@ export class CardStage {
 
   dispose() {
     this.disposed = true
+    this.cards.forEach(list => list.forEach(c => c.image && URL.revokeObjectURL(c.image)))
     cancelAnimationFrame(this.frame)
     this.canvasEl.removeEventListener('pointerdown', this.down)
     this.canvasEl.removeEventListener('pointermove', this.move)

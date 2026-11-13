@@ -55,7 +55,7 @@ npm run build
 
 ## Card packs (`/play/`)
 
-The 🎮 link in the navbar (`src/components/PlayLink.tsx`) shrinks the visible page into a card pack (`src/cards/morph.tsx`) and then navigates to `/play/`, which draws the same pack in the same spot (`src/cards/geometry.ts`) so the hand-off doesn't jump. People with reduced motion turned on, or who open the link in a new tab, go straight to `/play/`.
+The 🎮 link in the navbar (`src/components/PlayLink.tsx`) shrinks the visible page into a card pack (`src/cards/morph.tsx`) and then navigates to `/play/`, which draws the same pack in the same spot (`src/cards/geometry.ts`) so the hand-off doesn't jump. The pack's art is painted while the homepage is idle, so the animation starts on the first tap, and `/play/` builds its 3D scene under the painted pack before fading it out. The "← alexbiba.com" button plays it backwards: the other packs slide away and the homepage grows out of the pack. People with reduced motion turned on, or who open the link in a new tab, go straight to the other page.
 
 On `/play/` the packs and cards are 3D models drawn with Three.js (`src/cards/stage3d.ts`). Each pack is one puffed-up wrapper mesh with a front, a back and sealed crimped ends (its shape is in `src/cards/shapes.ts`), and each card is a thin slab with a printed front, a back and an edge. Their art is painted onto canvases (`src/cards/paint.ts`, colors in `src/cards/palette.ts`) and used as textures, and the homepage morph and the recap grid reuse the same paintings. The captions, buttons and links on top are ordinary HTML (`src/cards/CardGame.tsx`), so they stay sharp and screen readers can read them.
 

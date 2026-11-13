@@ -1,10 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import { CardStage, PICKED_SCALE, type StageState } from './stage3d'
 import { packRect, stackRect } from './geometry'
-import { MORPH_OVERLAY } from './handoff'
+import { MORPH_OVERLAY, wasMorphed } from './handoff'
+import { returnPack, showReturnPack } from './morph'
 import { disableMotion, enableMotion } from './motion'
 import { CENTER_PACK, PACK_ORDER } from './packMeta'
 import type { CardData, PackData } from './types'
@@ -30,16 +32,19 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
   const [state, setState] = useState<StageState>({ stage: 'shelf', active: PACK_ORDER.indexOf(CENTER_PACK), index: 0, face: 'front', tearing: false, ready: false })
   const [viewport, setViewport] = useState<{ w: number; h: number } | null>(null)
   const [failed, setFailed] = useState(false)
+  const [exiting, setExiting] = useState(false)
+  const router = useRouter()
   const pack = packs[state.active], total = pack.cards.length
 
   useEffect(() => {
     const html = document.documentElement
     html.classList.add('play-mode')
+    returnPack()?.remove()
     const resize = () => { setViewport({ w: window.innerWidth, h: window.innerHeight }); stage.current?.resize(window.innerWidth, window.innerHeight) }
     resize()
     window.addEventListener('resize', resize)
     try {
-      if (canvas.current) stage.current = new CardStage(canvas.current, packs, setState, PACK_ORDER.indexOf(CENTER_PACK))
+      if (canvas.current) stage.current = new CardStage(canvas.current, packs, setState, { active: PACK_ORDER.indexOf(CENTER_PACK), intro: wasMorphed() })
     } catch { setFailed(true) }
     // Phones only share their tilt after a tap (iOS asks for permission), so ask on the first one.
     const gesture = () => enableMotion()
@@ -47,20 +52,41 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
     return () => {
       window.removeEventListener('resize', resize); window.removeEventListener('touchend', gesture); window.removeEventListener('click', gesture)
       stage.current?.dispose(); stage.current = null
-      html.classList.remove('play-mode', 'play-morph'); disableMotion()
-      document.querySelectorAll(`[${MORPH_OVERLAY}]`).forEach(el => el.remove())
+      // On the way back to the homepage its pack stays up until the homepage has grown out of it.
+      html.classList.remove('play-mode'); disableMotion()
+      if (!returnPack()) html.classList.remove('play-morph')
+      document.querySelectorAll(`[${MORPH_OVERLAY}]:not([data-pack-return])`).forEach(el => el.remove())
     }
   }, [packs])
 
-  // The homepage morph leaves its painted pack on screen; take it away once the 3D one is drawn.
+  // The homepage morph leaves its painted pack on screen; fade it out once the 3D one is drawn
+  // underneath, after its bounce.
   useEffect(() => {
     if (!state.ready && !failed) return
-    let frame = requestAnimationFrame(() => { frame = requestAnimationFrame(() => {
-      document.querySelectorAll(`[${MORPH_OVERLAY}]`).forEach(el => el.remove())
+    let cancelled = false
+    const frame = requestAnimationFrame(() => document.querySelectorAll<HTMLElement>(`[${MORPH_OVERLAY}]:not([data-pack-return])`).forEach(async el => {
+      await Promise.all(el.getAnimations().filter(a => a.effect?.getTiming().fill !== 'forwards').map(a => a.finished.catch(() => {})))
+      if (cancelled) return
+      await el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, easing: 'ease-out', fill: 'forwards' }).finished.catch(() => {})
+      el.remove()
       document.documentElement.classList.remove('play-morph')
-    }) })
-    return () => cancelAnimationFrame(frame)
+    }))
+    return () => { cancelled = true; cancelAnimationFrame(frame) }
   }, [state.ready, failed])
+
+  // Going back to the homepage plays the morph in reverse: the other packs slide away, a painted
+  // copy of this pack takes the 3D one's place, and the homepage grows out of it.
+  const leave = async (event: MouseEvent<HTMLAnchorElement>) => {
+    const s = stage.current
+    if (!s || !state.ready || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    event.preventDefault()
+    if (exiting) return
+    setExiting(true)
+    s.exit()
+    await Promise.all([showReturnPack(s.packFront(state.active)), new Promise(resolve => setTimeout(resolve, 260))])
+    router.push('/')
+  }
 
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
@@ -89,7 +115,7 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
   const images = s && inStack ? s.cardImages(state.active) : []
 
   return (
-    <main className={styles.game} data-stage={state.stage}>
+    <main className={styles.game} data-stage={state.stage} data-exiting={exiting || undefined}>
       {glow && <div className={styles.rays} data-pack={pack.id} aria-hidden="true" style={{ left: glow.x - glow.r, top: glow.y - glow.r, width: glow.r * 2, height: glow.r * 2 }} />}
       <canvas ref={canvas} className={styles.canvas} aria-hidden="true" />
 
@@ -97,7 +123,7 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
       <header className={styles.header}>
         {inStack
           ? <button className={styles.exit} onClick={() => s?.untear()}><span aria-hidden="true">←</span> Packs</button>
-          : <Link href="/" className={styles.exit}><span aria-hidden="true">←</span> alexbiba.com</Link>}
+          : <Link href="/" className={styles.exit} onClick={leave}><span aria-hidden="true">←</span> alexbiba.com</Link>}
         <span className={styles.brand}>{inStack ? `${pack.title} PACK` : 'CARD PACKS'}</span>
       </header>
 
