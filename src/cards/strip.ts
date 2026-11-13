@@ -87,17 +87,20 @@ export class FoilStrip {
   }
 
   // While cutting: the part between lo and hi (fractions of the width) is loose, the rest still
-  // sealed. Near an edge the loose part runs off that edge, as it would on a real pack.
-  peel(lo: number, hi: number) {
-    if (lo < 0.12) lo = -1
-    if (hi > 0.88) hi = 2
+  // sealed. Near an edge the loose part runs off that edge, as it would on a real pack. A cut that
+  // has reached both edges stays loose at the end it came from (`fromLeft`) and hangs on by the
+  // other until it's torn right off, so the strip keeps peeling instead of lying back down.
+  peel(lo: number, hi: number, fromLeft = true) {
+    const left = lo < 0.12, right = hi > 0.88
+    if (left && (fromLeft || !right)) lo = -1
+    if (right && (!fromLeft || !left)) hi = 2
     this.mode = 'peel'
     for (let k = 0; k < this.n; k++) {
       const free = this.fx[k] > lo && this.fx[k] < hi
       if (!free && !this.pinned[k]) { this.pinned[k] = 1; this.p.set(this.rest.subarray(k * 3, k * 3 + 3), k * 3); this.prev.set(this.rest.subarray(k * 3, k * 3 + 3), k * 3) }
       if (free) this.pinned[k] = 0
     }
-    this.looseDir = lo < 0 && hi > 1 ? 0 : lo < 0 ? -1 : hi > 1 ? 1 : 0
+    this.looseDir = lo < 0 ? -1 : hi > 1 ? 1 : 0
     this.attachX = ((this.looseDir < 0 ? hi : lo) - 0.5) * this.w
     this.lo = lo; this.hi = hi
   }

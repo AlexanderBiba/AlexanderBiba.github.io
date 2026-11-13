@@ -734,7 +734,7 @@ export class CardStage {
       const step = Math.floor(progress * 12)
       if (step > t.ticks) { t.ticks = step; try { navigator.vibrate?.(4) } catch { /* optional */ } }
       if (t.max - t.min > 0.02 && !this.state.tearing) { p.whole.visible = false; p.body.visible = p.flap.visible = true; this.set({ tearing: true }) }
-      if (this.state.tearing) p.strip.peel(t.min, t.max)
+      if (this.state.tearing) p.strip.peel(t.min, t.max, t.fromLeft)
       if (progress >= 1) void this.startOpening(t.fromLeft ? 1 : -1)
       return
     }
