@@ -2,7 +2,8 @@
 // the homepage morph's stand-in pack and the recap grid, so all three always match.
 import { PALETTE } from './palette.ts'
 import { PACK_META } from './packMeta.ts'
-import { RIP_Y, rip, seeded, teeth, CRIMP } from './shapes.ts'
+import { paintBackdrop, paintHero, rays, raySeed, rgba } from './packArt.ts'
+import { RIP_Y, rip, teeth, CRIMP } from './shapes.ts'
 import type { CardData, IconName, PackId } from './types.ts'
 
 const SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif'
@@ -93,36 +94,21 @@ export function loadImage(src: string): Promise<HTMLImageElement | null> {
 
 // ---------- Packs ----------
 
-function foilBackground(ctx: Ctx, id: PackId, W: number, H: number, seed: number) {
-  const c = PALETTE[id]
-  const g = ctx.createLinearGradient(0, 0, W * 0.55, H)
-  g.addColorStop(0, c.p1); g.addColorStop(0.55, c.p2); g.addColorStop(1, c.p3)
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H)
-  const top = ctx.createRadialGradient(W / 2, 0, 0, W / 2, 0, H * 0.6)
-  top.addColorStop(0, 'rgba(255,255,255,.18)'); top.addColorStop(1, 'rgba(255,255,255,0)')
-  ctx.fillStyle = top; ctx.fillRect(0, 0, W, H)
-  // Crinkles: thin light and dark creases at random angles.
-  const rand = seeded(seed)
-  ctx.save()
-  for (let i = 0; i < 70; i++) {
-    const x = rand() * W, y = rand() * H, len = (0.08 + rand() * 0.25) * W, a = -0.6 + rand() * 1.2
-    ctx.strokeStyle = rand() > 0.5 ? `rgba(255,255,255,${0.04 + rand() * 0.07})` : `rgba(0,0,0,${0.05 + rand() * 0.08})`
-    ctx.lineWidth = 0.4 + rand() * W * 0.006
-    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); ctx.stroke()
-  }
-  ctx.restore()
-}
-
-function crimps(ctx: Ctx, W: number, H: number) {
-  const h = H * (CRIMP + 0.015)
+// The sealed ends: bare foil with fine ridges pressed into it, tinted by the pack's color.
+function crimps(ctx: Ctx, id: PackId, W: number, H: number) {
+  const h = H * (CRIMP + 0.015), c = PALETTE[id]
   for (const [y, flip] of [[0, false], [H - h, true]] as const) {
+    const foil = ctx.createLinearGradient(0, y, 0, y + h)
+    foil.addColorStop(0, '#eef2f8'); foil.addColorStop(0.5, '#aeb6c6'); foil.addColorStop(1, '#e4e9f2')
+    ctx.fillStyle = foil; ctx.fillRect(0, y, W, h)
+    ctx.fillStyle = c.p2; ctx.globalAlpha = 0.22; ctx.fillRect(0, y, W, h); ctx.globalAlpha = 1
     const stripe = Math.max(2, W * 0.009)
     for (let x = 0; x < W; x += stripe * 2) {
-      ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.fillRect(x, y, stripe, h)
-      ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x + stripe, y, stripe, h)
+      ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(x, y, stripe, h)
+      ctx.fillStyle = 'rgba(20,24,44,.3)'; ctx.fillRect(x + stripe, y, stripe, h)
     }
     const shade = ctx.createLinearGradient(0, flip ? y : y + h, 0, flip ? y - H * 0.02 : y + h + H * 0.02)
-    shade.addColorStop(0, 'rgba(0,0,0,.35)'); shade.addColorStop(1, 'rgba(0,0,0,0)')
+    shade.addColorStop(0, 'rgba(0,0,0,.45)'); shade.addColorStop(1, 'rgba(0,0,0,0)')
     ctx.fillStyle = shade; ctx.fillRect(0, flip ? y - H * 0.02 : y + h, W, H * 0.02)
   }
 }
@@ -140,16 +126,56 @@ export function packOutline(ctx: Ctx, W: number, H: number, part: 'whole' | 'fla
   ctx.closePath()
 }
 
-export function paintPackFront(canvas: HTMLCanvasElement, opts: { id: PackId; count: number; cover?: HTMLImageElement | null }) {
+// Fat slanted lettering with a dark rim and a block of depth under it, each letter set on a
+// slight arch. `face` is the letters' color from top to bottom.
+function wordmark(ctx: Ctx, text: string, cx: number, cy: number, size: number, o: { face: string[]; rim: string; depth: string; arch?: number; track?: number }) {
+  ctx.save()
+  ctx.font = `italic 900 ${size}px ${SANS}`; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.lineJoin = 'round'
+  const letters = [...text], track = (o.track ?? 0.02) * size, arch = o.arch ?? 0
+  const widths = letters.map(ch => ctx.measureText(ch).width), total = widths.reduce((a, b) => a + b, 0) + track * (letters.length - 1)
+  let x = -total / 2
+  const mids = widths.map(w => { const mid = x + w / 2; x += w + track; return mid })
+  const each = (draw: (ch: string) => void) => letters.forEach((ch, i) => {
+    const t = mids[i] / (total / 2)
+    ctx.save(); ctx.translate(cx + mids[i], cy + arch * size * t * t); ctx.rotate(t * arch * 0.8); draw(ch); ctx.restore()
+  })
+  ctx.strokeStyle = ctx.fillStyle = o.depth; ctx.lineWidth = size * 0.2
+  for (let d = 0.09; d > 0; d -= 0.03) each(ch => ctx.strokeText(ch, size * d * 0.35, size * d))
+  ctx.strokeStyle = o.rim; ctx.lineWidth = size * 0.17; each(ch => ctx.strokeText(ch, 0, 0))
+  ctx.strokeStyle = o.face[0]; ctx.lineWidth = size * 0.065; each(ch => ctx.strokeText(ch, 0, 0))
+  const face = ctx.createLinearGradient(0, -size * 0.74, 0, 0.02 * size)
+  o.face.forEach((color, i) => face.addColorStop(i / (o.face.length - 1), color))
+  ctx.fillStyle = face; each(ch => ctx.fillText(ch, 0, 0))
+  ctx.restore()
+}
+
+// The colors of each pack's big lettering.
+const TITLE: Record<PackId, { face: string[]; rim: string; depth: string }> = {
+  blog: { face: ['#ffffff', '#fff1b0', '#ffc24a', '#ff7a3a'], rim: '#3a0828', depth: '#16020f' },
+  works: { face: ['#ffffff', '#d4fff8', '#5cf0e0', '#18a8e8'], rim: '#04183a', depth: '#010818' },
+  social: { face: ['#ffffff', '#fff4c0', '#ffd24a', '#f29a1c'], rim: '#220a52', depth: '#0c0224' },
+}
+
+export function paintPackFront(canvas: HTMLCanvasElement, opts: { id: PackId; count: number }) {
   const ctx = canvas.getContext('2d')!, W = canvas.width, H = canvas.height, u = W / 100, c = PALETTE[opts.id]
-  const meta = PACK_META[opts.id]
+  const meta = PACK_META[opts.id], title = TITLE[opts.id]
   ctx.clearRect(0, 0, W, H)
-  foilBackground(ctx, opts.id, W, H, opts.id.length * 97 + 7)
-  crimps(ctx, W, H)
+  paintBackdrop(ctx, opts.id, W, H)
+  // Darker at the top, behind the name.
+  const head = ctx.createLinearGradient(0, 0.08 * H, 0, 0.27 * H)
+  head.addColorStop(0, rgba(c.p1, 0.85)); head.addColorStop(1, rgba(c.p1, 0))
+  ctx.fillStyle = head; ctx.fillRect(0, 0.08 * H, W, 0.19 * H)
+  paintHero(ctx, opts.id, W, H)
+  // A shadow under the lettering at the bottom, so it reads over the art.
+  const foot = ctx.createLinearGradient(0, 0.62 * H, 0, 0.93 * H)
+  foot.addColorStop(0, rgba(c.p1, 0)); foot.addColorStop(0.55, rgba(c.p1, 0.72)); foot.addColorStop(1, rgba(c.p1, 0.92))
+  ctx.fillStyle = foot; ctx.fillRect(0, 0.62 * H, W, 0.31 * H)
+
+  crimps(ctx, opts.id, W, H)
 
   // Tear line with scissors pointing along it.
   ctx.save()
-  ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 0.6 * u; ctx.setLineDash([2.2 * u, 1.6 * u])
+  ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 0.6 * u; ctx.setLineDash([2.2 * u, 1.6 * u])
   ctx.beginPath(); ctx.moveTo(11 * u, RIP_Y * H); ctx.lineTo(96 * u, RIP_Y * H); ctx.stroke()
   ctx.setLineDash([])
   ctx.translate(4 * u, RIP_Y * H - 3.2 * u); ctx.scale(6.4 * u / 24, 6.4 * u / 24)
@@ -158,72 +184,61 @@ export function paintPackFront(canvas: HTMLCanvasElement, opts: { id: PackId; co
   ctx.beginPath(); ctx.arc(5, 17.5, 3, 0, Math.PI * 2); ctx.stroke()
   ctx.stroke(new Path2D('M7.6 8 22 15.5M7.6 16 22 8.5'))
   ctx.restore()
-  ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.font = `800 ${2.8 * u}px ${MONO}`; ctx.textBaseline = 'alphabetic'
+  ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.font = `800 ${2.8 * u}px ${MONO}`; ctx.textBaseline = 'alphabetic'
   spaced(ctx, 'TEAR HERE', 96 * u, RIP_Y * H - 1.8 * u, 0.56 * u, 'right')
 
-  ctx.fillStyle = '#fff'; ctx.font = `800 ${3.6 * u}px ${SANS}`; ctx.textBaseline = 'middle'
-  ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowOffsetY = 0.3 * u
-  spaced(ctx, 'ALEX BIBA  ✦  SERIES 01', W / 2, 17.6 * H / 100, 1.1 * u)
-  ctx.shadowColor = 'transparent'
+  // Whose cards these are, under the tear line.
+  wordmark(ctx, 'ALEX BIBA', W / 2, 0.2 * H, 8.6 * u, { face: ['#ffffff', '#ffffff', c.chrome], rim: title.rim, depth: title.depth, track: 0.06 })
+  ctx.fillStyle = '#fff'; ctx.font = `800 ${2.7 * u}px ${SANS}`; ctx.textBaseline = 'middle'
+  ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 1.2 * u
+  spaced(ctx, 'TRADING CARDS  ✦  SERIES 01', W / 2, 0.2 * H + 4.6 * u, 0.9 * u)
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0
 
-  // Cover window.
-  const wx = 9 * u, wy = 0.21 * H, ww = 82 * u, wh = 0.4 * H, r = 5 * u
-  ctx.save()
-  ctx.shadowColor = `rgba(${c.glow.join(',')},.55)`; ctx.shadowBlur = 9 * u
-  roundRect(ctx, wx - 2 * u, wy - 2 * u, ww + 4 * u, wh + 4 * u, r + 2 * u); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fill()
-  ctx.restore()
-  roundRect(ctx, wx - 1.1 * u, wy - 1.1 * u, ww + 2.2 * u, wh + 2.2 * u, r + 1.1 * u); ctx.fillStyle = 'rgba(255,255,255,.88)'; ctx.fill()
-  ctx.save()
-  roundRect(ctx, wx, wy, ww, wh, r); ctx.clip()
-  const wg = ctx.createRadialGradient(W / 2, wy + wh * 0.4, 0, W / 2, wy + wh * 0.4, wh * 0.8)
-  wg.addColorStop(0, c.p3); wg.addColorStop(1, c.p1)
-  ctx.fillStyle = wg; ctx.fillRect(wx, wy, ww, wh)
-  if (opts.cover) cover(ctx, opts.cover, wx, wy, ww, wh)
-  else icon(ctx, `pack-${opts.id}`, W / 2 - 19 * u, wy + wh / 2 - 19 * u, 38 * u, '#fff')
-  const gloss = ctx.createLinearGradient(wx, wy, wx + ww * 0.5, wy + wh)
-  gloss.addColorStop(0, 'rgba(255,255,255,.5)'); gloss.addColorStop(0.28, 'rgba(255,255,255,.1)'); gloss.addColorStop(0.29, 'rgba(255,255,255,0)')
-  ctx.fillStyle = gloss; ctx.fillRect(wx, wy, ww, wh)
-  const fade = ctx.createLinearGradient(0, wy + wh, 0, wy + wh * 0.6)
-  fade.addColorStop(0, 'rgba(0,0,0,.35)'); fade.addColorStop(1, 'rgba(0,0,0,0)')
-  ctx.fillStyle = fade; ctx.fillRect(wx, wy, ww, wh)
-  ctx.restore()
+  // The pack's name.
+  const size = (meta.title.length > 5 ? 21 : 27) * u
+  wordmark(ctx, meta.title, W / 2, 0.795 * H, size, { ...title, arch: 0.07 })
 
-  // Chrome title.
-  ctx.save()
-  const size = (meta.title.length > 5 ? 20 : 23) * u, ty = 0.63 * H + size * 0.5
-  ctx.font = `italic 900 ${size}px ${SANS}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-  ctx.setTransform(1, 0, -0.1, 1, 0.1 * ty, 0)
-  ctx.shadowColor = `rgba(${c.glow.join(',')},.6)`; ctx.shadowBlur = 4 * u
-  ctx.fillStyle = c.p1; ctx.fillText(meta.title, W / 2, ty + 1.1 * u)
-  ctx.shadowColor = 'transparent'
-  const chrome = ctx.createLinearGradient(0, ty - size * 0.45, 0, ty + size * 0.45)
-  chrome.addColorStop(0, '#fff'); chrome.addColorStop(0.42, c.chrome); chrome.addColorStop(0.52, c.chrome2); chrome.addColorStop(0.6, '#fff'); chrome.addColorStop(1, c.chrome)
-  ctx.fillStyle = chrome; ctx.fillText(meta.title, W / 2, ty)
-  ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 0.35 * u; ctx.strokeText(meta.title, W / 2, ty)
-  ctx.restore()
+  // What's in it, on a ribbon.
+  ctx.font = `800 ${3.9 * u}px ${SANS}`; ctx.letterSpacing = `${0.9 * u}px`
+  const label = meta.subtitle.toUpperCase(), lw = ctx.measureText(label).width + 9 * u, ly = 0.846 * H, lh = 7.2 * u
+  ctx.letterSpacing = '0px'
+  ctx.beginPath()
+  ctx.moveTo(W / 2 - lw / 2 - 3 * u, ly - lh / 2); ctx.lineTo(W / 2 + lw / 2 + 3 * u, ly - lh / 2); ctx.lineTo(W / 2 + lw / 2, ly); ctx.lineTo(W / 2 + lw / 2 + 3 * u, ly + lh / 2)
+  ctx.lineTo(W / 2 - lw / 2 - 3 * u, ly + lh / 2); ctx.lineTo(W / 2 - lw / 2, ly); ctx.closePath()
+  const band = ctx.createLinearGradient(0, ly - lh / 2, 0, ly + lh / 2)
+  band.addColorStop(0, title.face[2]); band.addColorStop(1, title.face[3])
+  ctx.fillStyle = band; ctx.fill()
+  ctx.strokeStyle = title.rim; ctx.lineWidth = 0.7 * u; ctx.lineJoin = 'round'; ctx.stroke()
+  ctx.fillStyle = title.rim; ctx.textBaseline = 'middle'
+  spaced(ctx, label, W / 2, ly + 0.2 * u, 0.9 * u)
 
-  ctx.fillStyle = '#fff'; ctx.font = `800 ${4.4 * u}px ${SANS}`; ctx.textBaseline = 'middle'
-  ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowOffsetY = 0.4 * u
-  spaced(ctx, meta.subtitle.toUpperCase(), W / 2, 0.81 * H, 0.97 * u)
-  ctx.shadowColor = 'transparent'
-  ctx.globalAlpha = 0.85; ctx.font = `800 ${3 * u}px ${SANS}`
-  spaced(ctx, '★  HOLO FOIL INSIDE  ★', W / 2, 0.9 * H, 0.9 * u)
+  ctx.fillStyle = '#fff'; ctx.globalAlpha = 0.9; ctx.font = `800 ${2.9 * u}px ${SANS}`
+  spaced(ctx, `${opts.count} CARDS  ★  HOLO FOIL INSIDE`, W / 2, 0.895 * H, 0.85 * u)
   ctx.globalAlpha = 1
 
-  // Count sticker.
-  ctx.save()
-  ctx.translate(85.5 * u, 0.51 * H + 12.5 * u); ctx.rotate((14 * Math.PI) / 180)
-  const star = [[50, 0], [61, 13], [77, 6], [80, 23], [97, 25], [89, 40], [100, 54], [85, 62], [90, 79], [73, 79], [66, 95], [52, 85], [37, 97], [31, 80], [13, 82], [17, 65], [1, 55], [13, 42], [5, 26], [22, 22], [24, 5], [40, 13]]
-  ctx.beginPath(); star.forEach(([x, y], i) => { const px = (x - 50) / 100 * 25 * u, py = (y - 50) / 100 * 25 * u; if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py) }); ctx.closePath()
-  const sg = ctx.createRadialGradient(-2.5 * u, -3.7 * u, 0, 0, 0, 14 * u)
-  sg.addColorStop(0, '#fffbe0'); sg.addColorStop(0.55, '#ffd34d'); sg.addColorStop(1, '#f0a020')
-  ctx.fillStyle = sg; ctx.fill()
-  ctx.fillStyle = '#2a1600'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-  ctx.font = `900 ${10 * u}px ${SANS}`; ctx.fillText(String(opts.count), 0, -1.8 * u)
-  ctx.font = `900 ${3.4 * u}px ${SANS}`; spaced(ctx, 'CARDS', 0, 4.6 * u, 0.27 * u)
-  ctx.restore()
-
   sideShading(ctx, W, H)
+}
+
+// How each part of the front catches the light on the 3D pack, as a color: red is how much
+// rainbow sheen it has, green how rough it is, blue how much like metal (each from 0 to 1).
+const sheen = (rainbow: number, rough: number, metal: number) => `rgb(${Math.round(rainbow * 255)},${Math.round(rough * 255)},${Math.round(metal * 255)})`
+const FOIL = sheen(0.7, 0.3, 0.45), RAY = sheen(1, 0.16, 0.7), INK = sheen(0.05, 0.62, 0.04), STAMP = sheen(0.25, 0.16, 0.12), BARE = sheen(0.3, 0.3, 0.6)
+
+export function paintPackSheen(canvas: HTMLCanvasElement, id: PackId) {
+  const ctx = canvas.getContext('2d')!, W = canvas.width, H = canvas.height, u = W / 100, meta = PACK_META[id]
+  ctx.fillStyle = FOIL; ctx.fillRect(0, 0, W, H)
+  ctx.fillStyle = RAY; rays(ctx, id, W, H, raySeed(id))
+  // The creature is printed in ink over the foil: paint it, then keep only its shape.
+  const layer = document.createElement('canvas'); layer.width = W; layer.height = H
+  const ink = layer.getContext('2d')!
+  paintHero(ink, id, W, H)
+  ink.globalCompositeOperation = 'source-in'; ink.fillStyle = INK; ink.fillRect(0, 0, W, H)
+  ctx.drawImage(layer, 0, 0)
+  // The lettering is stamped in smooth foil, with an ink rim.
+  const stamp = { face: [STAMP, STAMP], rim: INK, depth: INK }
+  wordmark(ctx, 'ALEX BIBA', W / 2, 0.2 * H, 8.6 * u, { ...stamp, track: 0.06 })
+  wordmark(ctx, meta.title, W / 2, 0.795 * H, (meta.title.length > 5 ? 21 : 27) * u, { ...stamp, arch: 0.07 })
+  ctx.fillStyle = BARE; ctx.fillRect(0, 0, W, H * (CRIMP + 0.015)); ctx.fillRect(0, H * (1 - CRIMP - 0.015), W, H * (CRIMP + 0.015))
 }
 
 // Darker toward the folded sides, a little lighter where the wrapper puffs out.
@@ -239,8 +254,10 @@ const BARS = [3, 1, 2, 1, 1, 3, 2, 1, 3, 1, 2, 2, 1, 1, 3, 1, 2, 1, 3, 2, 1, 1, 
 export function paintPackBack(canvas: HTMLCanvasElement, opts: { id: PackId; names: string[] }) {
   const ctx = canvas.getContext('2d')!, W = canvas.width, H = canvas.height, u = W / 100, c = PALETTE[opts.id]
   ctx.clearRect(0, 0, W, H)
-  foilBackground(ctx, opts.id, W, H, opts.id.length * 31 + 3)
-  crimps(ctx, W, H)
+  // The same burst as the front, turned down so the list reads.
+  paintBackdrop(ctx, opts.id, W, H)
+  ctx.fillStyle = rgba(c.p1, 0.5); ctx.fillRect(0, 0, W, H)
+  crimps(ctx, opts.id, W, H)
   // The back's center seam.
   const seam = ctx.createLinearGradient(W / 2 - 3 * u, 0, W / 2 + 3 * u, 0)
   seam.addColorStop(0, 'rgba(0,0,0,0)'); seam.addColorStop(0.45, 'rgba(0,0,0,.25)'); seam.addColorStop(0.55, 'rgba(255,255,255,.2)'); seam.addColorStop(1, 'rgba(0,0,0,0)')
@@ -248,9 +265,7 @@ export function paintPackBack(canvas: HTMLCanvasElement, opts: { id: PackId; nam
 
   ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'
   ctx.font = `800 ${3.6 * u}px ${SANS}`; spaced(ctx, 'ALEX BIBA  ✦  SERIES 01', W / 2, 0.105 * H, 1.1 * u)
-  ctx.font = `italic 900 ${10 * u}px ${SANS}`; ctx.fillStyle = c.p1; ctx.textAlign = 'center'
-  ctx.fillText(`${PACK_META[opts.id].title} PACK`, W / 2, 0.165 * H + 0.8 * u)
-  ctx.fillStyle = c.chrome; ctx.fillText(`${PACK_META[opts.id].title} PACK`, W / 2, 0.165 * H)
+  wordmark(ctx, `${PACK_META[opts.id].title} PACK`, W / 2, 0.165 * H + 3.6 * u, 10 * u, TITLE[opts.id])
 
   const bx = 9 * u, by = 0.25 * H, bw = 82 * u, line = 6.2 * u, bh = 13 * u + opts.names.length * line
   roundRect(ctx, bx, by, bw, bh, 4 * u); ctx.fillStyle = 'rgba(0,0,0,.34)'; ctx.fill()

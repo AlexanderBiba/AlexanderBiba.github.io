@@ -1,22 +1,18 @@
 'use client'
 
-import posts from '../../content/blog.json'
 import works from '../../content/works.json'
 import { packRect } from './geometry'
 import { MORPH_OVERLAY, markMorphed } from './handoff'
-import { AVATAR, CENTER_PACK } from './packMeta'
+import { CENTER_PACK } from './packMeta'
 import { loadImage, packOutline, paintPackFront } from './paint'
 import styles from './cards.module.css'
 
 const counts = { works: works.length } as Record<string, number>
-// Same cover the /play/ shelf shows on the Built pack: the newest work with a screenshot.
-export const cover = [...works].sort((a, b) => b.date.localeCompare(a.date)).find(work => work.image)?.image ?? undefined
 
-// The pictures /play/ needs first: the three packs' covers and the Built pack's card art. Asking
-// for them the moment 🎮 is tapped gives them the length of the morph as a head start.
+// The pictures /play/ needs first: the art on the Built pack's cards. Asking for them the moment
+// 🎮 is tapped gives them the length of the morph as a head start.
 function warmArt() {
-  const newestPost = [...posts].sort((a, b) => b.date.localeCompare(a.date)).find(post => post.ogImage)
-  for (const src of [newestPost?.ogImage?.url, AVATAR, ...works.map(work => work.image)]) if (src) void loadImage(src)
+  for (const work of works) if (work.image) void loadImage(work.image)
 }
 
 const RETURN = 'data-pack-return'
@@ -49,10 +45,7 @@ let primed: { key: string; canvas: HTMLCanvasElement } | null = null
 const sizeKey = () => `${window.innerWidth}x${window.innerHeight}@${dpr()}`
 export function primeMorph() {
   if (primed?.key === sizeKey()) return
-  const paint = (img: HTMLImageElement | null) => (canvas: HTMLCanvasElement) => paintPackFront(canvas, { id: CENTER_PACK, count: counts[CENTER_PACK] ?? 0, cover: img })
-  const entry = { key: sizeKey(), canvas: packCanvas(paint(null)) }
-  primed = entry
-  if (cover) void loadImage(cover).then(img => { if (img && primed === entry) primed = { key: entry.key, canvas: packCanvas(paint(img)) } })
+  primed = { key: sizeKey(), canvas: packCanvas(canvas => paintPackFront(canvas, { id: CENTER_PACK, count: counts[CENTER_PACK] ?? 0 })) }
 }
 
 // Page clip shapes for the morph, from the full viewport down to the pack's outline.

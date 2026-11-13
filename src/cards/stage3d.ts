@@ -4,7 +4,7 @@
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { CARD_RATIO, PACK_RATIO, packRect, packSpacing, stackRect, zoomRect } from './geometry.ts'
-import { paintCardBack, paintCardFoil, paintCardFront, paintPackBack, paintPackFront, paintPackMask, loadImage } from './paint.ts'
+import { paintCardBack, paintCardFoil, paintCardFront, paintPackBack, paintPackFront, paintPackMask, paintPackSheen, loadImage } from './paint.ts'
 import { PALETTE } from './palette.ts'
 import { RIP_Y, pillow } from './shapes.ts'
 import { tilt as deviceTilt } from './motion.ts'
@@ -244,9 +244,6 @@ export class CardStage {
   // Set while leaving for the homepage: the side packs slide away and the pick pack holds still.
   private exiting = false
   private cardJobs = new Map<string, Promise<CardObj[]>>()
-  // Each pack's cover art, and the same after a short wait at most (see the constructor).
-  private covers: Promise<HTMLImageElement | null>[]
-  private coversSoon: Promise<(HTMLImageElement | null | undefined)[]>
   private fronts: HTMLCanvasElement[] = []
   // Sizes the meshes were built at; a resize scales them instead of rebuilding.
   private builtPackW = 0
@@ -255,12 +252,6 @@ export class CardStage {
   private get cardScale() { return this.builtCardW ? stackRect(this.vw, this.vh).w / this.builtCardW : 1 }
 
   constructor(private canvasEl: HTMLCanvasElement, private data: PackData[], private onChange: (state: StageState) => void, { active, intro }: StageOptions) {
-    // Start loading the cover art right away, so it arrives while the scene is set up.
-    // The scene waits for it, but not for long: a slow cover is painted in when it arrives instead
-    // of holding up the first frame. The pack in front gets more patience than the ones beside it.
-    this.covers = data.map(p => p.cover ? loadImage(p.cover) : Promise.resolve(null))
-    const patience = (i: number) => new Promise<undefined>(resolve => setTimeout(resolve, i === active ? 1500 : 400))
-    this.coversSoon = Promise.all(this.covers.map((cover, i) => Promise.race([cover, patience(i)])))
     this.intro = intro
     this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const params = new URLSearchParams(window.location.search)
@@ -288,13 +279,13 @@ export class CardStage {
 
     this.burst = this.glowSprite(); this.seal = this.glowSprite(true)
     this.resize(window.innerWidth, window.innerHeight)
-    this.build().then(async () => {
-      // Compile the shaders before the first frame, without blocking where the browser can do it
-      // in the background, so the hand-off from the homepage doesn't stall on it.
-      // The torn parts, the cut light and the glows are hidden until a tear, but compile them now too.
-      const hidden: THREE.Object3D[] = [...this.packs.flatMap(p => [p.body, p.flap, p.cut]), this.burst, this.seal]
-      hidden.forEach(m => { m.visible = true })
-      await this.renderer.compileAsync(this.scene, this.camera)
+    this.build()
+    // Compile the shaders before the first frame, without blocking where the browser can do it
+    // in the background, so the hand-off from the homepage doesn't stall on it.
+    // The torn parts, the cut light and the glows are hidden until a tear, but compile them now too.
+    const hidden: THREE.Object3D[] = [...this.packs.flatMap(p => [p.body, p.flap, p.cut]), this.burst, this.seal]
+    hidden.forEach(m => { m.visible = true })
+    void this.renderer.compileAsync(this.scene, this.camera).then(() => {
       hidden.forEach(m => { m.visible = false })
       this.compiled = true
     })
@@ -322,7 +313,7 @@ export class CardStage {
     return s
   }
 
-  private async build() {
+  private build() {
     const { w, h } = packRect(this.vw, this.vh)
     this.builtPackW = w
     // Painted big enough to stay sharp up close, at the resolution the scene is drawn at.
@@ -332,32 +323,29 @@ export class CardStage {
     const masks = (['whole', 'flap', 'body'] as const).map(part => { const c = canvas(512, 512 / PACK_RATIO); paintPackMask(c, part); return texture(c, false) })
     // Sent to the GPU now rather than on the first frame of a tear.
     masks.forEach(mask => this.renderer.initTexture(mask))
-    const covers = await this.coversSoon
     this.data.forEach((data, i) => {
       // The back only shows once a pack is picked and spun, so it's painted later (paintBacks).
       const front = canvas(tw, th), back = canvas(tw, th)
-      paintPackFront(front, { id: data.id, count: data.cards.length, cover: covers[i] })
+      paintPackFront(front, { id: data.id, count: data.cards.length })
       this.fronts[i] = front
       const frontTex = texture(front), backTex = texture(back, true, false)
-      // A cover that wasn't there in time is painted in once it is.
-      if (covers[i] === undefined) void this.covers[i].then(cover => {
-        if (!cover || this.disposed) return
-        paintPackFront(front, { id: data.id, count: data.cards.length, cover })
-        frontTex.needsUpdate = true
-      })
-      const foil = (map: THREE.Texture, alphaMap: THREE.Texture) => new THREE.MeshPhysicalMaterial({
-        map, alphaMap, alphaTest: 0.5, transparent: true, metalness: 0.2, roughness: 0.45,
-        clearcoat: 0.35, clearcoatRoughness: 0.3, iridescence: 0.4, iridescenceIOR: 1.4, iridescenceThicknessRange: [250, 750],
+      // How the front catches the light: the burst is mirror foil, the creature and the small print are ink.
+      const sheen = canvas(tw / 2, th / 2)
+      paintPackSheen(sheen, data.id)
+      const sheenTex = texture(sheen, false)
+      const foil = (map: THREE.Texture, alphaMap: THREE.Texture, shine?: THREE.Texture) => new THREE.MeshPhysicalMaterial({
+        map, alphaMap, alphaTest: 0.5, transparent: true, clearcoat: 0.35, clearcoatRoughness: 0.3, iridescenceIOR: 1.4, iridescenceThicknessRange: [250, 750],
+        ...(shine ? { metalness: 1, roughness: 1, iridescence: 1, metalnessMap: shine, roughnessMap: shine, iridescenceMap: shine } : { metalness: 0.2, roughness: 0.45, iridescence: 0.4 }),
       })
       const inside = (alphaMap: THREE.Texture) => new THREE.MeshPhysicalMaterial({ color: 0xc8cdd8, alphaMap, alphaTest: 0.5, transparent: true, metalness: 0.9, roughness: 0.35 })
       const make = (alpha: THREE.Texture) => {
-        const mats = [foil(frontTex, alpha), foil(backTex, alpha), inside(alpha), inside(alpha)]
+        const mats = [foil(frontTex, alpha, sheenTex), foil(backTex, alpha), inside(alpha), inside(alpha)]
         return new THREE.Mesh(geo, mats)
       }
       const whole = make(masks[0]), body = make(masks[2])
       // The strip you tear off is its own soft piece of foil (strip.ts).
       const strip = new FoilStrip(w, h, w * PUFF)
-      const flap = new THREE.Mesh(strip.geometry, [foil(frontTex, masks[1]), foil(backTex, masks[1])])
+      const flap = new THREE.Mesh(strip.geometry, [foil(frontTex, masks[1], sheenTex), foil(backTex, masks[1])])
       const cut = new THREE.Mesh(cutGeo, cutMaterial(PALETTE[data.id].glow))
       // Makes the bright head at the finger round: the band is this many times longer than half its height.
       cut.material.uniforms.uAspect.value = 2 * PACK_RATIO / CUT_BAND
