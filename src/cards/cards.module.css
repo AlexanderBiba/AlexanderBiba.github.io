@@ -55,7 +55,11 @@
 @keyframes spin { to { rotate: 360deg; } }
 
 
-.caption { position: absolute; left: 16px; right: 16px; z-index: 2; text-align: center; }
+.caption { position: absolute; left: 16px; right: 16px; z-index: 2; text-align: center; transition: opacity .3s ease; }
+.dim { position: absolute; inset: 0; z-index: 0; background: rgba(3, 4, 12, .62); opacity: 0; transition: opacity .35s ease; pointer-events: none; }
+.game[data-tearing] .dim { opacity: 1; }
+.game[data-tearing] .caption, .game[data-tearing] .header { opacity: .15; }
+.header { transition: opacity .3s ease; }
 .caption h1 { font-size: 22px; line-height: 1.2; font-weight: 850; letter-spacing: .04em; margin: 0; color: #fff; }
 .caption p { margin: 6px 0 0; font-size: 15px; line-height: 1.4; opacity: .75; }
 .caption .hint { font-size: 13px; opacity: .5; }

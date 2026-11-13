@@ -115,8 +115,10 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
   const images = s && inStack ? s.cardImages(state.active) : []
 
   return (
-    <main className={styles.game} data-stage={state.stage} data-exiting={exiting || undefined}>
+    <main className={styles.game} data-stage={state.stage} data-exiting={exiting || undefined} data-tearing={state.tearing || undefined}>
       {glow && <div className={styles.rays} data-pack={pack.id} aria-hidden="true" style={{ left: glow.x - glow.r, top: glow.y - glow.r, width: glow.r * 2, height: glow.r * 2 }} />}
+      {/* Dims everything but the pack while you tear it. */}
+      <div className={styles.dim} aria-hidden="true" />
       <canvas ref={canvas} className={styles.canvas} aria-hidden="true" />
 
       {/* One bar: it leaves the game on the shelf, and goes back to the packs once you've opened one. */}

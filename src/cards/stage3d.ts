@@ -90,6 +90,67 @@ export function pillowGeometry(w: number, h: number, depth: number, segX = 28, s
   return g
 }
 
+// The band along the tear line where the cut glows, lying on the pack's front, as a share of its height.
+const CUT_BAND = 0.11
+function cutGeometry(w: number, h: number, depth: number, seg = 28) {
+  const g = new THREE.BufferGeometry(), pos: number[] = [], uv: number[] = [], index: number[] = []
+  const y = (0.5 - RIP_Y) * h, band = h * CUT_BAND
+  for (let i = 0; i <= seg; i++) {
+    const fx = i / seg, z = depth / 2 * pillow(fx, RIP_Y) + 1
+    pos.push((fx - 0.5) * w, y - band / 2, z, (fx - 0.5) * w, y + band / 2, z)
+    uv.push(fx, 0, fx, 1)
+    if (i < seg) { const a = i * 2; index.push(a, a + 2, a + 1, a + 1, a + 2, a + 3) }
+  }
+  g.setIndex(index)
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2))
+  return g
+}
+
+// The light of the cut: a hot line from where the finger started to where it is now, brightest
+// at the finger, and a faint pulse along the whole seam before the first swipe.
+function cutMaterial(glow: [number, number, number]) {
+  return new THREE.ShaderMaterial({
+    uniforms: { uFrom: { value: 0 }, uTo: { value: 0 }, uCut: { value: 0 }, uSeam: { value: 0 }, uFlash: { value: 0 }, uTime: { value: 0 }, uAspect: { value: 12 }, uColor: { value: new THREE.Color(...glow.map(v => v / 255) as [number, number, number]) } },
+    vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `
+      uniform float uFrom, uTo, uCut, uSeam, uFlash, uTime, uAspect; uniform vec3 uColor; varying vec2 vUv;
+      void main() {
+        float d = (vUv.y - 0.5) * 2.0;
+        float core = exp(-d * d * 70.0), halo = exp(-d * d * 4.0);
+        float lo = min(uFrom, uTo), hi = max(uFrom, uTo);
+        float inCut = smoothstep(lo - 0.004, lo + 0.004, vUv.x) * (1.0 - smoothstep(hi - 0.004, hi + 0.004, vUv.x));
+        float along = clamp((vUv.x - uFrom) / max(0.0001, uTo - uFrom), 0.0, 1.0);
+        float dx = (vUv.x - uTo) * uAspect;
+        float head = exp(-(dx * dx + d * d) * 1.6);
+        float cut = uCut * (inCut * (0.45 + 0.55 * along * along) * (core * 2.4 + halo * 0.9) + head * 2.4);
+        float seam = uSeam * (0.3 + 0.2 * sin(uTime * 3.5)) * (core + halo * 0.25);
+        float flash = uFlash * (core * 2.0 + halo * 0.8);
+        float a = cut + seam + flash;
+        vec3 col = mix(uColor, vec3(1.0), clamp(core * 0.9 + head * 0.8, 0.0, 1.0));
+        gl_FragColor = vec4(col * a, a);
+      }`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false,
+  })
+}
+
+// Bends the torn strip into a ribbon as it flies: it twists more toward its far end.
+function twistStrip(material: THREE.Material, twist: { value: number }, w: number, yc: number) {
+  const W = w.toFixed(3), Y = yc.toFixed(3)
+  material.onBeforeCompile = shader => {
+    shader.uniforms.uTwist = twist
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>
+        uniform float uTwist;
+        vec3 twistAround(vec3 v, float a, float yc) { float y = v.y - yc; return vec3(v.x, yc + y * cos(a) - v.z * sin(a), y * sin(a) + v.z * cos(a)); }`)
+      .replace('#include <beginnormal_vertex>', `#include <beginnormal_vertex>
+        objectNormal = twistAround(objectNormal, uTwist * (position.x / ${W} + 0.5), 0.0);`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        transformed = twistAround(transformed, uTwist * (position.x / ${W} + 0.5), ${Y});`)
+  }
+  material.customProgramCacheKey = () => `strip-twist-${W}-${Y}`
+}
+
 // A card: a thin slab with rounded corners. Groups: 0 front, 1 edges, 2 back.
 export function cardGeometry(w: number, h: number, depth: number) {
   const r = w * 0.045, shape = new THREE.Shape()
@@ -116,6 +177,7 @@ export function cardGeometry(w: number, h: number, depth: number) {
 type PackObj = {
   root: THREE.Group; spin: THREE.Group; whole: THREE.Mesh; body: THREE.Mesh; hingeAt: THREE.Group; flapPivot: THREE.Group; flap: THREE.Mesh
   mats: THREE.MeshPhysicalMaterial[]; current: Pose; spinAngle: number; spinTarget: number; spinVel: number
+  cut: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>; twist: { value: number }
 }
 type CardObj = { mesh: THREE.Mesh; current: Pose; front: THREE.MeshPhysicalMaterial; image: string }
 export type StageOptions = { active: number; intro: boolean }
@@ -142,7 +204,7 @@ export class CardStage {
   private timeScale = 1
   private flapFrom = pose()
   private flapDir = 1
-  private tear: { start: number; min: number; max: number; left: number; width: number; at: number; fromLeft: boolean } | null = null
+  private tear: { start: number; min: number; max: number; left: number; width: number; at: number; fromLeft: boolean; ticks: number } | null = null
   private gesture: { id: number; x: number; y: number; t: number; mode: 'swipe' | 'spin' | 'tear' | 'card' | null; lastX: number; lastT: number; v: number; base: number; target: 'pack' | 'body' | 'none' } | null = null
   private drag = { dx: 0, active: false }
   private pointer: { x: number; y: number; t: number } | null = null
@@ -199,7 +261,11 @@ export class CardStage {
     this.build().then(async () => {
       // Compile the shaders before the first frame, without blocking where the browser can do it
       // in the background, so the hand-off from the homepage doesn't stall on it.
+      // The torn parts and the cut light are hidden until a tear, but compile them now too.
+      const hidden = this.packs.flatMap(p => [p.body, p.flap, p.cut])
+      hidden.forEach(m => { m.visible = true })
       await this.renderer.compileAsync(this.scene, this.camera)
+      hidden.forEach(m => { m.visible = false })
       this.compiled = true
     })
     canvasEl.addEventListener('pointerdown', this.down)
@@ -231,7 +297,7 @@ export class CardStage {
     this.builtPackW = w
     const dpr = Math.min(window.devicePixelRatio || 1, 2.5)
     const tw = Math.min(1024, Math.round(w * PICKED_SCALE * dpr)), th = tw / PACK_RATIO
-    const geo = pillowGeometry(w, h, w * PUFF)
+    const geo = pillowGeometry(w, h, w * PUFF), cutGeo = cutGeometry(w, h, w * PUFF)
     const masks = (['whole', 'flap', 'body'] as const).map(part => { const c = canvas(512, 512 / PACK_RATIO); paintPackMask(c, part); return texture(c, false) })
     const covers = await this.covers
     this.data.forEach((data, i) => {
@@ -250,13 +316,19 @@ export class CardStage {
         return new THREE.Mesh(geo, mats)
       }
       const whole = make(masks[0]), body = make(masks[2]), flap = make(masks[1])
+      const twist = { value: 0 }
+      for (const m of flap.material as THREE.Material[]) twistStrip(m, twist, w, (0.5 - RIP_Y / 2) * h)
+      const cut = new THREE.Mesh(cutGeo, cutMaterial(PALETTE[data.id].glow))
+      // Makes the bright head at the finger round: the band is this many times longer than half its height.
+      cut.material.uniforms.uAspect.value = 2 * PACK_RATIO / CUT_BAND
+      cut.renderOrder = 10; cut.visible = false
       // hingeAt sits on the untorn end of the tear line, flapPivot turns the strip around it.
       const root = new THREE.Group(), spin = new THREE.Group(), hingeAt = new THREE.Group(), flapPivot = new THREE.Group()
       body.visible = flap.visible = false
-      flapPivot.add(flap); hingeAt.add(flapPivot); spin.add(whole, body, hingeAt); root.add(spin)
+      flapPivot.add(flap); hingeAt.add(flapPivot); spin.add(whole, body, hingeAt, cut); root.add(spin)
       this.scene.add(root)
       const mats = [whole, body, flap].flatMap(m => m.material as THREE.MeshPhysicalMaterial[])
-      const obj: PackObj = { root, spin, whole, body, hingeAt, flapPivot, flap, mats, current: pose(), spinAngle: 0, spinTarget: 0, spinVel: 0 }
+      const obj: PackObj = { root, spin, whole, body, hingeAt, flapPivot, flap, mats, current: pose(), spinAngle: 0, spinTarget: 0, spinVel: 0, cut, twist }
       obj.current = this.packTarget(i, 0)
       // After the homepage morph only the middle pack is showing; the others come in from the sides.
       if (this.intro && !this.reduced && i !== this.state.active) obj.current = { ...obj.current, x: obj.current.x + Math.sign(i - this.state.active) * packSpacing(this.vw, w) * 0.7, o: 0 }
@@ -430,6 +502,7 @@ export class CardStage {
     if (!p) return
     p.whole.visible = true; p.body.visible = p.flap.visible = false
     p.hingeAt.position.set(0, 0, 0); p.flapPivot.position.set(0, 0, 0); p.flapPivot.rotation.set(0, 0, 0); p.flap.position.set(0, 0, 0)
+    p.twist.value = 0
     this.setOpacity(p, 1)
   }
   private setOpacity(p: PackObj, o: number, part: 'all' | 'flap' | 'body' = 'all') {
@@ -442,7 +515,7 @@ export class CardStage {
     const r = packRect(this.vw, this.vh)
     const dir = fromLeft ? 1 : -1
     // Three.js has y up, so turning counterclockwise (positive z) would push the loose left end down.
-    return pose({ y: progress * r.h * 0.03, rz: -dir * progress * 14 * DEG, rx: progress * 24 * DEG })
+    return pose({ y: progress * r.h * 0.008, rz: -dir * progress * 3 * DEG, rx: progress * 8 * DEG })
   }
   private hinge(fromLeft: boolean) {
     const r = packRect(this.vw, this.vh), p = this.packs[this.state.active]
@@ -497,7 +570,7 @@ export class CardStage {
   private beginTear(event: PointerEvent) {
     const r = packRect(this.vw, this.vh), w = r.w * PICKED_SCALE, left = r.x - (w - r.w) / 2
     const x = clamp((event.clientX - left) / w)
-    this.tear = { start: x, min: x, max: x, left, width: w, at: x, fromLeft: true }
+    this.tear = { start: x, min: x, max: x, left, width: w, at: x, fromLeft: true, ticks: 0 }
   }
 
   private move = (event: PointerEvent) => {
@@ -510,6 +583,9 @@ export class CardStage {
       t.min = Math.min(t.min, x); t.max = Math.max(t.max, x); t.at = x; t.fromLeft = x >= t.start
       const progress = Math.min(1, (t.max - t.min) / TEAR_DISTANCE)
       const p = this.packs[this.state.active]
+      // A light tick every few millimetres of foil, like the real thing.
+      const step = Math.floor(progress * 12)
+      if (step > t.ticks) { t.ticks = step; try { navigator.vibrate?.(4) } catch { /* optional */ } }
       if (t.max - t.min > 0.02 && !this.state.tearing) { p.whole.visible = false; p.body.visible = p.flap.visible = true; this.set({ tearing: true }) }
       if (this.state.tearing) { this.hinge(t.fromLeft); apply(p.flapPivot, this.flapPose(progress, t.fromLeft)) }
       if (progress >= 1) { this.gesture = null; void this.startOpening(this.flapPose(1, t.fromLeft), t.fromLeft ? 1 : -1) }
@@ -638,14 +714,19 @@ export class CardStage {
     if (!p) return
     const r = packRect(this.vw, this.vh), mouthY = (0.5 - RIP_Y) * r.h
     this.burst.visible = false; this.seal.visible = false
+    this.updateCut(p, now, dt, elapsed)
     if (stage === 'opening' || stage === 'closing') {
       // Closing plays the opening backwards, then seals the tear.
       const t = stage === 'opening' ? elapsed : OPEN_MS - elapsed
-      const fly = easeIn(clamp(t / 700))
-      const flown = pose({ x: this.flapDir * r.w * 0.3, y: r.h * 1.15, z: 60, rz: -this.flapDir * 30 * DEG, rx: 60 * DEG })
-      const f = stage === 'closing' && elapsed > OPEN_MS ? pose() : mix(this.flapFrom, flown, fly)
-      apply(p.flapPivot, f)
-      this.setOpacity(p, 1 - clamp((fly - 0.55) / 0.45), 'flap')
+      // The strip pops up off the pack, tumbling and twisting into a ribbon, and fades as it goes.
+      const fly = clamp(t / 900), up = easeOut(fly), side = ease(fly), from = this.flapFrom, dir = this.flapDir
+      const sealed = stage === 'closing' && elapsed > OPEN_MS
+      apply(p.flapPivot, sealed ? pose() : pose({
+        x: from.x + dir * r.w * 0.5 * side, y: from.y + r.h * 0.95 * up, z: from.z + 140 * up,
+        rx: from.rx + 65 * DEG * side, ry: from.ry + dir * 35 * DEG * side, rz: from.rz - dir * 55 * DEG * side,
+      }))
+      p.twist.value = sealed ? 0 : -dir * 1.3 * ease(fly)
+      this.setOpacity(p, 1 - clamp((fly - 0.6) / 0.4), 'flap')
       const drop = clamp((t - 800) / 450)
       p.body.position.y = -easeIn(drop) * r.h * 0.85
       p.body.position.z = 0
@@ -674,6 +755,21 @@ export class CardStage {
     } else if (stage === 'tear' && !this.state.tearing) {
       p.body.position.set(0, 0, 0)
     }
+  }
+
+  // The light along the tear line: a faint pulse inviting the swipe, the cut following the finger,
+  // and a flash along the whole line when it comes off.
+  private updateCut(p: PackObj, now: number, dt: number, elapsed: number) {
+    const { stage, tearing, face } = this.state
+    for (const other of this.packs) if (other !== p) other.cut.visible = false
+    const u = p.cut.material.uniforms, t = this.tear
+    u.uTime.value = now / 1000
+    const seam = stage === 'tear' && !tearing && face === 'front' && !this.exiting ? 1 : 0
+    u.uSeam.value += (seam - u.uSeam.value) * (1 - Math.exp(-5 * dt))
+    u.uCut.value = stage === 'tear' && tearing && t ? 1 : 0
+    if (u.uCut.value && t) { u.uFrom.value = t.fromLeft ? t.min : t.max; u.uTo.value = t.at }
+    u.uFlash.value = stage === 'opening' ? Math.max(0, 1 - elapsed / 420) : 0
+    p.cut.visible = u.uSeam.value > 0.01 || u.uCut.value > 0 || u.uFlash.value > 0
   }
 
   private updateCards(now: number, dt: number) {
