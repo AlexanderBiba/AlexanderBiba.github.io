@@ -65,6 +65,9 @@
 
 
 .caption { position: absolute; left: 16px; right: 16px; z-index: 2; text-align: center; transition: opacity .3s ease; }
+/* Taps between the buttons go through to the scene, where tapping off the pack steps back. */
+.caption { pointer-events: none; }
+.caption button { pointer-events: auto; }
 .dim { position: absolute; inset: 0; z-index: 0; background: rgba(3, 4, 12, .62); opacity: 0; transition: opacity .35s ease; pointer-events: none; }
 .game[data-tearing] .dim { opacity: 1; }
 .game[data-tearing] .caption, .game[data-tearing] .header { opacity: .15; }

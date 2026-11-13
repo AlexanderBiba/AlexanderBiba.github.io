@@ -1,3 +1,5 @@
+import { RIP_Y } from './shapes.ts'
+
 // A modern booster pack is about 66 × 120 mm.
 export const PACK_RATIO = 0.55
 
@@ -7,6 +9,14 @@ export function packRect(vw: number, vh: number) {
   let h = Math.min(vh * 0.52, 480), w = h * PACK_RATIO
   if (w > vw * 0.6) { w = vw * 0.6; h = w / PACK_RATIO }
   return { w, h, x: (vw - w) / 2, y: vh * 0.45 - h / 2 }
+}
+
+// The picked pack up close, ready to tear: big, with its tear line a bit above the middle of the
+// screen and the rest of it running off the bottom.
+export function zoomRect(vw: number, vh: number) {
+  const w = Math.min(vw * 0.88, 520), h = w / PACK_RATIO
+  const y = vh * 0.4 - RIP_Y * h
+  return { w, h, x: (vw - w) / 2, y }
 }
 
 // Horizontal distance between neighboring packs on the shelf.

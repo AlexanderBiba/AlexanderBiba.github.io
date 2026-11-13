@@ -3,7 +3,7 @@
 // plane, so a rect from geometry.ts lands on exactly the same spot on screen.
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { CARD_RATIO, PACK_RATIO, packRect, packSpacing, stackRect } from './geometry.ts'
+import { CARD_RATIO, PACK_RATIO, packRect, packSpacing, stackRect, zoomRect } from './geometry.ts'
 import { paintCardBack, paintCardFoil, paintCardFront, paintPackBack, paintPackFront, paintPackMask, loadImage } from './paint.ts'
 import { PALETTE } from './palette.ts'
 import { RIP_Y, pillow } from './shapes.ts'
@@ -12,7 +12,8 @@ import { FoilStrip } from './strip.ts'
 import type { PackData } from './types.ts'
 
 export type Stage = 'shelf' | 'tear' | 'opening' | 'stack' | 'closing'
-export type StageState = { stage: Stage; active: number; index: number; face: 'front' | 'back'; tearing: boolean; ready: boolean }
+// `zoom`: the picked pack is up close, ready to tear (it stays up close while it opens).
+export type StageState = { stage: Stage; active: number; index: number; face: 'front' | 'back'; tearing: boolean; ready: boolean; zoom: boolean }
 
 const FOV = 30
 // How much bigger the picked pack is drawn while you tear it.
@@ -192,7 +193,7 @@ export class CardStage {
   private last = performance.now()
   private vw = 1
   private vh = 1
-  private state: StageState = { stage: 'shelf', active: 1, index: 0, face: 'front', tearing: false, ready: false }
+  private state: StageState = { stage: 'shelf', active: 1, index: 0, face: 'front', tearing: false, ready: false, zoom: false }
   private stageStart = 0
   // Where the cards start when they're gathered back up from the recap grid, and how long it takes.
   private gather: Pose[] | null = null
@@ -432,6 +433,10 @@ export class CardStage {
       const bob = focused && !this.reduced ? Math.sin(t / 640) * 4 : 0
       return pose({ x: c.x + off * spacing, y: c.y + bob, z: focused ? 0 : -160, ry: off * -20 * DEG, s: (focused ? 1 : 0.8) * this.packScale })
     }
+    if (focused && this.state.zoom && (stage === 'tear' || stage === 'opening')) {
+      const z = zoomRect(this.vw, this.vh), zc = this.world(z.x + z.w / 2, z.y + z.h / 2)
+      return pose({ x: zc.x, y: zc.y, s: z.w / (this.builtPackW || 1) })
+    }
     if (focused) return pose({ x: c.x, y: c.y, s: PICKED_SCALE * this.packScale })
     return pose({ x: c.x + off * spacing * 2.6, y: c.y, s: 0.7 * this.packScale, o: 0 })
   }
@@ -446,9 +451,10 @@ export class CardStage {
 
   // Card k inside the picked pack: `risen` sticks out of the torn top.
   private inPackPose(k: number, risen: boolean): Pose {
-    const r = packRect(this.vw, this.vh), s = stackRect(this.vw, this.vh)
-    const c = this.world(r.x + r.w / 2, r.y + r.h / 2)
-    const pw = r.w * PICKED_SCALE, ph = r.h * PICKED_SCALE, top = c.y + ph / 2
+    // It follows the pack, wherever it is and however big (up close while it opens).
+    const s = stackRect(this.vw, this.vh), p = this.packs[this.state.active].current
+    const c = { x: p.x, y: p.y }
+    const pw = this.builtPackW * p.s, ph = pw / PACK_RATIO, top = c.y + ph / 2
     const cw = pw * 0.9, ch = cw / CARD_RATIO, scale = cw / s.w
     const y = risen ? top - (RIP_Y * ph + ch * 0.06) : top - 0.17 * ph - ch / 2
     // Packed face to face, the top card in front.
@@ -474,9 +480,20 @@ export class CardStage {
     p.spinAngle = p.spinTarget = 0; p.spinVel = 0
     this.set({ stage: 'tear', face: 'front' })
   }
-  backToShelf() { if (this.state.stage === 'tear') { this.resetFlap(); this.set({ stage: 'shelf' }) } }
+  backToShelf() { if (this.state.stage === 'tear') { this.resetFlap(); this.set({ stage: 'shelf', zoom: false }) } }
+  // Up close with the front showing, ready to tear; and back out to spinning it around.
+  zoomIn() {
+    if (this.state.stage !== 'tear' || this.state.zoom) return
+    const p = this.packs[this.state.active]
+    p.spinTarget = Math.round(p.spinAngle / (Math.PI * 2)) * Math.PI * 2
+    this.set({ zoom: true, face: 'front' })
+  }
+  zoomOut() {
+    if (this.state.stage !== 'tear' || !this.state.zoom || this.tear) return
+    this.set({ zoom: false })
+  }
   flip() {
-    if (this.state.stage !== 'tear' || this.tear) return
+    if (this.state.stage !== 'tear' || this.tear || this.state.zoom) return
     const p = this.packs[this.state.active]
     p.spinTarget = Math.round(p.spinAngle / Math.PI) * Math.PI + Math.PI
     this.set({ face: Math.round(p.spinTarget / Math.PI) % 2 ? 'back' : 'front' })
@@ -545,7 +562,7 @@ export class CardStage {
       if (hit) {
         target = 'pack'
         // The strip above the tear line, on the front.
-        if (this.state.face === 'front' && hit.uv && hit.uv.y > 1 - RIP_Y * 2 && hit.face && hit.face.normal.z > 0) mode = 'tear'
+        if (this.state.zoom && this.state.face === 'front' && hit.uv && hit.uv.y > 1 - RIP_Y * 2 && hit.face && hit.face.normal.z > 0) mode = 'tear'
       }
     }
     if (stage === 'stack') {
@@ -558,7 +575,7 @@ export class CardStage {
   }
 
   private beginTear(event: PointerEvent) {
-    const r = packRect(this.vw, this.vh), w = r.w * PICKED_SCALE, left = r.x - (w - r.w) / 2
+    const p = this.packs[this.state.active].current, w = this.builtPackW * p.s, left = p.x + this.vw / 2 - w / 2
     const x = clamp((event.clientX - left) / w)
     this.tear = { start: x, min: x, max: x, left, width: w, at: x, fromLeft: true, ticks: 0 }
   }
@@ -585,7 +602,7 @@ export class CardStage {
     if (!g.mode && Math.hypot(dx, dy) > 8) {
       const horizontal = Math.abs(dx) > Math.abs(dy)
       const { stage } = this.state
-      g.mode = stage === 'shelf' ? 'swipe' : stage === 'tear' && horizontal ? 'spin' : stage === 'stack' && horizontal ? 'card' : null
+      g.mode = stage === 'shelf' ? 'swipe' : stage === 'tear' && horizontal && !this.state.zoom ? 'spin' : stage === 'stack' && horizontal ? 'card' : null
       if (!g.mode) { this.gesture = null; return }
       g.x = g.lastX = event.clientX; g.lastT = now
       g.base = this.packs[this.state.active]?.spinAngle ?? 0
@@ -618,8 +635,10 @@ export class CardStage {
         const hit = this.hit(event, this.packs.map(p => p.whole))
         if (hit) { const i = this.packs.findIndex(p => p.whole === hit.object); if (i === this.state.active) this.pick(); else this.goTo(i) }
       }
-      // Tapping anywhere off the picked pack puts it back on the shelf.
-      if (stage === 'tear' && g.target === 'none') this.backToShelf()
+      // Tapping the pack brings it up close to tear. Tapping off it steps back: from up close to
+      // spinning it, and from there to the shelf.
+      if (stage === 'tear' && g.target === 'pack') this.zoomIn()
+      if (stage === 'tear' && g.target === 'none') { if (this.state.zoom) this.zoomOut(); else this.backToShelf() }
       return
     }
     if (g.mode === 'swipe') { if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) this.goTo(this.state.active + (dx < 0 ? 1 : -1)); return }
@@ -727,7 +746,7 @@ export class CardStage {
         this.burst.visible = b > 0 && b < 1
         const local = new THREE.Vector3(0, mouthY, 20).applyMatrix4(p.root.matrixWorld)
         this.burst.position.copy(local)
-        this.burst.scale.setScalar(r.w * 2.4 * easeOut(b) + 1)
+        this.burst.scale.setScalar(this.builtPackW * p.current.s * 2.26 * easeOut(b) + 1)
         this.burst.material.opacity = b < 0.25 ? b / 0.25 : 1 - (b - 0.25) / 0.75
         this.burst.material.color.setRGB(...PALETTE[this.data[active].id].glow.map(v => 0.6 + v / 640) as [number, number, number])
       }
@@ -742,7 +761,7 @@ export class CardStage {
         this.seal.material.opacity = sealT < 0.4 ? 1 : 1 - (sealT - 0.4) / 0.6
         if (elapsed >= CLOSE_MS) { this.resetFlap(); this.set({ stage: 'shelf', index: 0 }) }
       }
-      if (stage === 'opening' && elapsed >= OPEN_MS) { this.set({ stage: 'stack' }) }
+      if (stage === 'opening' && elapsed >= OPEN_MS) { this.set({ stage: 'stack', zoom: false }) }
     } else if (stage === 'tear' && !this.state.tearing) {
       p.body.position.set(0, 0, 0)
     }
@@ -755,7 +774,7 @@ export class CardStage {
     for (const other of this.packs) if (other !== p) other.cut.visible = false
     const u = p.cut.material.uniforms, t = this.tear
     u.uTime.value = now / 1000
-    const seam = stage === 'tear' && !tearing && face === 'front' && !this.exiting ? 1 : 0
+    const seam = stage === 'tear' && this.state.zoom && !tearing && face === 'front' && !this.exiting ? 1 : 0
     u.uSeam.value += (seam - u.uSeam.value) * (1 - Math.exp(-5 * dt))
     u.uCut.value = stage === 'tear' && tearing && t ? 1 : 0
     if (u.uCut.value && t) { u.uFrom.value = t.fromLeft ? t.min : t.max; u.uTo.value = t.at }

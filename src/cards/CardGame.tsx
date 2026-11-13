@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import { CardStage, PICKED_SCALE, type StageState } from './stage3d'
-import { packRect, stackRect } from './geometry'
+import { packRect, stackRect, zoomRect } from './geometry'
 import { MORPH_OVERLAY, wasMorphed } from './handoff'
 import { returnPack, showReturnPack } from './morph'
 import { disableMotion, enableMotion } from './motion'
@@ -29,7 +29,7 @@ function CardLinks({ card }: { card: CardData }) {
 // ordinary HTML, so they stay sharp, clickable and readable by screen readers.
 export default function CardGame({ packs }: { packs: PackData[] }) {
   const canvas = useRef<HTMLCanvasElement>(null), stage = useRef<CardStage | null>(null)
-  const [state, setState] = useState<StageState>({ stage: 'shelf', active: PACK_ORDER.indexOf(CENTER_PACK), index: 0, face: 'front', tearing: false, ready: false })
+  const [state, setState] = useState<StageState>({ stage: 'shelf', active: PACK_ORDER.indexOf(CENTER_PACK), index: 0, face: 'front', tearing: false, ready: false, zoom: false })
   const [viewport, setViewport] = useState<{ w: number; h: number } | null>(null)
   const [failed, setFailed] = useState(false)
   const [exiting, setExiting] = useState(false)
@@ -106,8 +106,9 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
       if (!s) return
       if (state.stage === 'shelf' && (k === 'ArrowRight' || k === 'ArrowLeft')) s.goTo(state.active + (k === 'ArrowRight' ? 1 : -1))
       else if (state.stage === 'shelf' && k === 'Enter' && !(event.target instanceof HTMLButtonElement || event.target instanceof HTMLAnchorElement)) s.pick()
-      else if (state.stage === 'tear' && k === 'Escape') s.backToShelf()
-      else if (state.stage === 'tear' && k.toLowerCase() === 'f') s.flip()
+      else if (state.stage === 'tear' && k === 'Escape') { if (state.zoom) s.zoomOut(); else s.backToShelf() }
+      else if (state.stage === 'tear' && !state.zoom && k === 'Enter' && !(event.target instanceof HTMLButtonElement || event.target instanceof HTMLAnchorElement)) s.zoomIn()
+      else if (state.stage === 'tear' && !state.zoom && k.toLowerCase() === 'f') s.flip()
       else if (state.stage === 'stack' && k === 'Escape') putBack()
       else if (state.stage === 'stack' && k === 'ArrowRight') s.next()
       else if (state.stage === 'stack' && k === 'ArrowLeft') s.prev()
@@ -116,14 +117,18 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
     }
     window.addEventListener('keydown', key)
     return () => window.removeEventListener('keydown', key)
-  }, [state.stage, state.active])
+  }, [state.stage, state.active, state.zoom])
 
   const s = stage.current
   const rect = viewport && packRect(viewport.w, viewport.h)
   const stack = viewport && stackRect(viewport.w, viewport.h)
   const card = state.index < total ? pack.cards[state.index] : null
   const inStack = state.stage === 'stack'
-  const glow = inStack && stack ? { x: stack.x + stack.w / 2, y: stack.y + stack.h / 2, r: stack.h * 1.1 } : rect ? { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2, r: rect.h * 1.2 } : null
+  // Up close the light sits behind the tear line, and the words go above the pack.
+  const zoomed = viewport && state.zoom && (state.stage === 'tear' || state.stage === 'opening') ? zoomRect(viewport.w, viewport.h) : null
+  const glow = inStack && stack ? { x: stack.x + stack.w / 2, y: stack.y + stack.h / 2, r: stack.h * 1.1 }
+    : zoomed && viewport ? { x: viewport.w / 2, y: viewport.h * 0.4, r: zoomed.w * 1.2 }
+      : rect ? { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2, r: rect.h * 1.2 } : null
   const images = s && (inStack || leaving) ? s.cardImages(state.active) : []
 
   return (
@@ -143,7 +148,7 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
 
       {failed && <div className={styles.fallback}><p>Your browser couldn’t draw the 3D card packs. <a href="/">Go to the homepage</a> for my posts, projects and links.</p></div>}
 
-      {rect && (state.stage === 'shelf' || state.stage === 'tear') && <div className={styles.caption} style={{ top: rect.y + rect.h * PICKED_SCALE + 26 }}>
+      {rect && (state.stage === 'shelf' || state.stage === 'tear') && <div className={styles.caption} style={zoomed && viewport ? { bottom: viewport.h - zoomed.y + 18 } : { top: rect.y + rect.h * PICKED_SCALE + 26 }}>
         {state.stage === 'shelf' && <>
           <div className={styles.captionRow}>
             <button className={styles.arrow} onClick={() => s?.goTo(state.active - 1)} disabled={state.active === 0} aria-label="Previous pack"><Chevron dir="left" /></button>
@@ -155,12 +160,19 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
           <button className={styles.srOnly} onClick={() => s?.pick()}>Pick the {pack.title.toLowerCase()} pack</button>
           <div className={styles.dots} aria-hidden="true">{packs.map((item, i) => <span key={item.id} className={i === state.active ? styles.dotOn : ''} />)}</div>
         </>}
-        {state.stage === 'tear' && <>
-          <h1>{state.face === 'front' ? 'Swipe the top to tear it open' : 'Spin it back to tear it'}</h1>
-          <p className={styles.hint}>Drag the pack sideways to spin it</p>
+        {state.stage === 'tear' && !state.zoom && <>
+          <h1>Tap the pack to open it</h1>
+          <p className={styles.hint}>Drag it sideways to spin it around</p>
           <div className={styles.captionActions}>
             <button className={styles.ghost} onClick={() => s?.backToShelf()}>← All packs</button>
             <button className={styles.ghost} onClick={() => s?.flip()}>⟲ Flip</button>
+            <button className={styles.ghost} onClick={() => s?.zoomIn()}>Open it</button>
+          </div>
+        </>}
+        {state.stage === 'tear' && state.zoom && <>
+          <h1>Swipe along the line to open it</h1>
+          <div className={styles.captionActions}>
+            <button className={styles.ghost} onClick={() => s?.zoomOut()}>← Back</button>
             <button className={styles.ghost} onClick={() => s?.openNow()}>Just open it</button>
           </div>
         </>}
