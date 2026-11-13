@@ -21,7 +21,9 @@ export const PICKED_SCALE = 1.06
 const PUFF = 0.09
 // A card's thickness as a share of its width: thicker than real card stock so it reads as solid.
 const CARD_DEPTH = 0.014
-const TEAR_DISTANCE = 0.6
+// How much of the width the cut has to cover before the strip comes off. Reaching the far edge
+// also finishes it, so a cut started in the middle still works.
+const TEAR_DISTANCE = 0.88
 export const OPEN_MS = 1900, CLOSE_MS = 2300
 const FAN = [0, -1.6, 1.3, -0.9]
 // Putting the laid-out cards back: each flies from its spot into the deck, the last card first.
@@ -562,7 +564,8 @@ export class CardStage {
     if (g.mode === 'tear' && this.tear) {
       const t = this.tear, x = clamp((event.clientX - t.left) / t.width)
       t.min = Math.min(t.min, x); t.max = Math.max(t.max, x); t.at = x; t.fromLeft = x >= t.start
-      const progress = Math.min(1, (t.max - t.min) / TEAR_DISTANCE)
+      const span = t.max - t.min, atEdge = span > 0.4 && (t.fromLeft ? x >= 0.97 : x <= 0.03)
+      const progress = atEdge ? 1 : Math.min(1, span / TEAR_DISTANCE)
       const p = this.packs[this.state.active]
       // A light tick every few millimetres of foil, like the real thing.
       const step = Math.floor(progress * 12)
