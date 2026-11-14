@@ -42,14 +42,15 @@ export default function PlayLink() {
         morphIntoPack(app, () => router.push('/play/'))
       }}
     >
-      {/* Two cards with a small star in the Built pack's color. The ring around them is in Navbar.scss. */}
+      {/* Two cards with a small star in the Built pack's color. The ring around them is in Navbar.scss.
+          The cards are moved so that their middle is the middle of the ring; the star sits in the corner. */}
       <span aria-hidden="true">
         <svg viewBox="0 0 24 24">
-          <g transform="translate(-1.2 1.6) scale(.92)" fill="#fff" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+          <g transform="translate(1.05 1) scale(.92)" fill="#fff" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
             <rect x="4.5" y="5" width="9.5" height="13.5" rx="1.8" transform="rotate(-12 9.25 11.75)" />
             <rect x="10" y="5.5" width="9.5" height="13.5" rx="1.8" transform="rotate(10 14.75 12.25)" />
           </g>
-          <path d="M19.6 1.5l.87 2.23 2.23.87-2.23.87-.87 2.23-.87-2.23-2.23-.87 2.23-.87z" fill="#22c7c0" />
+          <path d="M21 .4l.84 2.16 2.16.84-2.16.84-.84 2.16-.84-2.16-2.16-.84 2.16-.84z" fill="#22c7c0" />
         </svg>
       </span>
     </Link>
