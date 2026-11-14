@@ -111,3 +111,14 @@ time {
         color: #666;
     }
 }
+
+// /play/ card packs: the page background turns dark while the homepage morphs into a pack.
+html.play-morph, html.play-morph body {
+    background-color: #0b0d1c;
+    transition: background-color .5s ease;
+}
+html.play-mode, html.play-mode body {
+    background-color: #0b0d1c;
+    overflow: hidden;
+    overscroll-behavior: none;
+}

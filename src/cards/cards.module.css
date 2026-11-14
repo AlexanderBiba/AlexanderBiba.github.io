@@ -1,0 +1,169 @@
+/* ---------- Game layout ---------- */
+.game {
+  position: fixed; inset: 0; overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, .7), transparent),
+    radial-gradient(1px 1px at 82% 12%, rgba(255, 255, 255, .6), transparent),
+    radial-gradient(1.5px 1.5px at 68% 78%, rgba(255, 255, 255, .5), transparent),
+    radial-gradient(1px 1px at 22% 72%, rgba(255, 255, 255, .5), transparent),
+    radial-gradient(1px 1px at 46% 8%, rgba(255, 255, 255, .5), transparent),
+    radial-gradient(ellipse at 50% 42%, #262c63 0%, #0b0d1c 68%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none; -webkit-user-select: none;
+  /* Fades in over the plain dark background the homepage morph leaves, and back out on the way home. */
+  animation: fadeIn .4s ease backwards;
+  transition: opacity .25s ease;
+}
+/* Leaving for the homepage: the words go first while the pack returns to its place, then the rest. */
+.game[data-exiting] { pointer-events: none; }
+.game[data-exiting] .caption, .game[data-exiting] .header, .game[data-exiting] .stackControls, .game[data-exiting] .recap { opacity: 0; transition: opacity .2s ease; }
+.game[data-exiting='all'] { opacity: 0; }
+.game button { font: inherit; }
+.header {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: max(14px, env(safe-area-inset-top)) 16px 0;
+  pointer-events: none;
+}
+.header > * { pointer-events: auto; }
+.exit, .exit:visited {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: rgba(255, 255, 255, .85); font-size: 14px; font-weight: 600; cursor: pointer;
+  padding: 8px 14px; border-radius: 99px; background: rgba(255, 255, 255, .08);
+  border: 1px solid rgba(255, 255, 255, .14); text-decoration: none;
+}
+.exit:hover { background: rgba(255, 255, 255, .16); text-decoration: none; }
+.brand { font-size: 12px; font-weight: 800; letter-spacing: .3em; opacity: .55; }
+
+/* The 3D scene fills the screen under the captions and buttons. */
+.canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; z-index: 1; }
+.game:not([data-ready]) .canvas { opacity: 0; }
+/* Opened directly, the packs fade in once they're drawn. After the homepage morph its painted pack is already there. */
+.game[data-ready]:not([data-intro]) .canvas { animation: fadeIn .45s ease backwards; }
+/* It follows the pack by `translate` and `scale` (set in CardGame.tsx), which don't repaint it. */
+.rays { z-index: 0; transition: opacity .5s, translate .6s cubic-bezier(.2, .8, .2, 1), scale .6s cubic-bezier(.2, .8, .2, 1); }
+/* The light of the pack you just swiped away from fades out exactly as the new pack's fades in,
+   so the light changes color without dimming in between. */
+.rays[data-off] { opacity: 0 !important; }
+.game[data-stage='opening'] .rays, .game[data-stage='closing'] .rays { opacity: .85; }
+
+/* Pack colors for the light rays; the 3D textures take theirs from palette.ts. */
+.rays[data-pack='blog'] { --glow: 255, 120, 150; }
+.rays[data-pack='works'] { --glow: 80, 210, 255; }
+.rays[data-pack='social'] { --glow: 255, 200, 90; }
+
+/* Light behind the chosen pack */
+.rays {
+  position: absolute; pointer-events: none; border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(var(--glow), .55) 0%, rgba(var(--glow), .15) 30%, transparent 62%),
+    repeating-conic-gradient(from 0deg, rgba(var(--glow), .22) 0deg 7deg, transparent 7deg 18deg);
+  -webkit-mask: radial-gradient(circle, #000 18%, transparent 68%); mask: radial-gradient(circle, #000 18%, transparent 68%);
+  animation: spin 40s linear infinite;
+}
+@keyframes spin { to { rotate: 360deg; } }
+
+/* Until the 3D scene has drawn its first frame only the pack is on screen (the homepage's painted
+   stand-in). Then the light blooms behind it and the words fade in, while the other packs slide in. */
+.game:not([data-ready]) .rays, .game:not([data-ready]) .caption, .game:not([data-ready]) .header { opacity: 0; }
+.game[data-ready] .rays { animation: spin 40s linear infinite, bloom .9s cubic-bezier(.2, .8, .2, 1) backwards; }
+.game[data-ready] .rays[data-swap] { animation: spin 40s linear infinite, fadeIn .5s ease backwards; }
+.game[data-ready] .header { animation: fadeIn .5s ease .2s backwards; }
+.game[data-ready] .caption { animation: rise .55s cubic-bezier(.2, .8, .2, 1) .3s backwards; }
+@keyframes bloom { from { opacity: 0; transform: scale(.5); } }
+@keyframes rise { from { opacity: 0; translate: 0 14px; } }
+
+
+.caption { position: absolute; left: 16px; right: 16px; z-index: 2; text-align: center; transition: opacity .3s ease; }
+/* Each step's words rise in as they replace the last step's. */
+.captionBody { animation: rise .32s cubic-bezier(.2, .8, .2, 1) backwards; }
+/* Going up close and back, the pack passes through where the next words go, so they wait for it. */
+.captionBody[data-late] { animation-delay: .22s; }
+/* Words that change in place (the pack's name, the header) fade in rather than switch. */
+.swap { animation: fadeIn .28s ease backwards; }
+/* Taps between the buttons go through to the scene, where tapping off the pack steps back. */
+.caption { pointer-events: none; }
+.caption button { pointer-events: auto; }
+/* The pack is opening: the words fade out under it. */
+.caption[data-out] { opacity: 0 !important; }
+.dim { position: absolute; inset: 0; z-index: 0; background: rgba(3, 4, 12, .62); opacity: 0; transition: opacity .35s ease; pointer-events: none; }
+.game[data-tearing] .dim { opacity: 1; }
+.game[data-tearing] .caption, .game[data-tearing] .header { opacity: .15; }
+.header { transition: opacity .3s ease; }
+.caption h1 { font-size: 22px; line-height: 1.2; font-weight: 850; letter-spacing: .04em; margin: 0; color: #fff; }
+.caption p { margin: 6px 0 0; font-size: 15px; line-height: 1.4; opacity: .75; }
+.caption .hint { font-size: 13px; opacity: .5; }
+.captionRow { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.captionActions { display: flex; justify-content: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.dots { display: flex; justify-content: center; gap: 8px; margin-top: 14px; }
+.dots span { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, .25); transition: background .3s, transform .3s; }
+.dots .dotOn { background: #fff; transform: scale(1.3); }
+
+.arrow {
+  width: 40px; height: 40px; border-radius: 50%; display: inline-grid; place-items: center;
+  border: 1px solid rgba(255, 255, 255, .2); background: rgba(255, 255, 255, .08);
+  line-height: 0; cursor: pointer; padding: 0; color: #fff;
+}
+/* Icons are their own boxes, centered by the button, with no line of text around them to push them off. */
+.arrow svg, .ghost svg, .primary svg, .exit svg { display: block; flex: none; }
+.arrow:disabled { opacity: .25; cursor: default; }
+.arrow:not(:disabled):hover { background: rgba(255, 255, 255, .18); }
+.ghost, .ghost:visited, .primary, .primary:visited {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 44px; padding: 0 18px; border-radius: 99px; cursor: pointer;
+  font-size: 15px !important; font-weight: 700; text-decoration: none;
+}
+.ghost, .ghost:visited { color: #fff; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .22); }
+.ghost:hover { background: rgba(255, 255, 255, .16); text-decoration: none; }
+.primary, .primary:visited { color: #12142c; background: #fff; border: 1px solid #fff; }
+.primary:hover { background: #ffe9a8; text-decoration: none; }
+.arrow:focus-visible, .ghost:focus-visible, .primary:focus-visible, .exit:focus-visible { outline: 3px solid #ffd36b; outline-offset: 3px; }
+
+/* ---------- Card stack ---------- */
+.stackControls { position: absolute; left: 16px; right: 16px; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 12px; animation: rise .4s cubic-bezier(.2, .8, .2, 1) backwards; transition: opacity .2s ease; }
+/* The recap is up, or the pack is closing: they fade out, and come back if you look at a card again. */
+.stackControls[data-out] { opacity: 0; }
+.stackLinks { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; animation: fadeIn .28s ease backwards; }
+.stackNav { display: flex; align-items: center; gap: 14px; }
+.stackCount { min-width: 56px; text-align: center; font-size: 14px; font-weight: 800; letter-spacing: .1em; opacity: .75; font-variant-numeric: tabular-nums; }
+.stackHint { margin: 0; font-size: 12px; opacity: .5; text-align: center; }
+
+.recap h2 { margin: 0 0 16px; font-size: 26px; font-weight: 900; font-style: italic; color: #fff; }
+.recapGrid { list-style: none; padding: 0; margin: 0 auto 20px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 700px) { .recapGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; } }
+.recapGrid li { animation: dropIn .5s cubic-bezier(.2, .8, .2, 1) calc(.3s + var(--i) * 60ms) both; }
+.recapGrid button { all: unset; display: block; width: 100%; cursor: pointer; border-radius: 8px; }
+.recapGrid button:focus-visible { outline: 3px solid #ffd36b; outline-offset: 3px; }
+
+.recap {
+  position: absolute; inset: 0; z-index: 3; overflow-y: auto; overscroll-behavior: contain; text-align: center;
+  padding: calc(max(14px, env(safe-area-inset-top)) + 64px) 16px max(18px, env(safe-area-inset-bottom));
+  animation: fadeIn .35s ease .25s backwards;
+}
+@keyframes fadeIn { from { opacity: 0; } }
+.recap > * { max-width: 760px; margin-left: auto; margin-right: auto; }
+/* Leaving the recap: the cards that fly off are 3D ones from here, already drawn under their
+   pictures, which dissolve into them. Putting them back keeps the page until the pack closes;
+   tapping a card fades the rest out. */
+.recap[data-leaving] { pointer-events: none; }
+.recap[data-leaving] .recapGrid li[data-flying] button { opacity: 0; transition: opacity .1s linear; }
+.recap[data-leaving='gather'] > :not(ul) { opacity: 0; transition: opacity .2s ease; }
+.recap[data-leaving='show'] { opacity: 0; transition: opacity .28s ease; }
+.recapGrid img { display: block; width: 100%; height: auto; aspect-ratio: 63 / 88; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .45)); }
+@keyframes dropIn { from { translate: 0 60px; opacity: 0; } to { translate: 0 0; opacity: 1; } }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.fallback { position: absolute; inset: auto 16px 40%; z-index: 3; text-align: center; font-size: 16px; }
+.fallback a { color: #ffd36b; }
+
+.noscript { position: absolute; inset: auto 16px 40px; text-align: center; }
+.noscript a { color: #ffd36b; }
+
+/* The homepage morph's stand-in pack */
+.morphOverlay { position: fixed; z-index: 1000; pointer-events: none; opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dots span { transition: none; }
+  .game, .rays, .recapGrid li, .recap, .game[data-ready] .rays, .game[data-ready] .rays[data-swap], .game[data-ready] .header, .game[data-ready] .caption, .game[data-ready] .canvas, .captionBody, .swap, .stackControls, .stackLinks { animation: none; }
+}

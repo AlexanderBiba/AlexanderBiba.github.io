@@ -21,19 +21,18 @@ Workers Builds is connected to this repo, builds with `npm run build` and deploy
 
 ## Edit content
 
-- `content/site.json`: name, bio, and social links, shared by the homepage and house.
-  Update `chess` for the Play app’s Chess.com profile and `youtube3dPrinting` for the printer’s YouTube channel. Both accept full URLs; no code changes are needed when a username changes.
+- `content/site.json`: name, bio, and social links, shared by the homepage and the card packs.
+  `chess` (Chess.com profile) and `youtube3dPrinting` (3D printing YouTube channel) become cards in the Social pack. Both accept full URLs; no code changes are needed when a username changes.
 - `content/blog.json`: blog titles, slugs, dates, and cover images.
 - `content/blog/<slug>.md`: each article’s Markdown body.
 - `content/works.json`: titles, slugs, dates, live site links, and screenshots for the “Things I’ve built” section at `/works/`.
 - `content/works/<slug>.md`: each entry’s Markdown body.
 - `public/content/`: local article images and site screenshots. Reference them as `/content/filename.png`.
-- `src/house/content.ts`: house dialogue; its works/blog links use the same content indexes as the main site.
-- `src/house/world.ts`: house models, layout, and animations.
+- `src/cards/build.ts`: turns posts, works and `site.json` into the cards at `/play/`. The short lines on the Social cards live here too.
 
 To add a post or something you built, add its Markdown file and matching index entry. Keep existing slugs to preserve incoming links. Entries are displayed newest first.
 
-The repository contains all five published articles, four entries under “Things I’ve built”, profile settings, and their images. Both the main site and 3D mode read these local files; no external CMS or credentials are needed.
+The repository contains all the published articles, four entries under “Things I’ve built”, profile settings, and their images. Both the main site and the card packs read these local files; no external CMS or credentials are needed.
 
 ## Analytics
 
@@ -54,4 +53,21 @@ node --test tests/*.test.mjs
 npm run build
 ```
 
-The experimental game is at `/play/`; see `src/house/README.md` for controls.
+## Card packs (`/play/`)
+
+The 🎮 link in the navbar (`src/components/PlayLink.tsx`) shrinks the visible page into a card pack (`src/cards/morph.tsx`) and then navigates to `/play/`, which draws the same pack in the same spot (`src/cards/geometry.ts`) so the hand-off doesn't jump. The pack's art is painted while the homepage is idle, so the animation starts on the first tap, and `/play/` builds its 3D scene under the painted pack before fading it out. The "← alexbiba.com" button plays it backwards: the other packs slide away and the homepage grows out of the pack. People with reduced motion turned on, or who open the link in a new tab, go straight to the other page.
+
+On `/play/` the packs and cards are 3D models drawn with Three.js (`src/cards/stage3d.ts`). Each pack is one puffed-up wrapper mesh with a front, a back, edges with some thickness, sealed crimped ends and a fin seal folded over down the back (its shape is in `src/cards/shapes.ts`), and each card is a thin slab with a printed front, a back and an edge. Their art is painted onto canvases (`src/cards/paint.ts`, colors in `src/cards/palette.ts`) and used as textures, and the homepage morph and the recap grid reuse the same paintings. The picture on the front of each pack is drawn in code as well (`src/cards/packArt.ts`): a burst of light with the pack's creature in front of it, a phoenix for Blog, a golem made of blocks for Built and a dragon for Social. A second painting of the same front (`paintPackSheen` in `paint.ts`) tells the 3D pack how each part catches the light, so the burst shines like foil and the creature and the small print stay flat like ink. The front of a card is painted in `src/cards/cardArt.ts` like a classic trading card: a frame in the pack's color inside a thin ring of rainbow foil, the name on a metal bar, the art in a window, a line under it with what kind of card it is and a number (minutes to read for a post, the year for something built), and a box with the card's links and up to four lines of text. The pack's creature stands in the window in front of its burst with its head coming out over the top edge, a screenshot fills the window behind it, a portrait hangs in it as a framed print and an icon sits on a round badge. Nothing on a card is tilted. It has a sheen painting as well (`paintCardSheen`), so on the 3D card the ring, the frame and the burst are foil and the creature, the pictures and the box of words are ink. The captions, buttons and links on top are ordinary HTML (`src/cards/CardGame.tsx`), so they stay sharp and screen readers can read them.
+
+You swipe between three packs (Blog, Built and Social) and tap one to pick it. You can drag the picked pack sideways to spin it and see the back, which lists what's inside. Tapping it again brings it up close (`zoomRect` in `src/cards/geometry.ts`), where a flash runs along the dashed line, and swiping along that line cuts it open with a glowing line that follows your finger, and the strip, a small soft-body sheet of foil (`src/cards/strip.ts`), peels up as you cut, lies back down if you let go early, and flutters off once it's free; the cards rise out of the torn top and land as a stack: swipe the top card left for the next one or right to bring the last one back, and after the last card you see them all together. Going back puts the cards into the pack and seals it so it can be opened again. The top card leans toward the pointer or the phone's angle (`src/cards/motion.ts`); on iPhone the first tap asks for motion access. If the browser can't draw WebGL, the page links back to the homepage. Nothing is stored on the visitor's device.
+
+Every change of state on `/play/` is animated, and a few rules keep that smooth:
+
+- nothing is cut: words, buttons and the light behind the pack fade or rise in and out (`data-out`, `.swap` and `.captionBody` in `src/cards/cards.module.css`), and the 3D parts ease toward their new place every frame
+- where a picture on the page and a 3D card stand in for each other (the recap grid, the homepage's painted pack), the 3D one is drawn in the same spot first and made to look the same (`shade` in `stage3d.ts`) before the picture fades
+- slow work never runs while something moves: textures are painted between frames at quiet moments (`quiet` in `stage3d.ts`) and sent to the GPU ahead of the frame that needs them, and the first pictures start loading when 🎮 is tapped (`warmArt` in `morph.tsx`)
+- the light behind the pack only changes `opacity`, `translate` and `scale`, which the browser animates without repainting it
+
+Add `?slowmo=6` to the `/play/` URL to slow the 3D scene down six times when checking it frame by frame (the page's own fades keep their speed). It also puts the scene on `window.cardStage`, so a test script can wait on its clock instead of on real time.
+
+New posts and works show up as cards automatically.
