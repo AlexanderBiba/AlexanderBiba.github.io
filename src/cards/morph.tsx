@@ -6,7 +6,7 @@ import works from '../../content/works.json'
 import { packRect } from './geometry'
 import { MORPH_OVERLAY, markMorphed } from './handoff'
 import { CENTER_PACK } from './packMeta'
-import { loadImage, packOutline, paintPackFront } from './paint'
+import { loadImage, loadPackArt, packOutline, packPicture, paintPackFront } from './paint'
 import { EASE, RETURN, SHRINK_MS, shapes } from './returnMorph'
 
 const counts = { works: works.length } as Record<string, number>
@@ -39,19 +39,24 @@ function packCanvas(art: (canvas: HTMLCanvasElement) => void) {
 }
 
 // The Built pack's overlay is painted ahead of time, while the homepage is idle, so a tap on the
-// navbar's card icon starts the animation at once.
+// navbar's card icon starts the animation at once. The packs' pictures are fetched first (/play/
+// gets the same ones); a tap before they've arrived paints the pack with its creature drawn in code.
 let primed: { key: string; canvas: HTMLCanvasElement } | null = null
-const sizeKey = () => `${window.innerWidth}x${window.innerHeight}@${dpr()}`
-export function primeMorph() {
+const sizeKey = () => `${window.innerWidth}x${window.innerHeight}@${dpr()}${packPicture(CENTER_PACK) ? '+art' : ''}`
+function paintPrimed() {
   if (primed?.key === sizeKey()) return
   primed = { key: sizeKey(), canvas: packCanvas(canvas => paintPackFront(canvas, { id: CENTER_PACK, count: counts[CENTER_PACK] ?? 0 })) }
+}
+export function primeMorph() {
+  if (packPicture(CENTER_PACK)) paintPrimed()
+  else void loadPackArt().then(paintPrimed)
 }
 
 // Shrinks the visible part of the page into the shape of a card pack, right where /play/ draws
 // its center pack, then swaps in the pack's art. `done` runs as soon as the page is fully covered,
 // so /play/ starts setting up its 3D scene while the pack finishes its little bounce.
 export function morphIntoPack(app: HTMLElement, done: () => void) {
-  primeMorph()
+  paintPrimed()
   warmArt()
   const overlay = primed!.canvas
   primed = null

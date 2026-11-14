@@ -1,5 +1,5 @@
 import { extractDescription } from '../lib/description.ts'
-import type { CardData, PackData } from './types.ts'
+import type { CardArt, CardData, PackData } from './types.ts'
 import { AVATAR, PACK_META, PACK_ORDER } from './packMeta.ts'
 
 type Entry = { slug: string; title: string; date: string; content: string }
@@ -19,7 +19,9 @@ export function readingMinutes(markdown: string) {
   return Math.max(1, Math.round(words / 200))
 }
 
-export function buildPacks({ posts, works, settings }: { posts: Post[]; works: Work[]; settings: Settings }): PackData[] {
+// `art` maps a card's id to a picture made for it (content/card-art.json). It wins over what the
+// card would show otherwise, and a card that isn't listed keeps its screenshot, portrait or icon.
+export function buildPacks({ posts, works, settings, art = {} }: { posts: Post[]; works: Work[]; settings: Settings; art?: Record<string, string> }): PackData[] {
   const blog: CardData[] = newestFirst(posts).map((post, i) => {
     const image = typeof post.ogImage === 'string' ? post.ogImage : post.ogImage?.url
     return {
@@ -48,6 +50,12 @@ export function buildPacks({ posts, works, settings }: { posts: Post[]; works: W
   if (settings.email) social.push({ id: 'social-email', pack: 'social', name: 'Email', tag: 'SAY HI', meta: ['INBOX'], text: 'The best way to reach me.', art: { kind: 'icon', icon: 'mail' }, links: [{ label: 'Send an email', href: `mailto:${settings.email}` }], foot: settings.email })
   if (settings.chess) social.push({ id: 'social-chess', pack: 'social', name: 'Chess.com', tag: 'HOBBY', meta: [handle(settings.chess).toUpperCase()], text: 'Up for a game? Find me on Chess.com.', art: { kind: 'icon', icon: 'chess' }, links: [{ label: 'Challenge me', href: settings.chess }], foot: host(settings.chess) })
   if (settings.youtube3dPrinting) social.push({ id: 'social-printing', pack: 'social', name: '3D printing', tag: 'HOBBY', meta: [`@${handle(settings.youtube3dPrinting)}`], text: 'I like making things I can actually hold. Watch my 3D prints on YouTube.', art: { kind: 'icon', icon: 'printer' }, links: [{ label: 'Watch on YouTube', href: settings.youtube3dPrinting }], foot: host(settings.youtube3dPrinting) })
-  const cards = { blog, works: built, social: social.map((card, i) => ({ ...card, no: i + 1 })) }
+  const withArt = <T extends Omit<CardData, 'no'>>(card: T): T => {
+    const src = art[card.id]
+    if (!src) return card
+    const picture: CardArt = { kind: 'picture', src, ...(card.art.kind === 'icon' ? { icon: card.art.icon } : {}) }
+    return { ...card, art: picture }
+  }
+  const cards = { blog: blog.map(withArt), works: built.map(withArt), social: social.map((card, i) => ({ ...withArt(card), no: i + 1 })) }
   return PACK_ORDER.map(id => ({ id, ...PACK_META[id], cards: cards[id] }))
 }

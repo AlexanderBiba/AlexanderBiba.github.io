@@ -1,13 +1,15 @@
 // The front of a card, laid out like a classic trading card: a frame in the pack's color inside a
 // thin ring of holo foil, the name on a metal bar, the art in a window, a line that says what kind
-// of card it is, and the words in a box underneath. The pack's creature stands in the window with
-// its head coming out over the top edge. A screenshot fills the window behind it, a portrait hangs
-// in it as a framed print and an icon sits on a badge. Nothing on the card is tilted.
+// of card it is, and the words in a box underneath. A picture made for the card or a screenshot
+// fills the window. Otherwise the window shows the pack's creature (the wide picture from
+// PACK_ART, or while that hasn't loaded the one drawn in code, with its head coming out over the
+// top edge), with a portrait hanging in it as a framed print or an icon on a badge. Nothing on the
+// card is tilted.
 // Sizes are in hundredths of the card's width (`u`).
 import { PALETTE } from './palette.ts'
 import { PACK_META } from './packMeta.ts'
 import { HEAT, HERO, mix, paintBackdrop, paintHero, rays, raySeed, rgba, sparkle } from './packArt.ts'
-import { MONO, SANS, TITLE, cover, icon, roundRect, spaced, wrap } from './paint.ts'
+import { MONO, SANS, TITLE, cover, icon, packPicture, roundRect, spaced, wrap } from './paint.ts'
 import { seeded } from './shapes.ts'
 import type { CardData, CardLink, PackId } from './types.ts'
 
@@ -35,16 +37,19 @@ type Plan = ReturnType<typeof plan>
 function plan(ctx: Ctx, card: CardData, art: Pic | null, W: number, H: number) {
   const u = W / 100, id = card.pack, rand = seeded(seedOf(card.id))
   const win = { x: 6 * u, y: 20 * u, w: 88 * u, h: 60 * u, r: 2 * u }
-  // A wide picture (a screenshot) fills the window. A square one (a portrait) hangs in it as a print.
+  // A wide picture (one made for the card, or a screenshot) fills the window. A square one (a
+  // portrait) hangs in it as a print. Otherwise the pack's own picture of its creature fills it.
   const wide = !!art && art.width / art.height > 1.25
-  // The creature, with its head a little under the window's top edge (further right over a screenshot).
+  const scene = wide ? null : packPicture(id)?.window ?? null
+  // The creature drawn in code, with its head a little under the window's top edge.
   const hero = HERO[id], pw = hero.card.size * W, ph = pw / 0.55, head = hero.head
-  const hx = win.x + win.w * (wide ? 0.74 : hero.card.at), hy = win.y + hero.card.drop * u
+  const hx = win.x + win.w * hero.card.at, hy = win.y + hero.card.drop * u
   const creature = { x: hx - head.x * pw, y: hy - head.y * ph, w: pw, h: ph }
-  // A few glints around it. Over a screenshot they keep to the creature's side of the window.
-  const glints = Array.from({ length: 4 }, () => ({ x: win.x + (wide ? 0.62 + rand() * 0.33 : 0.4 + rand() * 0.55) * win.w, y: win.y + rand() * win.h * 0.8, r: (1.1 + rand() * 1.6) * u }))
+  // A few glints around the creature drawn in code. A picture brings its own.
+  const glints = wide || scene ? [] : Array.from({ length: 4 }, () => ({ x: win.x + (0.4 + rand() * 0.55) * win.w, y: win.y + rand() * win.h * 0.8, r: (1.1 + rand() * 1.6) * u }))
   const print = art && !wide ? { x: win.x + 5 * u, y: win.y + win.h - 30 * u, w: 25 * u } : null
-  const badge = !art && card.art.kind === 'icon' && card.art.icon !== 'quote' ? { icon: card.art.icon, cx: win.x + 17 * u, cy: win.y + win.h - 16 * u, r: 11 * u } : null
+  const iconName = art ? undefined : card.art.kind === 'icon' || card.art.kind === 'picture' ? card.art.icon : undefined
+  const badge = iconName && iconName !== 'quote' ? { icon: iconName, cx: win.x + 17 * u, cy: win.y + win.h - 16 * u, r: 11 * u } : null
   // The name on its bar, as big as fits: on one line if it's short, on two if it isn't.
   const bar = { x: 5 * u, y: 6.6 * u, w: (id === 'social' ? 56 : 60) * u, h: 10.4 * u, slant: 2.6 * u }
   let size = 0, lines: string[] = []
@@ -72,7 +77,7 @@ function plan(ctx: Ctx, card: CardData, art: Pic | null, W: number, H: number) {
   const text = wrap(ctx, card.text, across, links.length > 1 ? 3 : 4)
   const first = box.y + Math.max(5.6 * u, (box.h - links.length * ROW * u - text.length * lh) / 2 + 3.3 * u)
   const words = { x: box.x + 4 * u, w: across, rows: links.map((link, i) => ({ link, y: first + i * ROW * u })), text, size: textSize, lh, y: first + links.length * ROW * u - 2.2 * u }
-  return { u, W, H, salt: card.no, win, wide, creature, glints, print, badge, bar, name: { size, lines }, lineY, tag, room, box, words }
+  return { u, W, H, salt: card.no, win, wide, scene, creature, glints, print, badge, bar, name: { size, lines }, lineY, tag, room, box, words }
 }
 
 // Where one of a card's links is printed on it, as shares of the card (x and w of its width, y and
@@ -116,11 +121,12 @@ function ring(ctx: Ctx, id: PackId, p: Plan, base: (ctx: Ctx) => void, shapes: s
   ctx.restore()
 }
 
-// Over a screenshot the creature comes without what floats around it, so the picture stays clear.
+// The creature drawn in code, when the window has no picture to show.
 function creature(ctx: Ctx, id: PackId, p: Plan) {
+  if (p.wide || p.scene) return
   const c = p.creature
   ctx.save(); ctx.clip(stagePath(p)); ctx.translate(c.x, c.y)
-  paintHero(ctx, id, c.w, c.h, p.wide)
+  paintHero(ctx, id, c.w, c.h)
   ctx.restore()
 }
 
@@ -209,10 +215,11 @@ function action(ctx: Ctx, card: CardData, link: CardLink | null, x: number, w: n
   ctx.fillStyle = rgba(ink, 0.22); ctx.fillRect(x, y + 4.1 * u, w, 0.3 * u)
 }
 
-// A picture drawn to fill a box. A screenshot keeps its top edge, where a page starts.
-function coverTop(ctx: Ctx, img: Pic, x: number, y: number, w: number, h: number) {
+// A picture drawn to fill a box. A screenshot keeps its top edge, where a page starts, and any
+// other picture keeps its middle.
+function fill(ctx: Ctx, img: Pic, x: number, y: number, w: number, h: number, top: boolean) {
   const s = Math.max(w / img.width, h / img.height), sw = w / s, sh = h / s
-  ctx.drawImage(img, (img.width - sw) / 2, 0, sw, sh, x, y, w, h)
+  ctx.drawImage(img, (img.width - sw) / 2, top ? 0 : (img.height - sh) / 2, sw, sh, x, y, w, h)
 }
 
 // ---------- The painting ----------
@@ -247,15 +254,12 @@ export function paintCardFront(canvas: HTMLCanvasElement, card: CardData, total:
   ctx.strokeStyle = rgba(title.depth, 0.8); ctx.lineWidth = 0.4 * u
   ctx.beginPath(); ctx.roundRect(RING * u, RING * u, W - RING * 2 * u, H - RING * 2 * u, INNER * u); ctx.stroke()
 
-  // The window: the pack's burst, or the card's screenshot with a darker seat for the creature.
+  // The window: the card's picture or screenshot, or the pack's picture of its creature, or the
+  // pack's burst for the creature drawn in code.
   ctx.save(); ctx.clip(windowPath(p))
-  ctx.save(); ctx.translate(win.x, win.y); paintBackdrop(ctx, id, win.w, win.h, FOCUS, p.salt); ctx.restore()
-  if (art && p.wide) {
-    ctx.fillStyle = '#fff'; ctx.fillRect(win.x, win.y, win.w, win.h); coverTop(ctx, art, win.x, win.y, win.w, win.h)
-    const seat = ctx.createLinearGradient(win.x + win.w * 0.42, 0, win.x + win.w, 0)
-    seat.addColorStop(0, rgba(c.p1, 0)); seat.addColorStop(1, rgba(c.p1, 0.6))
-    ctx.fillStyle = seat; ctx.fillRect(win.x, win.y, win.w, win.h)
-  }
+  if (art && p.wide) { ctx.fillStyle = '#fff'; ctx.fillRect(win.x, win.y, win.w, win.h); fill(ctx, art, win.x, win.y, win.w, win.h, card.art.kind === 'image') }
+  else if (p.scene) fill(ctx, p.scene, win.x, win.y, win.w, win.h, false)
+  else { ctx.save(); ctx.translate(win.x, win.y); paintBackdrop(ctx, id, win.w, win.h, FOCUS, p.salt); ctx.restore() }
   ctx.restore()
   // Its rim, then the creature in front of it.
   ctx.lineWidth = 1.1 * u; ctx.strokeStyle = metal(ctx, win.y, win.h); ctx.stroke(windowPath(p, 0.9 * u))
@@ -339,10 +343,11 @@ export function paintCardSheen(canvas: HTMLCanvasElement, card: CardData, art: P
   const ctx = canvas.getContext('2d')!, W = canvas.width, H = canvas.height, id = card.pack
   const p = plan(ctx, card, art, W, H), { u, win, box } = p
   ctx.fillStyle = BODY; ctx.fillRect(0, 0, W, H)
-  // The window: foil with shinier rays, or plain ink under a screenshot.
+  // The window: foil with shinier rays behind the creature drawn in code, or plain ink under a picture.
+  const pictured = p.wide || !!p.scene
   ctx.save(); ctx.clip(windowPath(p))
-  ctx.fillStyle = p.wide ? INK : HOLO; ctx.fillRect(win.x, win.y, win.w, win.h)
-  if (!p.wide) { ctx.translate(win.x, win.y); ctx.fillStyle = RAY; rays(ctx, id, win.w, win.h, raySeed(id, p.salt), FOCUS) }
+  ctx.fillStyle = pictured ? INK : HOLO; ctx.fillRect(win.x, win.y, win.w, win.h)
+  if (!pictured) { ctx.translate(win.x, win.y); ctx.fillStyle = RAY; rays(ctx, id, win.w, win.h, raySeed(id, p.salt), FOCUS) }
   ctx.restore()
   ctx.lineWidth = 1.1 * u; ctx.strokeStyle = PLATE; ctx.stroke(windowPath(p, 0.9 * u))
   // The creature is ink over the foil: paint it, then keep only its shape.
