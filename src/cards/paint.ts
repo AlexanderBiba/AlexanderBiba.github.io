@@ -3,7 +3,7 @@
 import { PALETTE } from './palette.ts'
 import { PACK_META } from './packMeta.ts'
 import { paintBackdrop, paintHero, rays, raySeed, rgba } from './packArt.ts'
-import { RIP_Y, rip, teeth, CRIMP } from './shapes.ts'
+import { CRIMP, FIN, RIP_Y, finLift, rip, teeth } from './shapes.ts'
 import type { CardData, IconName, PackId } from './types.ts'
 
 const SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif'
@@ -161,10 +161,10 @@ export function paintPackFront(canvas: HTMLCanvasElement, opts: { id: PackId; co
   const meta = PACK_META[opts.id], title = TITLE[opts.id]
   ctx.clearRect(0, 0, W, H)
   paintBackdrop(ctx, opts.id, W, H)
-  // Darker at the top, behind the name.
-  const head = ctx.createLinearGradient(0, 0.08 * H, 0, 0.27 * H)
-  head.addColorStop(0, rgba(c.p1, 0.85)); head.addColorStop(1, rgba(c.p1, 0))
-  ctx.fillStyle = head; ctx.fillRect(0, 0.08 * H, W, 0.19 * H)
+  // A little darker at the top, behind the fine print.
+  const head = ctx.createLinearGradient(0, 0.08 * H, 0, 0.22 * H)
+  head.addColorStop(0, rgba(c.p1, 0.6)); head.addColorStop(1, rgba(c.p1, 0))
+  ctx.fillStyle = head; ctx.fillRect(0, 0.08 * H, W, 0.14 * H)
   paintHero(ctx, opts.id, W, H)
   // A shadow under the lettering at the bottom, so it reads over the art.
   const foot = ctx.createLinearGradient(0, 0.62 * H, 0, 0.93 * H)
@@ -187,11 +187,11 @@ export function paintPackFront(canvas: HTMLCanvasElement, opts: { id: PackId; co
   ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.font = `800 ${2.8 * u}px ${MONO}`; ctx.textBaseline = 'alphabetic'
   spaced(ctx, 'TEAR HERE', 96 * u, RIP_Y * H - 1.8 * u, 0.56 * u, 'right')
 
-  // Whose cards these are, under the tear line.
-  wordmark(ctx, 'ALEX BIBA', W / 2, 0.2 * H, 8.6 * u, { face: ['#ffffff', '#ffffff', c.chrome], rim: title.rim, depth: title.depth, track: 0.06 })
-  ctx.fillStyle = '#fff'; ctx.font = `800 ${2.7 * u}px ${SANS}`; ctx.textBaseline = 'middle'
+  // Fine print under the tear line: where the cards are from, and which series.
+  ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'
   ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 1.2 * u
-  spaced(ctx, 'TRADING CARDS  ✦  SERIES 01', W / 2, 0.2 * H + 4.6 * u, 0.9 * u)
+  ctx.font = `800 ${2.7 * u}px ${SANS}`; spaced(ctx, 'SERIES 01', 7 * u, 0.166 * H, 0.9 * u, 'left')
+  ctx.font = `700 ${3 * u}px ${MONO}`; spaced(ctx, 'alexbiba.com', 94 * u, 0.166 * H, 0.3 * u, 'right')
   ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0
 
   // The pack's name.
@@ -222,7 +222,7 @@ export function paintPackFront(canvas: HTMLCanvasElement, opts: { id: PackId; co
 // How each part of the front catches the light on the 3D pack, as a color: red is how much
 // rainbow sheen it has, green how rough it is, blue how much like metal (each from 0 to 1).
 const sheen = (rainbow: number, rough: number, metal: number) => `rgb(${Math.round(rainbow * 255)},${Math.round(rough * 255)},${Math.round(metal * 255)})`
-const FOIL = sheen(0.7, 0.3, 0.45), RAY = sheen(1, 0.16, 0.7), INK = sheen(0.05, 0.62, 0.04), STAMP = sheen(0.25, 0.16, 0.12), BARE = sheen(0.3, 0.3, 0.6)
+const FOIL = sheen(0.7, 0.44, 0.4), RAY = sheen(1, 0.32, 0.6), INK = sheen(0.05, 0.62, 0.04), STAMP = sheen(0.25, 0.16, 0.12), BARE = sheen(0.3, 0.3, 0.6)
 
 export function paintPackSheen(canvas: HTMLCanvasElement, id: PackId) {
   const ctx = canvas.getContext('2d')!, W = canvas.width, H = canvas.height, u = W / 100, meta = PACK_META[id]
@@ -236,7 +236,6 @@ export function paintPackSheen(canvas: HTMLCanvasElement, id: PackId) {
   ctx.drawImage(layer, 0, 0)
   // The lettering is stamped in smooth foil, with an ink rim.
   const stamp = { face: [STAMP, STAMP], rim: INK, depth: INK }
-  wordmark(ctx, 'ALEX BIBA', W / 2, 0.2 * H, 8.6 * u, { ...stamp, track: 0.06 })
   wordmark(ctx, meta.title, W / 2, 0.795 * H, (meta.title.length > 5 ? 21 : 27) * u, { ...stamp, arch: 0.07 })
   ctx.fillStyle = BARE; ctx.fillRect(0, 0, W, H * (CRIMP + 0.015)); ctx.fillRect(0, H * (1 - CRIMP - 0.015), W, H * (CRIMP + 0.015))
 }
@@ -258,13 +257,9 @@ export function paintPackBack(canvas: HTMLCanvasElement, opts: { id: PackId; nam
   paintBackdrop(ctx, opts.id, W, H)
   ctx.fillStyle = rgba(c.p1, 0.5); ctx.fillRect(0, 0, W, H)
   crimps(ctx, opts.id, W, H)
-  // The back's center seam.
-  const seam = ctx.createLinearGradient(W / 2 - 3 * u, 0, W / 2 + 3 * u, 0)
-  seam.addColorStop(0, 'rgba(0,0,0,0)'); seam.addColorStop(0.45, 'rgba(0,0,0,.25)'); seam.addColorStop(0.55, 'rgba(255,255,255,.2)'); seam.addColorStop(1, 'rgba(0,0,0,0)')
-  ctx.fillStyle = seam; ctx.fillRect(W / 2 - 3 * u, H * 0.08, 6 * u, H * 0.84)
 
   ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'
-  ctx.font = `800 ${3.6 * u}px ${SANS}`; spaced(ctx, 'ALEX BIBA  ✦  SERIES 01', W / 2, 0.105 * H, 1.1 * u)
+  ctx.font = `800 ${3.6 * u}px ${SANS}`; spaced(ctx, 'TRADING CARDS  ✦  SERIES 01', W / 2, 0.105 * H, 1.1 * u)
   wordmark(ctx, `${PACK_META[opts.id].title} PACK`, W / 2, 0.165 * H + 3.6 * u, 10 * u, TITLE[opts.id])
 
   const bx = 9 * u, by = 0.25 * H, bw = 82 * u, line = 6.2 * u, bh = 13 * u + opts.names.length * line
@@ -289,7 +284,48 @@ export function paintPackBack(canvas: HTMLCanvasElement, opts: { id: PackId; nam
   for (const w of BARS) { ctx.fillRect(x, byl + 1.6 * u, w * 0.55 * u, 9.8 * u); x += w * 0.55 * u + 0.55 * u }
   ctx.fillStyle = '#fff'; ctx.font = `700 ${3 * u}px ${MONO}`
   spaced(ctx, 'alexbiba.com/play', W / 2, byl + 16.5 * u, 0.3 * u)
+  finSeal(ctx, W, H)
   sideShading(ctx, W, H)
+}
+
+// The fin seal down the back, over the print: the light and shade of a flap of foil that's creased
+// along its hinge and stands a little off the pack at its free edge (the flap itself is in
+// pillowGeometry). Where the ends are crimped it's pressed flat, so only its outline shows there.
+function finSeal(ctx: Ctx, W: number, H: number) {
+  const u = W / 100, hinge = FIN.x * W, free = (FIN.x + FIN.w) * W
+  ctx.save()
+  // The flap: in shade by the crease, catching the light toward its raised edge, with the fine
+  // ridges the sealing jaws press into it.
+  const body = ctx.createLinearGradient(hinge, 0, free, 0)
+  body.addColorStop(0, 'rgba(0,0,0,.2)'); body.addColorStop(0.4, 'rgba(0,0,0,0)'); body.addColorStop(1, 'rgba(255,255,255,.1)')
+  ctx.fillStyle = body; ctx.fillRect(hinge, 0, free - hinge, H)
+  const ridge = Math.max(1, 0.55 * u)
+  for (let y = 0; y < H; y += ridge * 2) {
+    ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.fillRect(hinge, y, free - hinge, ridge)
+    ctx.fillStyle = 'rgba(0,0,0,.07)'; ctx.fillRect(hinge, y + ridge, free - hinge, ridge)
+  }
+  // The crease it folds along.
+  ctx.fillStyle = 'rgba(0,0,0,.42)'; ctx.fillRect(hinge - 0.5 * u, 0, 0.6 * u, H)
+  ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fillRect(hinge + 0.1 * u, 0, 0.4 * u, H)
+  // Its free edge: a bright line of cut foil with a hairline of shade beside it. The shadow it
+  // throws where it stands off the pack is in the model, so it stays under the flap as the pack turns.
+  ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.fillRect(free - 0.5 * u, 0, 0.5 * u, H)
+  ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(free, 0, 0.35 * u, H)
+  ctx.restore()
+}
+
+// The fin gets its own copy of the print that runs across it, and the back loses the print under
+// the fin's raised edge. Looking under the flap from the side then shows shade instead of the
+// same letters twice.
+export function paintPackFin(fin: HTMLCanvasElement, back: HTMLCanvasElement) {
+  const W = back.width, H = back.height, x = FIN.x * W, y = FIN.top * H, w = FIN.w * W, h = (FIN.bottom - FIN.top) * H
+  fin.getContext('2d')!.drawImage(back, x, y, w, h, 0, 0, fin.width, fin.height)
+  const ctx = back.getContext('2d')!, shade = ctx.createLinearGradient(x, 0, x + w, 0)
+  shade.addColorStop(0.25, 'rgba(10,8,24,0)'); shade.addColorStop(0.5, 'rgba(10,8,24,.9)'); shade.addColorStop(1, 'rgba(10,8,24,.9)')
+  ctx.save(); ctx.fillStyle = shade
+  const slice = Math.max(1, Math.round(H / 400))
+  for (let at = 0; at < h; at += slice) { ctx.globalAlpha = finLift((at + slice / 2) / h); ctx.fillRect(x, y + at, w, slice) }
+  ctx.restore()
 }
 
 // White where the wrapper is, clear outside it: the serrated ends and, for a torn pack, the rip.
@@ -399,7 +435,7 @@ export function paintCardBack(canvas: HTMLCanvasElement, id: PackId) {
   for (let s = -H; s < W + H; s += 7 * u) { ctx.beginPath(); ctx.moveTo(s, H); ctx.lineTo(s + H, 0); ctx.stroke() }
   roundRect(ctx, 5 * u, 5 * u, W - 10 * u, H - 10 * u, 3 * u); ctx.strokeStyle = c.chrome; ctx.lineWidth = 1.2 * u; ctx.stroke()
   icon(ctx, `pack-${id}`, W / 2 - 18 * u, H / 2 - 24 * u, 36 * u, c.chrome)
-  ctx.fillStyle = c.chrome; ctx.font = `800 ${4 * u}px ${SANS}`; ctx.textBaseline = 'middle'
-  spaced(ctx, 'ALEX BIBA', W / 2, H / 2 + 20 * u, 1.2 * u)
+  ctx.fillStyle = c.chrome; ctx.font = `700 ${3.8 * u}px ${MONO}`; ctx.textBaseline = 'middle'
+  spaced(ctx, 'alexbiba.com', W / 2, H / 2 + 20 * u, 0.5 * u)
   ctx.restore()
 }

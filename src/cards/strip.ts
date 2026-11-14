@@ -2,11 +2,14 @@
 // together by springs (Verlet integration), so it bends, peels and flutters instead of moving
 // as one rigid piece. Coordinates are the pack's local ones (CSS pixels, y up).
 import * as THREE from 'three'
-import { RIP_Y, pillow } from './shapes.ts'
+import { RIP_Y, TEETH, TOOTH, pillow } from './shapes.ts'
 
 const NX = 24, NY = 4
 // The strip reaches a bit below the tear line so the jagged rip (cut by the alpha mask) fits.
 const DEPTH_Y = RIP_Y + 0.016
+// Its edges, as on the pack (pillowGeometry): a band along the serrated top, two points per tooth
+// point, and a rounded fold down each short side, four points per row.
+const TOP = TEETH * 2 + 1, SIDE = (NY + 1) * 4
 const STEP = 1 / 120
 // It runs a third faster than real time: the pace its springs and speeds were tuned at.
 const PACE = 1.35
@@ -37,12 +40,12 @@ export class FoilStrip {
   private owed = 0
   private spin = 0
 
-  constructor(private w: number, private h: number, depth: number) {
+  constructor(private w: number, private h: number, depth: number, private edge: number) {
     const idx = (i: number, j: number) => j * (NX + 1) + i
     for (let j = 0; j <= NY; j++) for (let i = 0; i <= NX; i++) {
       const k = idx(i, j), fx = i / NX, fy = (j / NY) * DEPTH_Y
       this.rest.set([(fx - 0.5) * w, (0.5 - fy) * h, 0], k * 3)
-      this.thick[k] = depth / 2 * pillow(fx, fy) + 0.4
+      this.thick[k] = depth / 2 * pillow(fx, fy) + edge
       this.fx[k] = fx
     }
     const link = (a: number, b: number, stiff: number) => {
@@ -59,23 +62,42 @@ export class FoilStrip {
     }
 
     // Front and back surfaces share the simulated points, pushed apart by the pack's puff.
-    const uv: number[] = [], index: number[] = []
+    // `index` holds the triangles of the front material, then the back's.
+    const uv: number[] = [], index: number[][] = [[], []]
     for (const side of [1, -1]) for (let j = 0; j <= NY; j++) for (let i = 0; i <= NX; i++) {
       const fx = i / NX, fy = (j / NY) * DEPTH_Y
       uv.push(side === 1 ? fx : 1 - fx, 1 - fy)
     }
-    const faces = (base: number, flip: boolean) => {
+    const faces = (base: number, flip: boolean, material: number) => {
       for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
         const a = base + idx(i, j), b = a + 1, c = a + NX + 1, d = c + 1
-        if (flip) index.push(a, b, c, b, d, c); else index.push(a, c, b, b, c, d)
+        if (flip) index[material].push(a, b, c, b, d, c); else index[material].push(a, c, b, b, c, d)
       }
     }
-    faces(0, false); faces(this.n, true)
-    this.geometry.setIndex(index)
-    this.geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(this.n * 6), 3))
+    faces(0, false, 0); faces(this.n, true, 1)
+    // The edges, placed every frame in updateGeometry. Each band runs clockwise around the outline
+    // (seen from the front), so it faces outward.
+    const band = (near: (i: number) => number, far: (i: number) => number, count: number, material: number, reverse = false) => {
+      for (let i = 0; i < count - 1; i++) {
+        const [a, b] = reverse ? [i + 1, i] : [i, i + 1]
+        index[material].push(near(a), near(b), far(a), near(b), far(b), far(a))
+      }
+    }
+    const top = this.n * 2
+    for (let i = 0; i < TOP; i++) { const u = Math.min(0.98, Math.max(0.02, i / (TOP - 1))); uv.push(u, 0.97, u, 0.97) }
+    band(i => top + i * 2, i => top + i * 2 + 1, TOP, 0)
+    for (const right of [0, 1]) {
+      const base = top + TOP * 2 + right * SIDE, u = right ? 0.996 : 0.004
+      for (let j = 0; j <= NY; j++) { const v = 1 - (j / NY) * DEPTH_Y; uv.push(u, v, u, v, 1 - u, v, 1 - u, v) }
+      // Down the right side and up the left one.
+      band(j => base + j * 4, j => base + j * 4 + 1, NY + 1, 0, !right)
+      band(j => base + j * 4 + 2, j => base + j * 4 + 3, NY + 1, 1, !right)
+    }
+    this.geometry.setIndex(index.flat())
+    this.geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array((this.n * 2 + TOP * 2 + SIDE * 2) * 3), 3))
     this.geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2))
     // Groups match the pack's materials: 0 front, 1 back.
-    this.geometry.addGroup(0, index.length / 2, 0); this.geometry.addGroup(index.length / 2, index.length / 2, 1)
+    this.geometry.addGroup(0, index[0].length, 0); this.geometry.addGroup(index[0].length, index[1].length, 1)
     this.reset()
   }
 
@@ -218,6 +240,25 @@ export class FoilStrip {
         arr[base + o + 1] = p[o + 1] + nrm.y * t * side
         arr[base + o + 2] = p[o + 2] + nrm.z * t * side
       }
+    }
+    // The edges ride on the two surfaces: the serrated top between the first two rows of points,
+    // and a fold down each short side that bulges out a little halfway through.
+    const back = this.n * 3
+    let o = this.n * 6
+    for (let i = 0; i < TOP; i++) {
+      const gx = i / (TOP - 1) * NX, i0 = Math.min(NX - 1, Math.floor(gx)), sx = gx - i0, sy = i % 2 ? TOOTH / DEPTH_Y * NY : 0
+      for (const base of [0, back]) for (let c = 0; c < 3; c++) {
+        const a = arr[base + at(i0, 0) + c], b = arr[base + at(i0 + 1, 0) + c], d = arr[base + at(i0, 1) + c], e = arr[base + at(i0 + 1, 1) + c]
+        arr[o++] = (a + (b - a) * sx) * (1 - sy) + (d + (e - d) * sx) * sy
+      }
+    }
+    for (const right of [0, 1]) for (let j = 0; j <= NY; j++) {
+      const k = at(right ? NX : 0, j), inner = at(right ? NX - 1 : 1, j)
+      tx.set(p[k] - p[inner], p[k + 1] - p[inner + 1], p[k + 2] - p[inner + 2]).normalize().multiplyScalar(this.edge / 2)
+      const mid = [0, 1, 2].map(c => (arr[k + c] + arr[back + k + c]) / 2 + tx.getComponent(c))
+      for (let c = 0; c < 3; c++) arr[o++] = arr[k + c]
+      arr.set(mid, o); arr.set(mid, o + 3); o += 6
+      for (let c = 0; c < 3; c++) arr[o++] = arr[back + k + c]
     }
     pos.needsUpdate = true
     this.geometry.computeVertexNormals()

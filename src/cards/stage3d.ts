@@ -4,9 +4,9 @@
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { CARD_RATIO, PACK_RATIO, packRect, packSpacing, stackRect, zoomRect } from './geometry.ts'
-import { paintCardBack, paintCardFoil, paintCardFront, paintPackBack, paintPackFront, paintPackMask, paintPackSheen, loadImage } from './paint.ts'
+import { paintCardBack, paintCardFoil, paintCardFront, paintPackBack, paintPackFin, paintPackFront, paintPackMask, paintPackSheen, loadImage } from './paint.ts'
 import { PALETTE } from './palette.ts'
-import { RIP_Y, pillow } from './shapes.ts'
+import { EDGE, FIN, RIP_Y, finLift, pillow, smooth, teeth } from './shapes.ts'
 import { tilt as deviceTilt } from './motion.ts'
 import { FoilStrip } from './strip.ts'
 import type { PackData } from './types.ts'
@@ -67,36 +67,93 @@ function texture(c: HTMLCanvasElement, color = true, upload = true) {
 }
 
 // The wrapper: a closed foil pillow. Front and back meet at the folded long sides and are
-// sealed flat at the crimped ends. Groups: 0 front, 1 back, 2 inside of the front, 3 inside of the back.
+// sealed flat at the crimped ends, with a fin seal folded over down the back.
+// Materials: 0 front, 1 back, 2 inside of the front (and the fin's bare underside), 3 inside of the
+// back, 4 the print on the fin (its own little texture, see paintPackFin).
 export function pillowGeometry(w: number, h: number, depth: number, segX = 28, segY = 56) {
   const g = new THREE.BufferGeometry()
-  const pos: number[] = [], uv: number[] = [], index: number[] = []
-  const grid = (side: 1 | -1) => {
+  const pos: number[] = [], uv: number[] = [], shade: number[] = [], index: number[][] = [[], [], [], [], []]
+  const edge = w * EDGE
+  const vert = (x: number, y: number, z: number, u: number, v: number, light = 1) => { pos.push(x, y, z); uv.push(u, v); shade.push(light, light, light); return pos.length / 3 - 1 }
+  const grid = (side: 1 | -1, shaded = false) => {
     const base = pos.length / 3
     for (let j = 0; j <= segY; j++) for (let i = 0; i <= segX; i++) {
-      const fx = i / segX, fy = j / segY
-      // Never quite flat, even at the crimped ends and folds: where the front and the back's inside
-      // meet at the same depth, the silver inside would show through instead of the print.
-      pos.push((fx - 0.5) * w, (0.5 - fy) * h, side * (depth / 2 * pillow(fx, fy) + 0.4))
-      uv.push(side === 1 ? fx : 1 - fx, 1 - fy)
+      const fx = i / segX, fy = j / segY, u = side === 1 ? fx : 1 - fx
+      // The back is in shadow under the fin, and just past its free edge (the grid's next column out).
+      const under = shaded && u > FIN.x + 0.01 && u < FIN.x + FIN.w ? finLift((fy - FIN.top) / (FIN.bottom - FIN.top)) : 0
+      // Never thinner than two sheets pressed together, at the crimped ends and the folds.
+      vert((fx - 0.5) * w, (0.5 - fy) * h, side * (depth / 2 * pillow(fx, fy) + edge), u, 1 - fy, 1 - 0.62 * under)
     }
     return base
   }
-  const faces = (base: number, flip: boolean) => {
-    const start = index.length
+  const faces = (base: number, flip: boolean, material: number) => {
     for (let j = 0; j < segY; j++) for (let i = 0; i < segX; i++) {
       const a = base + j * (segX + 1) + i, b = a + 1, c = a + segX + 1, d = c + 1
-      if (flip) index.push(a, b, c, b, d, c); else index.push(a, c, b, b, c, d)
+      if (flip) index[material].push(a, b, c, b, d, c); else index[material].push(a, c, b, b, c, d)
     }
-    return [start, index.length - start]
   }
   // The insides get their own vertices so their normals point inward instead of cancelling out.
-  const front = grid(1), back = grid(-1), frontInside = grid(1), backInside = grid(-1)
-  const groups = [faces(front, false), faces(back, true), faces(frontInside, true), faces(backInside, false)]
-  g.setIndex(index)
+  faces(grid(1), false, 0); faces(grid(-1, true), true, 1); faces(grid(1), true, 2); faces(grid(-1), false, 3)
+
+  // The edges. `near` and `far` are two rows of points running clockwise around the outline (as
+  // seen from the front), `near` the one closer to the front: the band between them faces outward.
+  const band = (near: number[], far: number[], material: number) => {
+    for (let i = 0; i < near.length - 1; i++) index[material].push(near[i], near[i + 1], far[i], near[i + 1], far[i + 1], far[i])
+  }
+  // The cut ends follow the serrated teeth and show the crimp's bare foil. Their texture spot
+  // sits a little inside the outline, so the mask that cuts the teeth doesn't cut the edge away.
+  const inset = (fx: number) => clamp(fx, 0.02, 0.98)
+  for (const [points, fy] of [[teeth(0, 1), 0.03], [teeth(1, -1).reverse(), 0.97]] as const) {
+    const row = (z: number) => points.map(([x, y]) => vert((x - 0.5) * w, (0.5 - y) * h, z, inset(x), 1 - fy))
+    band(row(edge), row(-edge), 0)
+  }
+  // The long sides are folds, so they're rounded off and the print runs around them: the front's
+  // print on the front half, the back's on the back half.
+  for (const fx of [1, 0]) {
+    const x = (fx - 0.5) * w, out = (fx - 0.5) * edge, ends = fx ? [0, 1] : [1, 0]
+    const row = (dx: number, z: number, u: number) => ends.map(fy => vert(x + dx, (0.5 - fy) * h, z, u, 1 - fy))
+    const u = clamp(fx, 0.004, 0.996)
+    band(row(0, edge, u), row(out, 0, u), 0)
+    band(row(out, 0, 1 - u), row(0, -edge, 1 - u), 1)
+  }
+
+  // The fin seal: a flap of doubled foil hinged down the middle of the back, lying over to one side
+  // with its free edge a little off the pack. It hugs the pack's curve and flattens into it at both ends.
+  const S = 5, T = 40, sheet = w * 0.005
+  // A point on the fin, `k` of the way from its hinge to its free edge and `along` of the way down
+  // it, on its printed top (`skin` 1) or its bare underside (0).
+  const finPoint = (k: number, along: number, skin: number, own = false) => {
+    const u = FIN.x + FIN.w * k, fx = 1 - u, fy = lerp(FIN.top, FIN.bottom, along)
+    // The top never quite touches the pack, so the two don't flicker where the fin lies flat.
+    const seal = 0.3 + 0.7 * smooth(0, 0.3, k) * smooth(0, 0.03, along) * smooth(0, 0.03, 1 - along)
+    const off = FIN.lift * w * k ** 1.5 * finLift(along) + skin * sheet * seal
+    // The printed top is mapped onto the fin's own texture (`own`), the bare parts onto the pack's,
+    // for its outline mask.
+    return vert((fx - 0.5) * w, (0.5 - fy) * h, -(depth / 2 * pillow(fx, fy) + edge) - off, own ? k : u, own ? 1 - along : 1 - fy)
+  }
+  const finGrid = (skin: number) => {
+    const base = pos.length / 3
+    for (let t = 0; t <= T; t++) for (let s = 0; s <= S; s++) finPoint(s / S, t / T, skin, skin === 1)
+    return base
+  }
+  const top = finGrid(1), under = finGrid(0)
+  for (let t = 0; t < T; t++) for (let s = 0; s < S; s++) {
+    const at = (base: number) => { const a = base + t * (S + 1) + s; return [a, a + 1, a + S + 1, a + S + 2] }
+    const [a, b, c, d] = at(top), [e, f, m, n] = at(under)
+    index[4].push(a, c, b, b, c, d)
+    index[2].push(e, f, m, f, n, m)
+  }
+  // The fin's cut edge, bare foil: from the height of its top down to its underside.
+  const free = (skin: number) => Array.from({ length: T + 1 }, (_, t) => finPoint(1, t / T, skin))
+  band(free(1), free(0), 2)
+
+  g.setIndex(index.flat())
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2))
-  groups.forEach(([start, count], i) => g.addGroup(start, count, i))
+  // Only the back's material reads this (vertexColors).
+  g.setAttribute('color', new THREE.Float32BufferAttribute(shade, 3))
+  let start = 0
+  index.forEach((list, i) => { g.addGroup(start, list.length, i); start += list.length })
   g.computeVertexNormals()
   return g
 }
@@ -107,7 +164,7 @@ function cutGeometry(w: number, h: number, depth: number, seg = 28) {
   const g = new THREE.BufferGeometry(), pos: number[] = [], uv: number[] = [], index: number[] = []
   const y = (0.5 - RIP_Y) * h, band = h * CUT_BAND
   for (let i = 0; i <= seg; i++) {
-    const fx = i / seg, z = depth / 2 * pillow(fx, RIP_Y) + 1
+    const fx = i / seg, z = depth / 2 * pillow(fx, RIP_Y) + w * EDGE + 0.6
     pos.push((fx - 0.5) * w, y - band / 2, z, (fx - 0.5) * w, y + band / 2, z)
     uv.push(fx, 0, fx, 1)
     if (i < seg) { const a = i * 2; index.push(a, a + 2, a + 1, a + 1, a + 2, a + 3) }
@@ -325,26 +382,29 @@ export class CardStage {
     masks.forEach(mask => this.renderer.initTexture(mask))
     this.data.forEach((data, i) => {
       // The back only shows once a pack is picked and spun, so it's painted later (paintBacks).
-      const front = canvas(tw, th), back = canvas(tw, th)
+      const front = canvas(tw, th), back = canvas(tw, th), fin = canvas(tw * FIN.w, th * (FIN.bottom - FIN.top))
       paintPackFront(front, { id: data.id, count: data.cards.length })
       this.fronts[i] = front
-      const frontTex = texture(front), backTex = texture(back, true, false)
+      const frontTex = texture(front), backTex = texture(back, true, false), finTex = texture(fin, true, false)
       // How the front catches the light: the burst is mirror foil, the creature and the small print are ink.
       const sheen = canvas(tw / 2, th / 2)
       paintPackSheen(sheen, data.id)
       const sheenTex = texture(sheen, false)
-      const foil = (map: THREE.Texture, alphaMap: THREE.Texture, shine?: THREE.Texture) => new THREE.MeshPhysicalMaterial({
-        map, alphaMap, alphaTest: 0.5, transparent: true, clearcoat: 0.35, clearcoatRoughness: 0.3, iridescenceIOR: 1.4, iridescenceThicknessRange: [250, 750],
+      // `shaded`: darkened by the geometry's vertex colors (the shadow under the back's fin). The
+      // fin has no outline mask: it lies well inside the pack's.
+      const foil = (map: THREE.Texture, alphaMap?: THREE.Texture, shine?: THREE.Texture, shaded = false) => new THREE.MeshPhysicalMaterial({
+        map, transparent: true, clearcoat: 0.35, clearcoatRoughness: 0.3, iridescenceIOR: 1.4, iridescenceThicknessRange: [250, 750], vertexColors: shaded,
+        ...(alphaMap ? { alphaMap, alphaTest: 0.5 } : {}),
         ...(shine ? { metalness: 1, roughness: 1, iridescence: 1, metalnessMap: shine, roughnessMap: shine, iridescenceMap: shine } : { metalness: 0.2, roughness: 0.45, iridescence: 0.4 }),
       })
       const inside = (alphaMap: THREE.Texture) => new THREE.MeshPhysicalMaterial({ color: 0xc8cdd8, alphaMap, alphaTest: 0.5, transparent: true, metalness: 0.9, roughness: 0.35 })
       const make = (alpha: THREE.Texture) => {
-        const mats = [foil(frontTex, alpha, sheenTex), foil(backTex, alpha), inside(alpha), inside(alpha)]
+        const mats = [foil(frontTex, alpha, sheenTex), foil(backTex, alpha, undefined, true), inside(alpha), inside(alpha), foil(finTex)]
         return new THREE.Mesh(geo, mats)
       }
       const whole = make(masks[0]), body = make(masks[2])
       // The strip you tear off is its own soft piece of foil (strip.ts).
-      const strip = new FoilStrip(w, h, w * PUFF)
+      const strip = new FoilStrip(w, h, w * PUFF, w * EDGE)
       const flap = new THREE.Mesh(strip.geometry, [foil(frontTex, masks[1], sheenTex), foil(backTex, masks[1])])
       const cut = new THREE.Mesh(cutGeo, cutMaterial(PALETTE[data.id].glow))
       // Makes the bright head at the finger round: the band is this many times longer than half its height.
@@ -386,9 +446,10 @@ export class CardStage {
   private paintBack(i: number) {
     if (this.backPainted[i] || !this.packs[i]) return
     this.backPainted[i] = true
-    const data = this.data[i], tex = (this.packs[i].whole.material as THREE.MeshPhysicalMaterial[])[1].map!
+    const data = this.data[i], mats = this.packs[i].whole.material as THREE.MeshPhysicalMaterial[], tex = mats[1].map!, fin = mats[4].map!
     paintPackBack(tex.image as HTMLCanvasElement, { id: data.id, names: data.cards.map(c => c.name) })
-    tex.needsUpdate = true
+    paintPackFin(fin.image as HTMLCanvasElement, tex.image as HTMLCanvasElement)
+    tex.needsUpdate = fin.needsUpdate = true
   }
 
   // The pack in front first: it's the one that can be turned around.
