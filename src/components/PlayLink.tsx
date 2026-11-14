@@ -42,15 +42,14 @@ export default function PlayLink() {
         morphIntoPack(app, () => router.push('/play/'))
       }}
     >
-      {/* A fan of three cards, one in each pack's color. */}
+      {/* Two cards with a small star in the Built pack's color. The ring around them is in Navbar.scss. */}
       <span aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="26" height="26">
-          <g stroke="#1a1a1a" strokeWidth="1.3" strokeLinejoin="round">
-            <rect x="7.5" y="5" width="9" height="13" rx="1.7" fill="#ff8a4c" transform="rotate(-28 12 20)" />
-            <rect x="7.5" y="5" width="9" height="13" rx="1.7" fill="#8b5cf6" transform="rotate(28 12 20)" />
-            <rect x="7.5" y="3.5" width="9" height="13" rx="1.7" fill="#22c7c0" />
+        <svg viewBox="0 0 24 24">
+          <g transform="translate(-1.2 1.6) scale(.92)" fill="#fff" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+            <rect x="4.5" y="5" width="9.5" height="13.5" rx="1.8" transform="rotate(-12 9.25 11.75)" />
+            <rect x="10" y="5.5" width="9.5" height="13.5" rx="1.8" transform="rotate(10 14.75 12.25)" />
           </g>
-          <path d="M12 6.6l.95 2.45 2.45.95-2.45.95L12 13.4l-.95-2.45L8.6 10l2.45-.95z" fill="#fff" />
+          <path d="M19.6 1.5l.87 2.23 2.23.87-2.23.87-.87 2.23-.87-2.23-2.23-.87 2.23-.87z" fill="#22c7c0" />
         </svg>
       </span>
     </Link>
