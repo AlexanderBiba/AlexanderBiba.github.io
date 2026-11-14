@@ -9,6 +9,8 @@ export type CardData = {
   name: string
   tag: string
   meta: string[]
+  // The big number in the card's corner, when it has one: minutes to read, the year it was built.
+  stat?: { label: string; value: string }
   text: string
   art: CardArt
   links: CardLink[]

@@ -6,13 +6,14 @@ import type { PackId } from './types.ts'
 
 type Ctx = CanvasRenderingContext2D
 type Rand = () => number
+type Focus = { x: number; y: number }
 const TAU = Math.PI * 2
 
 // Where the light bursts from and the creature sits, as shares of the pack's width and height.
 export const FOCUS = { x: 0.5, y: 0.43 }
 
 // The hottest color of each pack's burst, and the color of its sparks.
-const HEAT: Record<PackId, { hot: string; spark: string }> = {
+export const HEAT: Record<PackId, { hot: string; spark: string }> = {
   blog: { hot: '#ffe27a', spark: '#fff3c4' },
   works: { hot: '#b8fff4', spark: '#e2fffb' },
   social: { hot: '#fff0b0', spark: '#fff8d8' },
@@ -59,19 +60,20 @@ export function bolt(ctx: Ctx, x0: number, y0: number, x1: number, y1: number, r
 }
 
 // The rays of the burst: wedges of uneven width, filled with whatever fill is set.
-export function rays(ctx: Ctx, id: PackId, W: number, H: number, rand: Rand) {
-  const fx = W * FOCUS.x, fy = H * FOCUS.y, far = Math.hypot(W, H) * 0.84
+export function rays(ctx: Ctx, id: PackId, W: number, H: number, rand: Rand, focus = FOCUS) {
+  const fx = W * focus.x, fy = H * focus.y, far = Math.hypot(W, H) * 0.84
   for (let i = 0; i < 22; i++) {
     const a = (i + rand() * 0.7) / 22 * TAU, w = 0.025 + rand() * 0.065
     ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx + Math.cos(a - w) * far, fy + Math.sin(a - w) * far); ctx.lineTo(fx + Math.cos(a + w) * far, fy + Math.sin(a + w) * far); ctx.closePath(); ctx.fill()
   }
 }
-export const raySeed = (id: PackId) => seeded(id.length * 131 + 17)
+// `salt` gives a different burst for the same pack (each card has its own).
+export const raySeed = (id: PackId, salt = 0) => seeded(id.length * 131 + 17 + salt * 977)
 
 // The burst behind the creature: a hot core, rays, streaks of speed, and sparks.
-function burst(ctx: Ctx, id: PackId, W: number, H: number) {
-  const u = W / 100, c = PALETTE[id], heat = HEAT[id], fx = W * FOCUS.x, fy = H * FOCUS.y, far = Math.hypot(W, H) * 0.6
-  const rand = raySeed(id)
+function burst(ctx: Ctx, id: PackId, W: number, H: number, focus: Focus, salt: number) {
+  const u = W / 100, c = PALETTE[id], heat = HEAT[id], fx = W * focus.x, fy = H * focus.y, far = Math.hypot(W, H) * 0.6
+  const rand = raySeed(id, salt)
   const base = ctx.createRadialGradient(fx, fy, 0, fx, fy, far)
   base.addColorStop(0, '#fff'); base.addColorStop(0.07, heat.hot); base.addColorStop(0.24, c.p3); base.addColorStop(0.5, c.p2); base.addColorStop(0.9, c.p1)
   ctx.fillStyle = base; ctx.fillRect(0, 0, W, H)
@@ -81,7 +83,7 @@ function burst(ctx: Ctx, id: PackId, W: number, H: number) {
   const ray = ctx.createRadialGradient(fx, fy, 0, fx, fy, far)
   ray.addColorStop(0, rgba(heat.hot, 0)); ray.addColorStop(0.16, rgba(heat.hot, 0.26)); ray.addColorStop(0.6, rgba(c.p3, 0.14)); ray.addColorStop(1, rgba(c.p3, 0))
   ctx.fillStyle = ray
-  rays(ctx, id, W, H, rand)
+  rays(ctx, id, W, H, rand, focus)
   // Streaks of speed flying outward.
   ctx.lineCap = 'round'
   for (let i = 0; i < 70; i++) {
@@ -112,8 +114,8 @@ function halftone(ctx: Ctx, W: number, H: number, cx: number, cy: number, reach:
   ctx.fillStyle = color; ctx.fill()
 }
 
-function sparks(ctx: Ctx, id: PackId, W: number, H: number, count: number) {
-  const u = W / 100, heat = HEAT[id], rand = seeded(id.length * 53 + 5), fx = W * FOCUS.x, fy = H * FOCUS.y
+function sparks(ctx: Ctx, id: PackId, W: number, H: number, count: number, focus: Focus, salt: number) {
+  const u = W / 100, heat = HEAT[id], rand = seeded(id.length * 53 + 5 + salt * 389), fx = W * focus.x, fy = H * focus.y
   ctx.save(); ctx.globalCompositeOperation = 'lighter'
   for (let i = 0; i < count; i++) {
     const a = rand() * TAU, d = (0.25 + rand() * 0.75) * W * 0.85, x = fx + Math.cos(a) * d * 0.75, y = fy + Math.sin(a) * d * 1.25
@@ -123,16 +125,16 @@ function sparks(ctx: Ctx, id: PackId, W: number, H: number, count: number) {
 }
 
 // Everything behind the creature.
-export function paintBackdrop(ctx: Ctx, id: PackId, W: number, H: number) {
+export function paintBackdrop(ctx: Ctx, id: PackId, W: number, H: number, focus = FOCUS, salt = 0) {
   const c = PALETTE[id]
-  burst(ctx, id, W, H)
+  burst(ctx, id, W, H, focus, salt)
   halftone(ctx, W, H, 0, H, W * 0.95, rgba(c.p1, 0.5))
   halftone(ctx, W, H, W, 0, W * 0.8, rgba(c.p1, 0.42))
   // Darker toward the corners, so the middle glows.
-  const dark = ctx.createRadialGradient(W * FOCUS.x, H * FOCUS.y, W * 0.45, W * FOCUS.x, H * FOCUS.y, Math.hypot(W, H) * 0.62)
+  const dark = ctx.createRadialGradient(W * focus.x, H * focus.y, W * 0.45, W * focus.x, H * focus.y, Math.hypot(W, H) * 0.62)
   dark.addColorStop(0, rgba(c.p1, 0)); dark.addColorStop(1, rgba(c.p1, 0.78))
   ctx.fillStyle = dark; ctx.fillRect(0, 0, W, H)
-  sparks(ctx, id, W, H, 34)
+  sparks(ctx, id, W, H, 34, focus, salt)
 }
 
 // ---------- A little 3D for the golem: boxes turned in space and drawn flat, far ones first ----------

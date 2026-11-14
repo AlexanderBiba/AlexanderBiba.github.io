@@ -24,7 +24,7 @@ export function buildPacks({ posts, works, settings }: { posts: Post[]; works: W
     const image = typeof post.ogImage === 'string' ? post.ogImage : post.ogImage?.url
     return {
       id: `blog-${post.slug}`, pack: 'blog', no: i + 1, name: post.title, tag: 'POST',
-      meta: [monthYear(post.date), `${readingMinutes(post.content)} MIN READ`],
+      meta: [monthYear(post.date)], stat: { label: 'MIN READ', value: String(readingMinutes(post.content)) },
       text: extractDescription(post.content, 150),
       art: image ? { kind: 'image', src: image } : { kind: 'icon', icon: 'quote' },
       links: [{ label: 'Read the post', href: `/blog/${post.slug}/` }],
@@ -33,11 +33,11 @@ export function buildPacks({ posts, works, settings }: { posts: Post[]; works: W
   })
   const built: CardData[] = newestFirst(works).map((work, i) => ({
     id: `works-${work.slug}`, pack: 'works', no: i + 1, name: work.title, tag: 'BUILT',
-    meta: [work.date.slice(0, 4)],
+    meta: [work.url ? host(work.url) : 'alexbiba.com/works'], stat: { label: 'YEAR', value: work.date.slice(0, 4) },
     text: extractDescription(work.content, 150),
     art: work.image ? { kind: 'image', src: work.image } : { kind: 'icon', icon: 'quote' },
     links: [...(work.url ? [{ label: `Visit ${host(work.url)}`, href: work.url }] : []), { label: 'Read about it', href: `/works/${work.slug}/` }],
-    foot: work.url ? host(work.url) : 'alexbiba.com/works',
+    foot: 'alexbiba.com/works',
   }))
   const social: Omit<CardData, 'no'>[] = [
     { id: 'social-alex', pack: 'social', name: settings.name, tag: 'ME', meta: ['ENGINEER', 'HUSBAND', 'DAD'], text: settings.aboutBlurb, art: { kind: 'image', src: AVATAR }, links: [], foot: 'alexbiba.com' },

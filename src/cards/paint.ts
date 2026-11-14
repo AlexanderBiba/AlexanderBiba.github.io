@@ -4,10 +4,10 @@ import { PALETTE } from './palette.ts'
 import { PACK_META } from './packMeta.ts'
 import { paintBackdrop, paintHero, rays, raySeed, rgba } from './packArt.ts'
 import { CRIMP, FIN, RIP_Y, finLift, rip, teeth } from './shapes.ts'
-import type { CardData, IconName, PackId } from './types.ts'
+import type { IconName, PackId } from './types.ts'
 
-const SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif'
-const MONO = 'ui-monospace, SFMono-Regular, Menlo, monospace'
+export const SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif'
+export const MONO = 'ui-monospace, SFMono-Regular, Menlo, monospace'
 type Ctx = CanvasRenderingContext2D
 
 // Line icons on a 64-unit grid, from the same drawings the site used as SVG.
@@ -24,7 +24,7 @@ const ICONS: Record<IconName | `pack-${PackId}`, { d: string[]; fill?: boolean; 
   'pack-social': { d: ['M10 14h36a4 4 0 0 1 4 4v20a4 4 0 0 1-4 4H26l-10 9v-9h-6a4 4 0 0 1-4-4V18a4 4 0 0 1 4-4Z', 'M18 26h20M18 33h12'] },
 }
 
-function icon(ctx: Ctx, name: keyof typeof ICONS, x: number, y: number, size: number, color: string) {
+export function icon(ctx: Ctx, name: keyof typeof ICONS, x: number, y: number, size: number, color: string) {
   const { d, fill, width = 4 } = ICONS[name]
   ctx.save()
   ctx.translate(x, y); ctx.scale(size / 64, size / 64)
@@ -34,18 +34,18 @@ function icon(ctx: Ctx, name: keyof typeof ICONS, x: number, y: number, size: nu
   ctx.restore()
 }
 
-function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: number) {
+export function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath(); ctx.roundRect(x, y, w, h, r)
 }
 
 // Draws an image to fill a box, cropped from the top like CSS object-fit: cover with a top position.
-function cover(ctx: Ctx, img: CanvasImageSource & { width: number; height: number }, x: number, y: number, w: number, h: number) {
+export function cover(ctx: Ctx, img: CanvasImageSource & { width: number; height: number }, x: number, y: number, w: number, h: number) {
   const scale = Math.max(w / img.width, h / img.height)
   const sw = w / scale, sh = h / scale
   ctx.drawImage(img, (img.width - sw) / 2, 0, sw, sh, x, y, w, h)
 }
 
-function wrap(ctx: Ctx, text: string, width: number, lines: number) {
+export function wrap(ctx: Ctx, text: string, width: number, lines: number) {
   const words = text.split(/\s+/), out: string[] = []
   let line = ''
   for (const word of words) {
@@ -64,7 +64,7 @@ function wrap(ctx: Ctx, text: string, width: number, lines: number) {
   return out
 }
 
-function spaced(ctx: Ctx, text: string, x: number, y: number, spacing: number, align: 'center' | 'left' | 'right' = 'center') {
+export function spaced(ctx: Ctx, text: string, x: number, y: number, spacing: number, align: 'center' | 'left' | 'right' = 'center') {
   ctx.letterSpacing = `${spacing}px`
   // Letter spacing adds a trailing gap, so shift centered text back by half of it.
   ctx.textAlign = align
@@ -150,7 +150,7 @@ function wordmark(ctx: Ctx, text: string, cx: number, cy: number, size: number, 
 }
 
 // The colors of each pack's big lettering.
-const TITLE: Record<PackId, { face: string[]; rim: string; depth: string }> = {
+export const TITLE: Record<PackId, { face: string[]; rim: string; depth: string }> = {
   blog: { face: ['#ffffff', '#fff1b0', '#ffc24a', '#ff7a3a'], rim: '#3a0828', depth: '#16020f' },
   works: { face: ['#ffffff', '#d4fff8', '#5cf0e0', '#18a8e8'], rim: '#04183a', depth: '#010818' },
   social: { face: ['#ffffff', '#fff4c0', '#ffd24a', '#f29a1c'], rim: '#220a52', depth: '#0c0224' },
@@ -337,92 +337,7 @@ export function paintPackMask(canvas: HTMLCanvasElement, part: 'whole' | 'flap' 
 
 // ---------- Cards ----------
 
-const symbol = { blog: '●', works: '◆', social: '★' }
-
-// Card proportions match a 63 × 88 mm trading card. Sizes are in hundredths of the width.
-export function paintCardFront(canvas: HTMLCanvasElement, card: CardData, total: number, art: HTMLImageElement | null) {
-  const ctx = canvas.getContext('2d')!, W = canvas.width, H = canvas.height, u = W / 100, c = PALETTE[card.pack]
-  ctx.clearRect(0, 0, W, H)
-  roundRect(ctx, 0, 0, W, H, 4.5 * u); ctx.save(); ctx.clip()
-  const frame = ctx.createLinearGradient(0, 0, W * 0.6, H)
-  frame.addColorStop(0, c.c1); frame.addColorStop(1, c.c2)
-  ctx.fillStyle = frame; ctx.fillRect(0, 0, W, H)
-
-  const pad = 2.4 * u, ix = pad, iy = pad, iw = W - pad * 2, ih = H - pad * 2
-  roundRect(ctx, ix, iy, iw, ih, 2.4 * u); ctx.fillStyle = '#fbf8f1'; ctx.fill()
-  const p = 3.2 * u, x0 = ix + p, cw = iw - p * 2
-  let y = iy + p
-
-  // Name and tag.
-  ctx.textBaseline = 'top'; ctx.textAlign = 'left'
-  const tagSize = 3.1 * u
-  ctx.font = `800 ${tagSize}px ${SANS}`; ctx.letterSpacing = `${0.37 * u}px`
-  const tagW = ctx.measureText(card.tag).width + 4.4 * u, tagH = tagSize + 1.8 * u
-  ctx.letterSpacing = '0px'
-  roundRect(ctx, x0 + cw - tagW, y + 0.6 * u, tagW, tagH, tagH / 2); ctx.fillStyle = c.c2; ctx.fill()
-  ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'
-  spaced(ctx, card.tag, x0 + cw - tagW / 2, y + 0.6 * u + tagH / 2 + 0.1 * u, 0.37 * u)
-  const nameSize = (card.name.length > 22 ? 5.8 : 7.2) * u
-  ctx.font = `800 ${nameSize}px ${SANS}`; ctx.fillStyle = '#181a26'; ctx.textBaseline = 'top'; ctx.textAlign = 'left'
-  const nameLines = wrap(ctx, card.name, cw - tagW - 2 * u, 2)
-  nameLines.forEach((line, i) => ctx.fillText(line, x0, y + i * nameSize * 1.05))
-  y += Math.max(nameLines.length * nameSize * 1.05, tagH + 0.6 * u) + 2.2 * u
-
-  // Art.
-  const ah = cw * 10 / 16
-  ctx.save(); roundRect(ctx, x0, y, cw, ah, 2.2 * u); ctx.clip()
-  if (art) { ctx.fillStyle = '#fff'; ctx.fillRect(x0, y, cw, ah); cover(ctx, art, x0, y, cw, ah) }
-  else {
-    const bg = ctx.createLinearGradient(x0, y, x0 + cw * 0.6, y + ah)
-    bg.addColorStop(0, c.p2); bg.addColorStop(1, c.p1)
-    ctx.fillStyle = bg; ctx.fillRect(x0, y, cw, ah)
-    const glow = ctx.createRadialGradient(x0 + cw / 2, y + ah * 0.45, 0, x0 + cw / 2, y + ah * 0.45, cw * 0.6)
-    glow.addColorStop(0, c.p3); glow.addColorStop(1, 'rgba(0,0,0,0)')
-    ctx.globalAlpha = 0.85; ctx.fillStyle = glow; ctx.fillRect(x0, y, cw, ah); ctx.globalAlpha = 1
-    ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 3 * u
-    for (let s = -ah; s < cw + ah; s += 6 * u) { ctx.beginPath(); ctx.moveTo(x0 + s, y + ah); ctx.lineTo(x0 + s + ah, y); ctx.stroke() }
-    const size = cw * 0.34
-    ctx.shadowColor = 'rgba(0,0,0,.18)'; ctx.shadowOffsetY = 1.2 * u
-    icon(ctx, card.art.kind === 'icon' ? card.art.icon : 'quote', x0 + cw / 2 - size / 2, y + ah / 2 - size / 2, size, '#fff')
-    ctx.shadowColor = 'transparent'
-  }
-  ctx.restore()
-  roundRect(ctx, x0, y, cw, ah, 2.2 * u); ctx.strokeStyle = 'rgba(0,0,0,.12)'; ctx.lineWidth = 0.7 * u; ctx.stroke()
-  y += ah + 2.2 * u
-
-  // Number and meta.
-  ctx.font = `700 ${3.1 * u}px ${MONO}`; ctx.fillStyle = '#6c6f82'; ctx.textBaseline = 'top'; ctx.textAlign = 'left'
-  ctx.letterSpacing = `${0.12 * u}px`
-  ctx.fillText([`#${String(card.no).padStart(2, '0')}/${String(total).padStart(2, '0')}`, ...card.meta].join('  ·  '), x0, y)
-  ctx.letterSpacing = '0px'
-  y += 3.1 * u * 1.3 + 2.2 * u
-
-  // Description, then the foot pinned to the bottom.
-  const footY = iy + ih - p - 3 * u
-  ctx.font = `400 ${4.3 * u}px ${SANS}`; ctx.fillStyle = '#2a2c3a'
-  const lh = 4.3 * u * 1.38, room = Math.max(1, Math.floor((footY - 3 * u - y) / lh))
-  wrap(ctx, card.text, cw, Math.min(6, room)).forEach((line, i) => ctx.fillText(line, x0, y + i * lh))
-
-  ctx.fillStyle = '#e7e1d4'; ctx.fillRect(x0, footY - 1.8 * u, cw, 0.4 * u)
-  ctx.font = `700 ${3 * u}px ${MONO}`; ctx.fillStyle = '#6c6f82'; ctx.textBaseline = 'top'
-  ctx.fillText(wrap(ctx, card.foot, cw - 8 * u, 1)[0] ?? '', x0, footY)
-  ctx.fillStyle = c.c2; ctx.font = `700 ${4 * u}px ${SANS}`; ctx.textAlign = 'right'
-  ctx.fillText(symbol[card.pack], x0 + cw, footY - 0.5 * u)
-  ctx.restore()
-}
-
-// Where the holo foil goes on a card: the art window, as a white mask.
-export function paintCardFoil(canvas: HTMLCanvasElement, card: CardData) {
-  const ctx = canvas.getContext('2d')!, W = canvas.width, H = canvas.height, u = W / 100
-  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H)
-  // The frame is foil too, a little less strongly.
-  ctx.fillStyle = '#555'; roundRect(ctx, 0, 0, W, H, 4.5 * u); ctx.fill()
-  ctx.fillStyle = '#000'; roundRect(ctx, 2.4 * u, 2.4 * u, W - 4.8 * u, H - 4.8 * u, 2.4 * u); ctx.fill()
-  const x0 = 5.6 * u, cw = W - 11.2 * u, nameSize = (card.name.length > 22 ? 5.8 : 7.2) * u
-  const y = 5.6 * u + Math.max(nameSize * 1.05, 3.1 * u + 2.4 * u) + 2.2 * u
-  ctx.fillStyle = card.art.kind === 'image' ? '#999' : '#fff'
-  roundRect(ctx, x0, y, cw, cw * 10 / 16, 2.2 * u); ctx.fill()
-}
+// The card fronts are in cardArt.ts.
 
 export function paintCardBack(canvas: HTMLCanvasElement, id: PackId) {
   const ctx = canvas.getContext('2d')!, W = canvas.width, H = canvas.height, u = W / 100, c = PALETTE[id]

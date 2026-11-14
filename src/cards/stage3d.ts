@@ -4,7 +4,8 @@
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { CARD_RATIO, PACK_RATIO, packRect, packSpacing, stackRect, zoomRect } from './geometry.ts'
-import { paintCardBack, paintCardFoil, paintCardFront, paintPackBack, paintPackFin, paintPackFront, paintPackMask, paintPackSheen, loadImage } from './paint.ts'
+import { paintCardFront, paintCardSheen } from './cardArt.ts'
+import { paintCardBack, paintPackBack, paintPackFin, paintPackFront, paintPackMask, paintPackSheen, loadImage } from './paint.ts'
 import { PALETTE } from './palette.ts'
 import { EDGE, FIN, RIP_Y, finLift, pillow, smooth, teeth } from './shapes.ts'
 import { tilt as deviceTilt } from './motion.ts'
@@ -241,7 +242,7 @@ type PackObj = {
 }
 // `flat`: how much the card shows as its plain picture instead of a lit, shiny thing (see shade).
 // `away`: how much of the way from its picture on the page to the stack it still has to go.
-type CardObj = { mesh: THREE.Mesh; current: Pose; front: THREE.MeshPhysicalMaterial; image: string; flat: number; away: number }
+type CardObj = { mesh: THREE.Mesh; current: Pose; front: THREE.MeshPhysicalMaterial; unmapped: { value: number }; image: string; flat: number; away: number }
 // A card flying in from its picture keeps looking like it for the first part of the way, and
 // takes on the light over the rest: up by the pictures it would catch a glare and wash out.
 const flatFor = (away: number) => { const x = clamp(away / 0.6); return x * x * (3 - 2 * x) }
@@ -508,18 +509,30 @@ export class CardStage {
     for (const [k, card] of data.cards.entries()) {
       await this.quiet()
       if (this.disposed) return list
-      const face = canvas(tw, th), foil = canvas(tw / 4, th / 4)
-      paintCardFront(face, card, data.cards.length, arts[k]); paintCardFoil(foil, card)
+      const face = canvas(tw, th), foil = canvas(tw / 2, th / 2)
+      paintCardFront(face, card, data.cards.length, arts[k]); paintCardSheen(foil, card, arts[k])
       const faceTex = texture(face), foilTex = texture(foil, false)
       // Send them to the GPU now, between frames, instead of on the first frame that shows the card.
       this.renderer.initTexture(faceTex); this.renderer.initTexture(foilTex)
+      // How it catches the light comes from the sheen painting: a foil frame and burst, ink elsewhere.
       const front = new THREE.MeshPhysicalMaterial({
-        map: faceTex, roughness: 0.62, metalness: 0, clearcoat: 0.25, clearcoatRoughness: 0.3, envMapIntensity: 0.35,
+        map: faceTex, roughness: 1, metalness: 1, roughnessMap: foilTex, metalnessMap: foilTex, clearcoat: 0.25, clearcoatRoughness: 0.3,
         iridescence: 1, iridescenceMap: foilTex, iridescenceIOR: 1.8, iridescenceThicknessRange: [120, 900],
         // Its own picture as a light source, off until the card has to pass for that picture (see shade).
         emissive: 0xffffff, emissiveMap: faceTex, emissiveIntensity: 0,
+        envMap: this.scene.environment, envMapIntensity: 0.45,
       })
-      const obj: CardObj = { mesh: new THREE.Mesh(geo, [front, edgeMat, backMat]), current: pose(), front, image: '', flat: 0, away: 0 }
+      // The cards reflect the same room as the packs, tipped back: its big lamp would otherwise sit
+      // right behind the viewer and wash out a card held flat. Now it only shows when the top leans away.
+      front.envMapRotation.set(-0.4, 0, 0)
+      // A card passing for its picture also skips the tone mapping, which would deepen its colors (see shade).
+      const unmapped = { value: 0 }
+      front.onBeforeCompile = shader => {
+        shader.uniforms.unmapped = unmapped
+        shader.fragmentShader = 'uniform float unmapped;\n' + shader.fragmentShader.replace('#include <tonemapping_fragment>',
+          '#if defined( TONE_MAPPING )\n\tgl_FragColor.rgb = mix( toneMapping( gl_FragColor.rgb ), gl_FragColor.rgb, unmapped );\n#endif')
+      }
+      const obj: CardObj = { mesh: new THREE.Mesh(geo, [front, edgeMat, backMat]), current: pose(), front, unmapped, image: '', flat: 0, away: 0 }
       holder.add(obj.mesh)
       list.push(obj)
       // The recap grid shows the same painting; encoding it off the main thread keeps frames smooth.
@@ -696,8 +709,7 @@ export class CardStage {
     m.color.setScalar(lit); m.specularIntensity = lit
     // Never quite zero, which would switch to another shader.
     m.iridescence = Math.max(0.001, lit); m.clearcoat = Math.max(0.001, 0.25 * lit)
-    // (A touch over 1 makes up for what the tone mapping takes off.)
-    m.emissiveIntensity = flat * 1.03
+    m.emissiveIntensity = card.unmapped.value = flat
   }
   private setOpacity(p: PackObj, o: number, part: 'all' | 'flap' | 'body' = 'all') {
     const meshes = part === 'flap' ? [p.flap] : part === 'body' ? [p.body, p.whole] : [p.whole, p.body, p.flap]
