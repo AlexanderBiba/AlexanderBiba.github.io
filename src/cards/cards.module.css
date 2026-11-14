@@ -29,6 +29,7 @@
 }
 .header > * { pointer-events: auto; }
 .exit, .exit:visited {
+  display: inline-flex; align-items: center; gap: 6px;
   color: rgba(255, 255, 255, .85); font-size: 14px; font-weight: 600; cursor: pointer;
   padding: 8px 14px; border-radius: 99px; background: rgba(255, 255, 255, .08);
   border: 1px solid rgba(255, 255, 255, .14); text-decoration: none;
@@ -105,7 +106,8 @@
   border: 1px solid rgba(255, 255, 255, .2); background: rgba(255, 255, 255, .08);
   line-height: 0; cursor: pointer; padding: 0; color: #fff;
 }
-.arrow svg { display: block; }
+/* Icons are their own boxes, centered by the button, with no line of text around them to push them off. */
+.arrow svg, .ghost svg, .primary svg, .exit svg { display: block; flex: none; }
 .arrow:disabled { opacity: .25; cursor: default; }
 .arrow:not(:disabled):hover { background: rgba(255, 255, 255, .18); }
 .ghost, .ghost:visited, .primary, .primary:visited {

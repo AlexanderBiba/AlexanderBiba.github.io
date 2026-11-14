@@ -15,14 +15,22 @@ import styles from './cards.module.css'
 type Vars = CSSProperties & Record<`--${string}`, string | number>
 const external = (href: string) => /^https?:/.test(href)
 
-// Drawn rather than typed: the ‹ › glyphs sit off-center in a round button in most fonts.
-function Chevron({ dir }: { dir: 'left' | 'right' }) {
-  return <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d={dir === 'left' ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+// Drawn rather than typed: arrow glyphs like ‹ ← ⟲ ↗ come from whatever font the device falls back
+// to, and sit off-center next to the words in most of them.
+const ICONS = {
+  left: 'M15 5l-7 7 7 7',
+  right: 'M9 5l7 7-7 7',
+  back: 'M20 12H5m6.5-6.5L5 12l6.5 6.5',
+  flip: 'M4.5 10a7.8 7.8 0 0 1 14-2.6l1 1.6m0-5v5h-5m5 5a7.8 7.8 0 0 1-14 2.6l-1-1.6m0 5v-5h5',
+  out: 'M7 17 17 7M8.5 7H17v8.5',
+}
+function Icon({ name, size = 16 }: { name: keyof typeof ICONS; size?: number }) {
+  return <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true"><path d={ICONS[name]} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
 }
 
 function CardLinks({ card }: { card: CardData }) {
   if (!card.links.length) return null
-  return <div className={styles.stackLinks}>{card.links.map((link, i) => <a key={link.href} className={i === 0 ? styles.primary : styles.ghost} href={link.href} target={external(link.href) ? '_blank' : undefined} rel={external(link.href) ? 'noopener noreferrer' : undefined}>{link.label}{external(link.href) && <span aria-hidden="true"> ↗</span>}</a>)}</div>
+  return <div className={styles.stackLinks}>{card.links.map((link, i) => <a key={link.href} className={i === 0 ? styles.primary : styles.ghost} href={link.href} target={external(link.href) ? '_blank' : undefined} rel={external(link.href) ? 'noopener noreferrer' : undefined}>{link.label}{external(link.href) && <Icon name="out" size={14} />}</a>)}</div>
 }
 
 // The /play/ page: a Three.js scene (stage3d.ts) with the captions, buttons and links on top as
@@ -193,8 +201,8 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
       {/* One bar: it leaves the game on the shelf, and goes back to the packs once you've opened one. */}
       <header className={styles.header}>
         {inStack
-          ? <button key="packs" className={`${styles.exit} ${styles.swap}`} onClick={() => s?.untear()}><span aria-hidden="true">←</span> Packs</button>
-          : <Link key="home" href="/" className={`${styles.exit} ${styles.swap}`} onClick={leave}><span aria-hidden="true">←</span> alexbiba.com</Link>}
+          ? <button key="packs" className={`${styles.exit} ${styles.swap}`} onClick={() => s?.untear()}><Icon name="back" />Packs</button>
+          : <Link key="home" href="/" className={`${styles.exit} ${styles.swap}`} onClick={leave}><Icon name="back" />alexbiba.com</Link>}
         <span key={inStack ? 'pack' : 'all'} className={`${styles.brand} ${styles.swap}`}>{inStack ? `${pack.title} PACK` : 'CARD PACKS'}</span>
       </header>
 
@@ -203,9 +211,9 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
       {rect && (state.stage === 'shelf' || state.stage === 'tear' || opening) && <div className={styles.caption} data-out={opening || undefined} inert={opening} style={zoomed && viewport ? { bottom: viewport.h - zoomed.y + 18 } : { top: rect.y + rect.h * PICKED_SCALE + 26 }}>
         {state.stage === 'shelf' && <div key="shelf" className={styles.captionBody}>
           <div className={styles.captionRow}>
-            <button className={styles.arrow} onClick={() => s?.goTo(state.active - 1)} disabled={state.active === 0} aria-label="Previous pack"><Chevron dir="left" /></button>
+            <button className={styles.arrow} onClick={() => s?.goTo(state.active - 1)} disabled={state.active === 0} aria-label="Previous pack"><Icon name="left" size={18} /></button>
             <h1 key={pack.id} className={styles.swap}>{pack.title} PACK</h1>
-            <button className={styles.arrow} onClick={() => s?.goTo(state.active + 1)} disabled={state.active === packs.length - 1} aria-label="Next pack"><Chevron dir="right" /></button>
+            <button className={styles.arrow} onClick={() => s?.goTo(state.active + 1)} disabled={state.active === packs.length - 1} aria-label="Next pack"><Icon name="right" size={18} /></button>
           </div>
           <p key={pack.id} className={styles.swap}>{pack.subtitle} · {total} cards</p>
           <p className={styles.hint}>Swipe to browse · tap the pack to pick it</p>
@@ -216,15 +224,15 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
           <h1>Tap the pack to open it</h1>
           <p className={styles.hint}>Drag it sideways to spin it around</p>
           <div className={styles.captionActions}>
-            <button className={styles.ghost} onClick={() => s?.backToShelf()}>← All packs</button>
-            <button className={styles.ghost} onClick={() => s?.flip()}>⟲ Flip</button>
+            <button className={styles.ghost} onClick={() => s?.backToShelf()}><Icon name="back" />All packs</button>
+            <button className={styles.ghost} onClick={() => s?.flip()}><Icon name="flip" />Flip</button>
             <button className={styles.ghost} onClick={() => s?.zoomIn()}>Open it</button>
           </div>
         </div>}
         {(state.stage === 'tear' || opening) && state.zoom && <div key="close" className={styles.captionBody} data-late>
           <h1>Swipe to tear it open</h1>
           <div className={styles.captionActions}>
-            <button className={styles.ghost} onClick={() => s?.zoomOut()}>← Back</button>
+            <button className={styles.ghost} onClick={() => s?.zoomOut()}><Icon name="back" />Back</button>
             <button className={styles.ghost} onClick={() => s?.openNow()}>Just open it</button>
           </div>
         </div>}
@@ -234,9 +242,9 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
         <p className={styles.srOnly} aria-live="polite">{card && `${card.name}, card ${state.index + 1} of ${total}. ${card.text}`}</p>
         <CardLinks key={underStack.id} card={underStack} />
         <div className={styles.stackNav}>
-          <button className={styles.arrow} onClick={() => s?.prev()} disabled={state.index === 0} aria-label="Previous card"><Chevron dir="left" /></button>
+          <button className={styles.arrow} onClick={() => s?.prev()} disabled={state.index === 0} aria-label="Previous card"><Icon name="left" size={18} /></button>
           <span className={styles.stackCount}>{Math.min(state.index + 1, total)} / {total}</span>
-          <button className={styles.arrow} onClick={() => s?.next()} aria-label="Next card"><Chevron dir="right" /></button>
+          <button className={styles.arrow} onClick={() => s?.next()} aria-label="Next card"><Icon name="right" size={18} /></button>
         </div>
         <p className={styles.stackHint}>Swipe the card left for the next one</p>
       </div>}
