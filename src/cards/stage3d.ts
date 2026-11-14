@@ -541,7 +541,7 @@ export class CardStage {
       await this.quiet()
       if (this.disposed) return drop()
       const face = canvas(tw, th), foil = canvas(tw / 2, th / 2)
-      const spots = paintCardFront(face, card, data.cards.length, arts[k]); paintCardSheen(foil, card, arts[k])
+      const spots = paintCardFront(face, card, arts[k]); paintCardSheen(foil, card, arts[k])
       const faceTex = texture(face), foilTex = texture(foil, false)
       // Send them to the GPU now, between frames, instead of on the first frame that shows the card.
       this.renderer.initTexture(faceTex); this.renderer.initTexture(foilTex)
