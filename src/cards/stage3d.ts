@@ -290,6 +290,8 @@ export class CardStage {
   private deckPivot = new THREE.Group()
   private deck = new THREE.Group()
   private deckLean = { x: 0, y: 0 }
+  // Reduced motion is turned on: nothing moves by itself (no bob, no lean, no packs sliding in).
+  // What a tap starts still plays.
   private reduced: boolean
   private disposed = false
   private pendingPick = false
@@ -698,7 +700,7 @@ export class CardStage {
   show(index: number, from?: { x: number; y: number; w: number }[]) {
     if (this.state.stage !== 'stack') return
     const list = this.cards.get(this.data[this.state.active].id)
-    if (from && list && from.length === list.length && !this.reduced && this.builtCardW) list.forEach((card, k) => {
+    if (from && list && from.length === list.length && this.builtCardW) list.forEach((card, k) => {
       const n = k - index
       if (n < 0 || n > 3) return
       const c = this.world(from[k].x, from[k].y)
@@ -712,7 +714,7 @@ export class CardStage {
   untear(from?: { x: number; y: number; w: number }[]) {
     if (this.state.stage !== 'stack') return
     const n = this.count()
-    this.gather = from && from.length === n && !this.reduced && this.builtCardW
+    this.gather = from && from.length === n && this.builtCardW
       ? from.map(r => { const c = this.world(r.x, r.y); return pose({ x: c.x, y: c.y, s: r.w / this.builtCardW }) })
       : null
     this.gatherMs = this.gather ? GATHER_HOLD + GATHER_FLY + GATHER_STAGGER * (n - 1) + 120 : 0
@@ -966,7 +968,7 @@ export class CardStage {
       let target = this.packTarget(i, now)
       const focused = i === active
       if (focused && (stage === 'opening' || stage === 'closing' || stage === 'stack')) target = pose({ ...this.packTarget(i, now) })
-      if (this.state.ready) p.current = damp(p.current, target, dt, this.reduced ? 60 : this.exiting ? 14 : 9)
+      if (this.state.ready) p.current = damp(p.current, target, dt, this.exiting ? 14 : 9)
       apply(p.root, p.current)
       p.root.visible = p.current.o > 0.02 && !(focused && stage === 'stack')
       if (!focused) this.setOpacity(p, p.current.o)
@@ -1121,7 +1123,7 @@ export class CardStage {
       if (!card.mesh.visible) { card.current = this.stackPose(n < 0 ? -1 : 3); card.away = 0; this.shade(card, 0); return }
       // Cards coming over from the recap grid set off gently rather than at full speed.
       const ramp = clamp((now - this.showAt) / 220)
-      const speed = this.reduced ? 60 : index >= list.length ? 16 : 10 * ramp * ramp * (3 - 2 * ramp)
+      const speed = index >= list.length ? 16 : 10 * ramp * ramp * (3 - 2 * ramp)
       if (card.away) { card.away = card.away < 0.005 ? 0 : card.away * Math.exp(-speed * dt); this.shade(card, flatFor(card.away)) }
       let target = this.stackPose(n)
       if (this.drag.active) {

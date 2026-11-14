@@ -68,6 +68,8 @@ Every change of state on `/play/` is animated, and a few rules keep that smooth:
 - slow work never runs while something moves: textures are painted between frames at quiet moments (`quiet` in `stage3d.ts`) and sent to the GPU ahead of the frame that needs them, and the first pictures start loading when the navbar's card icon is tapped (`warmArt` in `morph.tsx`)
 - the light behind the pack only changes `opacity`, `translate` and `scale`, which the browser animates without repainting it
 
+For people with reduced motion turned on, nothing on `/play/` moves by itself: the light behind the pack holds still, the pack in front doesn't bob or lean toward the pointer or the phone, the stack doesn't lean, and the other packs are in place from the start (`reduced` in `stage3d.ts`, the last rule in `cards.module.css`). What a tap starts still plays at its normal speed, because cutting it short left packs and cards jumping between places.
+
 Add `?slowmo=6` to the `/play/` URL to slow the 3D scene down six times when checking it frame by frame (the page's own fades keep their speed). It also puts the scene on `window.cardStage`, so a test script can wait on its clock instead of on real time.
 
 New posts and works show up as cards automatically.
