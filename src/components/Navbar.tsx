@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import PlayLink from './PlayLink'
 import '../Navbar.scss'
 
 export default function Navbar() {
@@ -8,7 +9,7 @@ export default function Navbar() {
                 <Link href="/">Home</Link>
                 <Link href="/blog">Blog</Link>
                 <Link href="/works">Built</Link>
-                <Link href="/play/" className="explore-link" aria-label="Enter 3D mode" title="Enter 3D mode"><span aria-hidden="true">🎮</span></Link>
+                <PlayLink />
             </div>
         </nav>
     )
