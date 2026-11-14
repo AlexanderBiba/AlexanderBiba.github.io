@@ -160,9 +160,6 @@
 .noscript { position: absolute; inset: auto 16px 40px; text-align: center; }
 .noscript a { color: #ffd36b; }
 
-/* The homepage morph's stand-in pack */
-.morphOverlay { position: fixed; z-index: 1000; pointer-events: none; opacity: 0; }
-
 @media (prefers-reduced-motion: reduce) {
   .dots span { transition: none; }
   .game, .rays, .recapGrid li, .recap, .game[data-ready] .rays, .game[data-ready] .rays[data-swap], .game[data-ready] .header, .game[data-ready] .caption, .game[data-ready] .canvas, .captionBody, .swap, .stackControls, .stackLinks { animation: none; }

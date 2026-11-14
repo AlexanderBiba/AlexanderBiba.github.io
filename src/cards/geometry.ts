@@ -11,12 +11,16 @@ export function packRect(vw: number, vh: number) {
   return { w, h, x: (vw - w) / 2, y: vh * 0.45 - h / 2 }
 }
 
+// Room kept above the pack up close for the words and buttons that go over it.
+const ZOOM_TOP = 128
+
 // The picked pack up close, ready to tear: big, with its tear line a bit above the middle of the
-// screen and the rest of it running off the bottom.
+// screen and the rest of it running off the bottom. On a short screen (a phone on its side, a low
+// window) it sits lower, so the words above it stay on the screen. `tearY` is where its tear line is.
 export function zoomRect(vw: number, vh: number) {
   const w = Math.min(vw * 0.88, 520), h = w / PACK_RATIO
-  const y = vh * 0.4 - RIP_Y * h
-  return { w, h, x: (vw - w) / 2, y }
+  const y = Math.max(vh * 0.4 - RIP_Y * h, ZOOM_TOP)
+  return { w, h, x: (vw - w) / 2, y, tearY: y + RIP_Y * h }
 }
 
 // Horizontal distance between neighboring packs on the shelf.

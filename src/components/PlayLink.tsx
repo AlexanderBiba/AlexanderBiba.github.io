@@ -2,13 +2,18 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useLayoutEffect } from 'react'
-import { morphIntoPack, morphOutOfPack, primeMorph, returnPack } from '../cards/morph'
+import { useEffect, useLayoutEffect, useRef } from 'react'
+import { morphOutOfPack, returnPack } from '../cards/returnMorph'
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+// Turning the page into a pack takes the code that paints packs. It's fetched once the page is up
+// instead of with it, so no page waits for it.
+const loadMorph = () => import('../cards/morph')
 
 export default function PlayLink() {
   const router = useRouter()
+  // Set by the tap that starts the morph, so a second tap doesn't start another.
+  const leaving = useRef(false)
 
   // Coming back from /play/, which leaves its pack on screen: grow the page out of it before
   // the page is first drawn.
@@ -17,10 +22,11 @@ export default function PlayLink() {
     if (returnPack() && app) morphOutOfPack(app)
   }, [])
 
-  // Paint the pack the page turns into while nothing else is going on, so a tap starts at once.
+  // Fetch the morph and paint the pack the page turns into while nothing else is going on, so a
+  // tap starts at once.
   useEffect(() => {
     if (reducedMotion()) return
-    const prime = () => primeMorph()
+    const prime = () => { loadMorph().then(morph => morph.primeMorph(), () => {}) }
     // Safari has no requestIdleCallback.
     const idle = typeof requestIdleCallback === 'function'
     const id = idle ? requestIdleCallback(prime, { timeout: 3000 }) : window.setTimeout(prime, 1500)
@@ -39,7 +45,11 @@ export default function PlayLink() {
         const app = document.querySelector<HTMLElement>('.App')
         if (!app || typeof app.animate !== 'function') return
         event.preventDefault()
-        morphIntoPack(app, () => router.push('/play/'))
+        if (leaving.current) return
+        leaving.current = true
+        const go = () => router.push('/play/')
+        // (If the morph can't be fetched, the link still goes there.)
+        loadMorph().then(morph => morph.morphIntoPack(app, go), go)
       }}
     >
       {/* Two cards with a small star in the Built pack's color. The ring around them is in Navbar.scss.

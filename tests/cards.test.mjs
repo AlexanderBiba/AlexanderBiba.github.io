@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { buildPacks, readingMinutes } from '../src/cards/build.ts'
-import { packRect, stackRect } from '../src/cards/geometry.ts'
+import { packRect, stackRect, zoomRect } from '../src/cards/geometry.ts'
 
 const read = (folder, entries) => entries.map(entry => ({ ...entry, content: readFileSync(`content/${folder}/${entry.slug}.md`, 'utf8') }))
 const posts = read('blog', JSON.parse(readFileSync('content/blog.json', 'utf8')))
@@ -44,6 +44,13 @@ test('the center pack fits on a phone and a desktop screen', () => {
   for (const [vw, vh] of [[390, 844], [360, 640], [1440, 900], [844, 390]]) {
     const r = packRect(vw, vh)
     assert.ok(r.x >= 0 && r.x + r.w <= vw && r.y >= 0 && r.y + r.h <= vh, `${vw}x${vh}`)
+  }
+})
+
+test('up close, the pack leaves room above it for its words, with its tear line on screen', () => {
+  for (const [vw, vh] of [[390, 844], [360, 640], [1440, 900], [844, 390], [1280, 560], [568, 320]]) {
+    const z = zoomRect(vw, vh)
+    assert.ok(z.y >= 128 && z.tearY < vh - 40, `${vw}x${vh}`)
   }
 })
 

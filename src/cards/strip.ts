@@ -222,6 +222,8 @@ export class FoilStrip {
 
   // Seconds since it let go, for fading it out.
   get flying() { return this.mode === 'fly' ? this.time : 0 }
+  // Skips ahead in its flight, to where it fades, when the pack closes again under it.
+  skipTo(time: number) { if (this.mode === 'fly' && this.time < time) this.time = time }
 
   private updateGeometry() {
     const pos = this.geometry.getAttribute('position') as THREE.BufferAttribute

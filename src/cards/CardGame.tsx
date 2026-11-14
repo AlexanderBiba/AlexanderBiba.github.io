@@ -6,7 +6,8 @@ import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from
 import { CardStage, PICKED_SCALE, type StageState } from './stage3d'
 import { packRect, stackRect, zoomRect } from './geometry'
 import { MORPH_OVERLAY, wasMorphed } from './handoff'
-import { returnPack, showReturnPack } from './morph'
+import { showReturnPack } from './morph'
+import { returnPack } from './returnMorph'
 import { disableMotion, enableMotion } from './motion'
 import { CENTER_PACK, PACK_ORDER } from './packMeta'
 import type { CardData, PackData } from './types'
@@ -158,7 +159,8 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       const s = stage.current, k = event.key
-      if (!s) return
+      // (With Ctrl, Alt or ⌘ held they're the browser's own shortcuts: find, back, forward.)
+      if (!s || exiting || event.metaKey || event.ctrlKey || event.altKey) return
       if (state.stage === 'shelf' && (k === 'ArrowRight' || k === 'ArrowLeft')) s.goTo(state.active + (k === 'ArrowRight' ? 1 : -1))
       else if (state.stage === 'shelf' && k === 'Enter' && !(event.target instanceof HTMLButtonElement || event.target instanceof HTMLAnchorElement)) s.pick()
       else if (state.stage === 'tear' && k === 'Escape') { if (state.zoom) s.zoomOut(); else s.backToShelf() }
@@ -172,7 +174,7 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
     }
     window.addEventListener('keydown', key)
     return () => window.removeEventListener('keydown', key)
-  }, [state.stage, state.active, state.zoom])
+  }, [state.stage, state.active, state.zoom, exiting])
 
   const s = stage.current
   const rect = viewport && packRect(viewport.w, viewport.h)
@@ -188,7 +190,7 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
   // Up close the light sits behind the tear line, and the words go above the pack.
   const zoomed = viewport && state.zoom && (state.stage === 'tear' || state.stage === 'opening') ? zoomRect(viewport.w, viewport.h) : null
   const glow = inStack && stack ? { x: stack.x + stack.w / 2, y: stack.y + stack.h / 2, r: stack.h * 1.1 }
-    : zoomed && viewport ? { x: viewport.w / 2, y: viewport.h * 0.4, r: zoomed.w * 1.2 }
+    : zoomed && viewport ? { x: viewport.w / 2, y: zoomed.tearY, r: zoomed.w * 1.2 }
       : rect ? { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2, r: rect.h * 1.2 } : null
   // The light is laid out once, where it sits behind the shelf, and moved and resized from there
   // with transforms, which the browser animates without painting it again.
@@ -197,7 +199,7 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
   const images = s && (inStack || leaving) ? s.cardImages(state.active) : []
 
   return (
-    <main className={styles.game} data-stage={state.stage} data-ready={state.ready || failed || undefined} data-intro={intro || undefined} data-exiting={exiting || undefined} data-tearing={state.tearing || undefined}>
+    <main className={styles.game} data-stage={state.stage} data-ready={state.ready || failed || undefined} data-intro={intro || undefined} data-exiting={exiting || undefined} data-tearing={state.tearing || undefined} inert={!!exiting}>
       {glowStyle && glows.map(({ id, swap }) => <div key={id} className={styles.rays} data-pack={id} data-swap={swap || undefined} data-off={id !== glowNow || undefined} aria-hidden="true" style={glowStyle} />)}
       {/* Dims everything but the pack while you tear it. */}
       <div className={styles.dim} aria-hidden="true" />

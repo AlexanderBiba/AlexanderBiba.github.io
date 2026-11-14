@@ -1,11 +1,13 @@
 'use client'
 
+// The page turning into a card pack on the way to /play/, and /play/'s pack standing in for the
+// page on the way back. The homepage's half of the way back is in returnMorph.ts.
 import works from '../../content/works.json'
 import { packRect } from './geometry'
 import { MORPH_OVERLAY, markMorphed } from './handoff'
 import { CENTER_PACK } from './packMeta'
 import { loadImage, packOutline, paintPackFront } from './paint'
-import styles from './cards.module.css'
+import { EASE, RETURN, SHRINK_MS, shapes } from './returnMorph'
 
 const counts = { works: works.length } as Record<string, number>
 
@@ -15,9 +17,6 @@ function warmArt() {
   for (const work of works) if (work.image) void loadImage(work.image)
 }
 
-const RETURN = 'data-pack-return'
-const EASE = 'cubic-bezier(.7, 0, .25, 1)'
-const SHRINK_MS = 720
 const dpr = () => Math.min(window.devicePixelRatio || 1, 2.5)
 
 // The painted pack that stands in for the 3D one while the page changes. `art` draws its front.
@@ -26,8 +25,8 @@ function packCanvas(art: (canvas: HTMLCanvasElement) => void) {
   const canvas = document.createElement('canvas')
   canvas.width = Math.round(r.w * dpr()); canvas.height = Math.round(r.h * dpr())
   canvas.setAttribute(MORPH_OVERLAY, '')
-  canvas.className = styles.morphOverlay
-  Object.assign(canvas.style, { left: `${r.x}px`, top: `${r.y}px`, width: `${r.w}px`, height: `${r.h}px` })
+  // Styled here: the pages it's shown over don't load the game's stylesheet.
+  Object.assign(canvas.style, { position: 'fixed', zIndex: '1000', pointerEvents: 'none', opacity: '0', left: `${r.x}px`, top: `${r.y}px`, width: `${r.w}px`, height: `${r.h}px` })
   art(canvas)
   // Cut it to the pack's outline. The fill has to be opaque: whatever style the painting left
   // behind would otherwise set how much of the pack survives.
@@ -48,24 +47,6 @@ export function primeMorph() {
   primed = { key: sizeKey(), canvas: packCanvas(canvas => paintPackFront(canvas, { id: CENTER_PACK, count: counts[CENTER_PACK] ?? 0 })) }
 }
 
-// Page clip shapes for the morph, from the full viewport down to the pack's outline.
-function shapes(app: HTMLElement) {
-  const vw = window.innerWidth, vh = window.innerHeight, r = packRect(vw, vh)
-  const box = app.getBoundingClientRect()
-  const scale = Math.max(r.w / vw, r.h / vh)
-  const cw = r.w / scale, ch = r.h / scale
-  const top = -box.top, left = -box.left
-  const inset = (t: number, l: number, w: number, h: number, round: number) =>
-    `inset(${t}px ${box.width - (l + w)}px ${box.height - (t + h)}px ${l}px round ${round}px)`
-  const dx = r.x + r.w / 2 - vw / 2, dy = r.y + r.h / 2 - vh / 2
-  Object.assign(app.style, { transformOrigin: `${left + vw / 2}px ${top + vh / 2}px`, background: '#fff', willChange: 'transform, clip-path' })
-  return {
-    full: { clipPath: inset(top, left, vw, vh, 0), transform: 'translate(0, 0) scale(1)' },
-    lifted: { clipPath: inset(top + 10, left + 10, vw - 20, vh - 20, 28), transform: 'translate(0, 0) scale(.96)' },
-    pack: { clipPath: inset(top + (vh - ch) / 2, left + (vw - cw) / 2, cw, ch, (r.w * 0.035) / scale), transform: `translate(${dx}px, ${dy}px) scale(${scale})` },
-  }
-}
-
 // Shrinks the visible part of the page into the shape of a card pack, right where /play/ draws
 // its center pack, then swaps in the pack's art. `done` runs as soon as the page is fully covered,
 // so /play/ starts setting up its 3D scene while the pack finishes its little bounce.
@@ -84,7 +65,6 @@ export function morphIntoPack(app: HTMLElement, done: () => void) {
     markMorphed()
     done()
   }, done)
-  return () => { shrink.cancel(); overlay.remove(); document.documentElement.classList.remove('play-morph') }
 }
 
 // /play/ on its way back: a painted copy of the pack in front, from the 3D scene's own texture,
@@ -96,22 +76,4 @@ export function showReturnPack(front: HTMLCanvasElement | null) {
   // In case the page we go to never picks it up.
   setTimeout(() => { if (!overlay.dataset.growing) { overlay.remove(); document.documentElement.classList.remove('play-morph') } }, 10000)
   return overlay.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'ease-out', fill: 'forwards' }).finished
-}
-export const returnPack = () => document.querySelector<HTMLCanvasElement>(`[${RETURN}]`)
-
-// The homepage growing back out of the pack: the morph into the pack, played backwards.
-export function morphOutOfPack(app: HTMLElement) {
-  const overlay = returnPack()
-  if (!overlay || overlay.dataset.growing) return
-  overlay.dataset.growing = '1'
-  document.documentElement.classList.add('play-morph')
-  const { full, lifted, pack } = shapes(app)
-  const grow = app.animate([pack, { ...lifted, offset: 0.8 }, full], { duration: SHRINK_MS, easing: EASE, fill: 'forwards' })
-  overlay.animate([{ opacity: 1 }, { opacity: 0, offset: 0.3 }, { opacity: 0 }], { duration: SHRINK_MS, easing: 'ease-in', fill: 'forwards' })
-  const finish = () => {
-    grow.cancel(); overlay.remove()
-    Object.assign(app.style, { transformOrigin: '', background: '', willChange: '' })
-    document.documentElement.classList.remove('play-morph')
-  }
-  grow.finished.then(finish, finish)
 }

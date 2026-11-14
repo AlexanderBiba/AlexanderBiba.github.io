@@ -32,6 +32,8 @@ const FAN = [0, -1.6, 1.3, -0.9]
 // Putting the laid-out cards back: each flies from its spot into the deck, the last card first,
 // after a beat in which the pictures on the page dissolve into the 3D cards under them.
 const GATHER_HOLD = 50, GATHER_FLY = 560, GATHER_STAGGER = 70
+// When the torn-off strip starts to fade and when it's gone, in its own seconds since it let go (strip.ts).
+const STRIP_FADE = 0.6, STRIP_GONE = 1
 const DEG = Math.PI / 180
 
 type Pose = { x: number; y: number; z: number; rx: number; ry: number; rz: number; s: number; o: number }
@@ -294,6 +296,8 @@ export class CardStage {
   // Set from the moment the strip comes off until the cards start coming out (they may still be
   // painting). Nothing else can be started in between.
   private pendingOpen = false
+  // Nothing new starts while a torn pack waits for its cards, or on the way to the homepage.
+  private get locked() { return this.pendingOpen || this.exiting }
   // Called once the picked pack is back in its place on the shelf, on the way to the homepage,
   // or at this scene time if it somehow isn't by then.
   private onSettled: (() => void) | null = null
@@ -302,6 +306,8 @@ export class CardStage {
   private busyUntil = 0
   private backPainted: boolean[] = []
   private compiled = false
+  // The scene's shaders being compiled (see dispose).
+  private compiling: Promise<unknown>
   // Set when the page arrived through the homepage morph: the side packs slide in once it's drawn.
   private intro = false
   // Set while leaving for the homepage: the side packs slide away and the pick pack holds still.
@@ -349,7 +355,7 @@ export class CardStage {
     // The torn parts, the cut light and the glows are hidden until a tear, but compile them now too.
     const hidden: THREE.Object3D[] = [...this.packs.flatMap(p => [p.body, p.flap, p.cut]), this.burst, this.seal]
     hidden.forEach(m => { m.visible = true })
-    void this.renderer.compileAsync(this.scene, this.camera).then(() => {
+    this.compiling = this.renderer.compileAsync(this.scene, this.camera).then(() => {
       hidden.forEach(m => { m.visible = false })
       this.compiled = true
     })
@@ -442,7 +448,7 @@ export class CardStage {
     this.state.ready = true; this.emit()
     if (this.pendingPick) { this.pendingPick = false; this.pick() }
     await this.paintBacks()
-    void this.prepareCards(this.state.active)
+    if (!this.disposed) void this.prepareCards(this.state.active)
   }
 
   // Painting takes long enough to drop a frame or two, so it waits for a moment when nothing is
@@ -476,18 +482,25 @@ export class CardStage {
   packFront(i: number) { return this.fronts[i] ?? null }
 
   // Before going back to the homepage: the side packs slide away and the picked one goes back to
-  // its place on the shelf, where the homepage grows out of it. Resolves once it's there.
+  // its place on the shelf, where the homepage grows out of it. Resolves once it's there and whole:
+  // a pack that's torn open closes up first.
   exit() {
+    const { stage } = this.state, p = this.packs[this.state.active]
     this.exiting = true
     this.gesture = null
     if (this.tear) { this.tear = null; this.set({ tearing: false }) }
-    const p = this.packs[this.state.active]
     if (p) p.spinTarget = Math.round(p.spinAngle / (Math.PI * 2)) * Math.PI * 2
-    if (this.state.stage === 'tear' && !this.pendingOpen) p?.strip.settle()
-    this.settleBy = this.clock + 700
+    if (stage === 'tear' && !this.pendingOpen) p?.strip.settle()
+    // Torn, with its cards still being painted, on their way out or already out: they go back in
+    // from wherever they are, and it seals.
+    else if (stage !== 'shelf' && stage !== 'closing') this.closeFrom(stage === 'tear' ? 0 : stage === 'opening' ? clamp(this.clock - this.stageStart, 0, OPEN_MS) : OPEN_MS)
+    this.pendingOpen = false
+    // (A strip still in the air can hold the seal up a little, see updatePacks.)
+    const wait = this.state.stage === 'closing' ? Math.max(0, this.stageStart + CLOSE_MS - this.clock) + 1100 : 700
+    this.settleBy = this.clock + wait
     return new Promise<void>(resolve => {
       // (The timer is for a tab that stopped drawing.)
-      const timer = setTimeout(resolve, 3000)
+      const timer = setTimeout(resolve, wait / this.timeScale + 2500)
       this.onSettled = () => { clearTimeout(timer); resolve() }
     })
   }
@@ -496,7 +509,12 @@ export class CardStage {
   private prepareCards(i: number) {
     const id = this.data[i].id
     let job = this.cardJobs.get(id)
-    if (!job) { job = this.paintCards(i); this.cardJobs.set(id, job) }
+    if (!job) {
+      const painting = job = this.paintCards(i)
+      this.cardJobs.set(id, painting)
+      // A painting that failed is forgotten, so the next try starts over.
+      painting.catch(() => { if (this.cardJobs.get(id) === painting) this.cardJobs.delete(id) })
+    }
     return job
   }
 
@@ -515,9 +533,11 @@ export class CardStage {
     const edgeMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(PALETTE[data.id].c2).lerp(new THREE.Color(0xf6f1e4), 0.55), roughness: 0.75 })
     const arts = await Promise.all(data.cards.map(card => card.art.kind === 'image' ? loadImage(card.art.src) : Promise.resolve(null)))
     const holder = new THREE.Group()
+    // The page was left while this was still painting: nothing made so far is kept.
+    const drop = () => { this.free(holder); geo.dispose(); backTex.dispose(); backMat.dispose(); edgeMat.dispose(); return [] }
     for (const [k, card] of data.cards.entries()) {
       await this.quiet()
-      if (this.disposed) return list
+      if (this.disposed) return drop()
       const face = canvas(tw, th), foil = canvas(tw / 2, th / 2)
       const spots = paintCardFront(face, card, data.cards.length, arts[k]); paintCardSheen(foil, card, arts[k])
       const faceTex = texture(face), foilTex = texture(foil, false)
@@ -549,7 +569,7 @@ export class CardStage {
     }
     // Compile the card shaders now, so the first frame of the opening doesn't stall on them.
     await this.renderer.compileAsync(holder, this.camera, this.scene)
-    if (this.disposed) return list
+    if (this.disposed) return drop()
     for (const c of list) { c.mesh.visible = false; this.deck.add(c.mesh) }
     this.cards.set(data.id, list)
     this.emit()
@@ -624,12 +644,12 @@ export class CardStage {
   get stageName() { return this.state.stage }
 
   goTo(i: number) {
-    if (this.state.stage !== 'shelf') return
+    if (this.state.stage !== 'shelf' || this.locked) return
     const active = clamp(i, 0, this.data.length - 1)
     if (active !== this.state.active) { this.set({ active }); void this.prepareCards(active) }
   }
   pick() {
-    if (this.state.stage !== 'shelf') return
+    if (this.state.stage !== 'shelf' || this.locked) return
     // A tap before the textures are ready picks the pack as soon as they are.
     if (!this.state.ready) { this.pendingPick = true; return }
     const p = this.packs[this.state.active]
@@ -637,7 +657,7 @@ export class CardStage {
     this.set({ stage: 'tear', face: 'front' })
   }
   backToShelf() {
-    if (this.state.stage !== 'tear' || this.pendingOpen) return
+    if (this.state.stage !== 'tear' || this.locked) return
     this.dropTear()
     this.set({ stage: 'shelf', zoom: false })
   }
@@ -650,25 +670,25 @@ export class CardStage {
   }
   // Up close with the front showing, ready to tear; and back out to spinning it around.
   zoomIn() {
-    if (this.state.stage !== 'tear' || this.state.zoom || this.pendingOpen) return
+    if (this.state.stage !== 'tear' || this.state.zoom || this.locked) return
     const p = this.packs[this.state.active]
     p.spinTarget = Math.round(p.spinAngle / (Math.PI * 2)) * Math.PI * 2
     this.set({ zoom: true, face: 'front' })
   }
   zoomOut() {
-    if (this.state.stage !== 'tear' || !this.state.zoom || this.pendingOpen) return
+    if (this.state.stage !== 'tear' || !this.state.zoom || this.locked) return
     this.dropTear()
     this.set({ zoom: false })
   }
   flip() {
-    if (this.state.stage !== 'tear' || this.tear || this.state.zoom || this.pendingOpen) return
+    if (this.state.stage !== 'tear' || this.tear || this.state.zoom || this.locked) return
     const p = this.packs[this.state.active]
     this.paintBack(this.state.active)
     p.spinTarget = Math.round(p.spinAngle / Math.PI) * Math.PI + Math.PI
     this.set({ face: Math.round(p.spinTarget / Math.PI) % 2 ? 'back' : 'front' })
   }
   openNow() {
-    if (this.state.stage !== 'tear' || this.pendingOpen) return
+    if (this.state.stage !== 'tear' || this.locked) return
     void this.startOpening(1)
   }
   next() { const n = this.count(); if (this.state.stage === 'stack' && this.state.index < n) this.set({ index: this.state.index + 1 }) }
@@ -701,6 +721,15 @@ export class CardStage {
     this.set({ stage: 'closing', index: this.state.index < this.count() ? this.state.index : 0 })
   }
   private count() { return this.data[this.state.active].cards.length }
+  // Closes the picked pack from `at` ms into its opening: the cards that came out go back in and
+  // the tear seals. (Closing is the opening played backwards.)
+  private closeFrom(at: number) {
+    this.gather = null; this.gatherMs = 0
+    this.stageStart = this.clock - (OPEN_MS - at)
+    // A strip that's still in the air starts fading now.
+    this.packs[this.state.active]?.strip.skipTo(STRIP_FADE)
+    this.set({ stage: 'closing', zoom: false, tearing: false, index: this.state.index < this.count() ? this.state.index : 0 })
+  }
 
   private resetFlap() {
     const p = this.packs[this.state.active]
@@ -727,7 +756,7 @@ export class CardStage {
   }
 
   private async startOpening(dir: number) {
-    if (this.pendingOpen) return
+    if (this.locked) return
     this.pendingOpen = true
     const p = this.packs[this.state.active]
     this.gesture = null; this.tear = null
@@ -736,9 +765,12 @@ export class CardStage {
     // Face the front the short way round, if it was still turning.
     p.spinTarget = Math.round(p.spinAngle / (Math.PI * 2)) * Math.PI * 2
     try { navigator.vibrate?.([10, 30, 18]) } catch { /* optional */ }
-    await this.prepareCards(this.state.active)
+    const cards = await this.prepareCards(this.state.active).catch(() => null)
+    // Left for the homepage meanwhile: the pack is sealing again (see exit).
+    if (this.disposed || this.exiting) return
     this.pendingOpen = false
-    if (this.disposed) return
+    // The cards couldn't be painted: the pack seals again rather than hang open.
+    if (!cards) { this.closeFrom(0); return }
     this.stageStart = this.clock
     this.set({ stage: 'opening', index: 0, tearing: false })
   }
@@ -753,7 +785,8 @@ export class CardStage {
   }
 
   private down = (event: PointerEvent) => {
-    if (event.button !== 0 || this.pendingOpen || this.exiting) return
+    // (One finger at a time: a second one doesn't take over from the first.)
+    if (event.button !== 0 || !event.isPrimary || this.locked) return
     const { stage } = this.state
     let target: 'pack' | 'body' | 'none' = 'none', mode: 'tear' | null = null
     if (stage === 'tear') {
@@ -928,7 +961,7 @@ export class CardStage {
 
   private updatePacks(now: number, dt: number) {
     const { stage, active } = this.state
-    const elapsed = now - this.stageStart
+    let elapsed = now - this.stageStart
     this.packs.forEach((p, i) => {
       let target = this.packTarget(i, now)
       const focused = i === active
@@ -955,13 +988,20 @@ export class CardStage {
 
     const p = this.packs[active]
     if (!p) return
-    const r = packRect(this.vw, this.vh), mouthY = (0.5 - RIP_Y) * r.h
-    this.burst.visible = false; this.seal.visible = false
+    // In the pack's own units: it was built this size, and is scaled from there.
+    const bw = this.builtPackW, bh = bw / PACK_RATIO, mouthY = (0.5 - RIP_Y) * bh
+    this.seal.visible = false
+    // The burst belongs to the opening. If that's cut short it fades out rather than vanish.
+    if (stage !== 'opening') { const m = this.burst.material; m.opacity = m.opacity < 0.01 ? 0 : m.opacity * Math.exp(-12 * dt); this.burst.visible = m.opacity > 0 }
     this.updateCut(p, now, dt, elapsed)
-    // The strip moves on its own: peeling while you cut, then flying off. It fades as it leaves.
-    if (p.flap.visible && stage !== 'closing') {
+    // The strip moves on its own: peeling while you cut, then flying off. It fades as it leaves,
+    // and once it's gone there's nothing left to move.
+    const flight = p.strip.flying, inFlight = flight > 0 && flight < STRIP_GONE
+    // Closed again right after it was torn, the strip is still in the air: the seal waits for it.
+    if (stage === 'closing' && elapsed > OPEN_MS && inFlight && p.flap.visible) { elapsed = OPEN_MS; this.stageStart = now - OPEN_MS }
+    if (p.flap.visible && (flight ? inFlight : stage !== 'closing')) {
       p.strip.step(dt)
-      if (p.strip.flying) this.setOpacity(p, 1 - clamp((p.strip.flying - 0.6) / 0.4), 'flap')
+      if (p.strip.flying) this.setOpacity(p, 1 - clamp((p.strip.flying - STRIP_FADE) / (STRIP_GONE - STRIP_FADE)), 'flap')
       // A strip that was let go has sprung back flat: the pack is whole again.
       else if (p.strip.resting && !this.tear && !this.pendingOpen && (stage === 'tear' || stage === 'shelf')) this.resetFlap()
     }
@@ -969,15 +1009,16 @@ export class CardStage {
     if (this.exiting && this.onSettled) {
       const to = this.packTarget(active, now), at = p.current
       const there = Math.abs(at.x - to.x) + Math.abs(at.y - to.y) < 2.5 && Math.abs(at.s - to.s) < 0.008 * to.s && Math.abs(p.spinAngle - p.spinTarget) < 0.03
-      if ((there && (!p.flap.visible || stage !== 'tear')) || now >= this.settleBy) { const done = this.onSettled; this.onSettled = null; done() }
+      const whole = stage === 'shelf' || (stage === 'tear' && !p.flap.visible)
+      if ((there && whole) || now >= this.settleBy) { const done = this.onSettled; this.onSettled = null; done() }
     }
     if (stage === 'opening' || stage === 'closing') {
       // Closing plays the opening backwards, then seals the tear.
       const t = stage === 'opening' ? elapsed : OPEN_MS - elapsed
       // The torn strip is gone by the time the pack closes again; it comes back when it seals.
-      if (stage === 'closing' && elapsed <= OPEN_MS) p.flap.visible = false
+      if (stage === 'closing' && elapsed <= OPEN_MS && !inFlight) p.flap.visible = false
       const drop = clamp((t - 800) / 450)
-      p.body.position.y = -easeIn(drop) * r.h * 0.85
+      p.body.position.y = -easeIn(drop) * bh * 0.85
       p.body.position.z = 0
       this.setOpacity(p, 1 - clamp(drop / 0.75), 'body')
       if (stage === 'opening') {
@@ -998,8 +1039,8 @@ export class CardStage {
           this.setOpacity(p, 1, 'body'); this.setOpacity(p, clamp(sealT / 0.5), 'flap')
         }
         this.seal.visible = sealT > 0 && sealT < 1
-        this.seal.position.copy(new THREE.Vector3(0, mouthY, r.w * PUFF).applyMatrix4(p.root.matrixWorld))
-        this.seal.scale.set(r.w * PICKED_SCALE * (sealT < 0.4 ? sealT / 0.4 : 1), 14, 1)
+        this.seal.position.copy(new THREE.Vector3(0, mouthY, bw * PUFF).applyMatrix4(p.root.matrixWorld))
+        this.seal.scale.set(bw * p.current.s * (sealT < 0.4 ? sealT / 0.4 : 1), 14, 1)
         this.seal.material.opacity = sealT < 0.4 ? 1 : 1 - (sealT - 0.4) / 0.6
         if (elapsed >= CLOSE_MS) { this.resetFlap(); this.set({ stage: 'shelf', index: 0 }) }
       }
@@ -1021,7 +1062,7 @@ export class CardStage {
     // The cut's light holds while cutting and fades out where it was when the finger lets go.
     if (stage === 'tear' && tearing && t) { u.uCut.value = 1; u.uFrom.value = t.fromLeft ? t.min : t.max; u.uTo.value = t.at }
     else u.uCut.value = u.uCut.value < 0.01 ? 0 : u.uCut.value * Math.exp(-14 * dt)
-    u.uFlash.value = stage === 'opening' ? Math.max(0, 1 - elapsed / 420) : 0
+    u.uFlash.value = stage === 'opening' ? Math.max(0, 1 - elapsed / 420) : u.uFlash.value < 0.01 ? 0 : u.uFlash.value * Math.exp(-14 * dt)
     p.cut.visible = u.uSeam.value > 0.01 || u.uCut.value > 0 || u.uFlash.value > 0
   }
 
@@ -1108,13 +1149,24 @@ export class CardStage {
     this.canvasEl.removeEventListener('pointercancel', this.cancel)
     this.canvasEl.removeEventListener('pointerleave', this.leave)
     this.canvasEl.removeEventListener('click', this.click)
-    this.scene.traverse(obj => {
-      if (obj instanceof THREE.Mesh || obj instanceof THREE.Sprite) {
-        obj.geometry.dispose()
-        const mats = Array.isArray(obj.material) ? obj.material : [obj.material]
-        for (const m of mats) { for (const v of Object.values(m)) if (v instanceof THREE.Texture) v.dispose(); m.dispose() }
-      }
+    const global = window as unknown as { cardStage?: CardStage }
+    if (global.cardStage === this) delete global.cardStage
+    // The GPU's side goes once nothing is being compiled or painted any more: three.js checks on a
+    // compile with timers of its own, and they fail on a renderer that's gone.
+    void Promise.allSettled([this.compiling, ...this.cardJobs.values()]).then(() => {
+      this.free(this.scene)
+      this.scene.environment?.dispose()
+      this.renderer.dispose()
     })
-    this.renderer.dispose()
+  }
+
+  // Lets go of what the meshes under `root` hold on the GPU.
+  private free(root: THREE.Object3D) {
+    root.traverse(obj => {
+      if (!(obj instanceof THREE.Mesh || obj instanceof THREE.Sprite)) return
+      obj.geometry.dispose()
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material]
+      for (const m of mats) { for (const v of Object.values(m)) if (v instanceof THREE.Texture) v.dispose(); m.dispose() }
+    })
   }
 }

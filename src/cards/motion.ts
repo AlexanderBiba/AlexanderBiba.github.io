@@ -16,7 +16,8 @@ export function enableMotion() {
   if (!window.matchMedia('(pointer: coarse)').matches) return
   started = true
   const request = (DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> }).requestPermission
-  if (request) request().then(state => { if (state === 'granted') window.addEventListener('deviceorientation', onOrientation) }).catch(() => { started = false })
+  // (Not if the page was left while the question was up.)
+  if (request) request().then(state => { if (state === 'granted' && started) window.addEventListener('deviceorientation', onOrientation) }).catch(() => { started = false })
   else window.addEventListener('deviceorientation', onOrientation)
 }
 
