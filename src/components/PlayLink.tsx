@@ -43,14 +43,15 @@ export default function PlayLink() {
       }}
     >
       {/* Two cards with a small star in the Built pack's color. The ring around them is in Navbar.scss.
-          The cards are moved so that their middle is the middle of the ring; the star sits in the corner. */}
+          The cards are centered in the ring from side to side and sit 0.75 under its middle, which
+          balances the star above them; centered exactly, the drawing looks like it rides high. */}
       <span aria-hidden="true">
         <svg viewBox="0 0 24 24">
-          <g transform="translate(1.05 1) scale(.92)" fill="#fff" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+          <g transform="translate(1.05 1.75) scale(.92)" fill="#fff" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
             <rect x="4.5" y="5" width="9.5" height="13.5" rx="1.8" transform="rotate(-12 9.25 11.75)" />
             <rect x="10" y="5.5" width="9.5" height="13.5" rx="1.8" transform="rotate(10 14.75 12.25)" />
           </g>
-          <path d="M21 .4l.84 2.16 2.16.84-2.16.84-.84 2.16-.84-2.16-2.16-.84 2.16-.84z" fill="#22c7c0" />
+          <path d="M21 2l.78 2.02 2.02.78-2.02.78-.78 2.02-.78-2.02-2.02-.78 2.02-.78z" fill="#22c7c0" />
         </svg>
       </span>
     </Link>
