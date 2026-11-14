@@ -50,6 +50,8 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
   // you tap one ('show', from that card on).
   const [leaving, setLeaving] = useState<null | { mode: 'gather' | 'show'; first: number }>(null)
   const grid = useRef<HTMLUListElement>(null)
+  // The buttons under the stack. A tap on a link printed on the card presses the one for that link.
+  const controls = useRef<HTMLDivElement>(null)
   useEffect(() => { if (state.stage !== 'closing') setLeaving(l => l?.mode === 'gather' ? null : l) }, [state.stage])
   useEffect(() => {
     if (leaving?.mode !== 'show') return
@@ -105,7 +107,10 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
     const morphed = wasMorphed()
     setIntro(morphed)
     try {
-      if (canvas.current) stage.current = new CardStage(canvas.current, packs, setState, { active: PACK_ORDER.indexOf(CENTER_PACK), intro: morphed })
+      if (canvas.current) stage.current = new CardStage(canvas.current, packs, setState, {
+        active: PACK_ORDER.indexOf(CENTER_PACK), intro: morphed,
+        onLink: k => controls.current?.querySelectorAll<HTMLAnchorElement>('a[href]')[k]?.click(),
+      })
     } catch { setFailed(true) }
     // Phones only share their tilt after a tap (iOS asks for permission), so ask on the first one.
     const gesture = () => enableMotion()
@@ -238,7 +243,7 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
         </div>}
       </div>}
 
-      {(inStack || state.stage === 'closing') && stack && <div className={styles.stackControls} data-out={controlsOut || undefined} inert={controlsOut} style={{ top: stack.y + stack.h + 22 }}>
+      {(inStack || state.stage === 'closing') && stack && <div ref={controls} className={styles.stackControls} data-out={controlsOut || undefined} inert={controlsOut} style={{ top: stack.y + stack.h + 22 }}>
         <p className={styles.srOnly} aria-live="polite">{card && `${card.name}, card ${state.index + 1} of ${total}. ${card.text}`}</p>
         <CardLinks key={underStack.id} card={underStack} />
         <div className={styles.stackNav}>

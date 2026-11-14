@@ -42,7 +42,17 @@ export default function PlayLink() {
         morphIntoPack(app, () => router.push('/play/'))
       }}
     >
-      <span aria-hidden="true">🎮</span>
+      {/* A fan of three cards, one in each pack's color. */}
+      <span aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="26" height="26">
+          <g stroke="#1a1a1a" strokeWidth="1.3" strokeLinejoin="round">
+            <rect x="7.5" y="5" width="9" height="13" rx="1.7" fill="#ff8a4c" transform="rotate(-28 12 20)" />
+            <rect x="7.5" y="5" width="9" height="13" rx="1.7" fill="#8b5cf6" transform="rotate(28 12 20)" />
+            <rect x="7.5" y="3.5" width="9" height="13" rx="1.7" fill="#22c7c0" />
+          </g>
+          <path d="M12 6.6l.95 2.45 2.45.95-2.45.95L12 13.4l-.95-2.45L8.6 10l2.45-.95z" fill="#fff" />
+        </svg>
+      </span>
     </Link>
   )
 }

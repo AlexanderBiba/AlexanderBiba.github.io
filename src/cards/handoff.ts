@@ -1,4 +1,4 @@
-// Set by the homepage 🎮 link right before it navigates, so /play/ knows the page already
+// Set by the homepage's card-packs link right before it navigates, so /play/ knows the page already
 // morphed into the center pack and can skip its own intro.
 let morphedAt = 0
 export const markMorphed = () => { morphedAt = Date.now() }

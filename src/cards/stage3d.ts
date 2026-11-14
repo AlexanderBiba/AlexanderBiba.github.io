@@ -4,7 +4,7 @@
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { CARD_RATIO, PACK_RATIO, packRect, packSpacing, stackRect, zoomRect } from './geometry.ts'
-import { paintCardFront, paintCardSheen } from './cardArt.ts'
+import { paintCardFront, paintCardSheen, type CardSpot } from './cardArt.ts'
 import { paintCardBack, paintPackBack, paintPackFin, paintPackFront, paintPackMask, paintPackSheen, loadImage } from './paint.ts'
 import { PALETTE } from './palette.ts'
 import { EDGE, FIN, RIP_Y, finLift, pillow, smooth, teeth } from './shapes.ts'
@@ -242,11 +242,13 @@ type PackObj = {
 }
 // `flat`: how much the card shows as its plain picture instead of a lit, shiny thing (see shade).
 // `away`: how much of the way from its picture on the page to the stack it still has to go.
-type CardObj = { mesh: THREE.Mesh; current: Pose; front: THREE.MeshPhysicalMaterial; unmapped: { value: number }; image: string; flat: number; away: number }
+// `spots`: where its links are printed on its front.
+type CardObj = { mesh: THREE.Mesh; current: Pose; front: THREE.MeshPhysicalMaterial; unmapped: { value: number }; image: string; flat: number; away: number; spots: CardSpot[] }
 // A card flying in from its picture keeps looking like it for the first part of the way, and
 // takes on the light over the rest: up by the pictures it would catch a glare and wash out.
 const flatFor = (away: number) => { const x = clamp(away / 0.6); return x * x * (3 - 2 * x) }
-export type StageOptions = { active: number; intro: boolean }
+// `onLink`: someone tapped the top card's link number `index`, where it's printed on the card.
+export type StageOptions = { active: number; intro: boolean; onLink?: (index: number) => void }
 
 export class CardStage {
   private renderer: THREE.WebGLRenderer
@@ -277,6 +279,9 @@ export class CardStage {
   private gesture: { id: number; x: number; y: number; t: number; mode: 'swipe' | 'spin' | 'tear' | 'card' | null; lastX: number; lastT: number; v: number; base: number; target: 'pack' | 'body' | 'none' } | null = null
   private drag = { dx: 0, active: false }
   private pointer: { x: number; y: number; t: number } | null = null
+  // When the top card was last tapped, and what to do when the tap lands on one of its links.
+  private tapped = -1e9
+  private onLink: ((index: number) => void) | null = null
   private tilt = { x: 0, y: 0 }
   // The cards live in a deck that turns about the stack's center, so the stack leans as one
   // piece and the cards never cut through each other.
@@ -309,7 +314,8 @@ export class CardStage {
   private get packScale() { return this.builtPackW ? packRect(this.vw, this.vh).w / this.builtPackW : 1 }
   private get cardScale() { return this.builtCardW ? stackRect(this.vw, this.vh).w / this.builtCardW : 1 }
 
-  constructor(private canvasEl: HTMLCanvasElement, private data: PackData[], private onChange: (state: StageState) => void, { active, intro }: StageOptions) {
+  constructor(private canvasEl: HTMLCanvasElement, private data: PackData[], private onChange: (state: StageState) => void, { active, intro, onLink }: StageOptions) {
+    this.onLink = onLink ?? null
     this.intro = intro
     this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const params = new URLSearchParams(window.location.search)
@@ -347,11 +353,14 @@ export class CardStage {
       hidden.forEach(m => { m.visible = false })
       this.compiled = true
     })
+    // The top card of the stack is drawn in a pass of its own (layer 1); a tap has to find it too.
+    this.raycaster.layers.enableAll()
     canvasEl.addEventListener('pointerdown', this.down)
     canvasEl.addEventListener('pointermove', this.move)
     canvasEl.addEventListener('pointerup', this.up)
     canvasEl.addEventListener('pointercancel', this.cancel)
     canvasEl.addEventListener('pointerleave', this.leave)
+    canvasEl.addEventListener('click', this.click)
     this.frame = requestAnimationFrame(this.loop)
   }
 
@@ -510,7 +519,7 @@ export class CardStage {
       await this.quiet()
       if (this.disposed) return list
       const face = canvas(tw, th), foil = canvas(tw / 2, th / 2)
-      paintCardFront(face, card, data.cards.length, arts[k]); paintCardSheen(foil, card, arts[k])
+      const spots = paintCardFront(face, card, data.cards.length, arts[k]); paintCardSheen(foil, card, arts[k])
       const faceTex = texture(face), foilTex = texture(foil, false)
       // Send them to the GPU now, between frames, instead of on the first frame that shows the card.
       this.renderer.initTexture(faceTex); this.renderer.initTexture(foilTex)
@@ -532,7 +541,7 @@ export class CardStage {
         shader.fragmentShader = 'uniform float unmapped;\n' + shader.fragmentShader.replace('#include <tonemapping_fragment>',
           '#if defined( TONE_MAPPING )\n\tgl_FragColor.rgb = mix( toneMapping( gl_FragColor.rgb ), gl_FragColor.rgb, unmapped );\n#endif')
       }
-      const obj: CardObj = { mesh: new THREE.Mesh(geo, [front, edgeMat, backMat]), current: pose(), front, unmapped, image: '', flat: 0, away: 0 }
+      const obj: CardObj = { mesh: new THREE.Mesh(geo, [front, edgeMat, backMat]), current: pose(), front, unmapped, image: '', flat: 0, away: 0, spots }
       holder.add(obj.mesh)
       list.push(obj)
       // The recap grid shows the same painting; encoding it off the main thread keeps frames smooth.
@@ -736,7 +745,7 @@ export class CardStage {
 
   // ---------- Input ----------
 
-  private hit(event: PointerEvent, meshes: THREE.Object3D[]) {
+  private hit(event: { clientX: number; clientY: number }, meshes: THREE.Object3D[]) {
     const rect = this.canvasEl.getBoundingClientRect()
     const ndc = new THREE.Vector2(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1)
     this.raycaster.setFromCamera(ndc, this.camera)
@@ -783,6 +792,8 @@ export class CardStage {
   private move = (event: PointerEvent) => {
     this.pointer = { x: event.clientX, y: event.clientY, t: performance.now() }
     const g = this.gesture
+    // A mouse over a link printed on the top card gets the hand that links get.
+    if (!g && event.pointerType === 'mouse') this.canvasEl.style.cursor = this.spotAt(event) >= 0 ? 'pointer' : ''
     if (!g || g.id !== event.pointerId) return
     const dx = event.clientX - g.x, dy = event.clientY - g.y, now = performance.now()
     if (g.mode === 'tear' && this.tear) {
@@ -837,6 +848,7 @@ export class CardStage {
       // spinning it, and from there to the shelf.
       if (stage === 'tear' && g.target === 'pack') this.zoomIn()
       if (stage === 'tear' && g.target === 'none') { if (this.state.zoom) this.zoomOut(); else this.backToShelf() }
+      if (stage === 'stack' && g.target === 'body') this.tapped = performance.now()
       return
     }
     if (g.mode === 'swipe') { if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) this.goTo(this.state.active + (dx < 0 ? 1 : -1)); return }
@@ -859,6 +871,24 @@ export class CardStage {
     if (this.tear) this.dropTear()
   }
   private leave = () => { this.pointer = null }
+
+  // Which of the top card's printed links is under the pointer (-1 for none).
+  private spotAt(event: { clientX: number; clientY: number }) {
+    const top = this.state.stage === 'stack' ? this.topCard() : null
+    const hit = top && this.hit(event, [top.mesh])
+    if (!top || !hit?.uv || hit.face?.materialIndex !== 0) return -1
+    const x = hit.uv.x, y = 1 - hit.uv.y
+    return top.spots.findIndex(s => x >= s.x && x <= s.x + s.w && y >= s.y && y <= s.y + s.h)
+  }
+
+  // A tap on a link printed on the top card opens it, like its button under the card. This waits
+  // for the click that follows the tap: every browser lets a click open a new tab.
+  private click = (event: MouseEvent) => {
+    if (performance.now() - this.tapped > 700) return
+    this.tapped = -1e9
+    const k = this.spotAt(event)
+    if (k >= 0) this.onLink?.(k)
+  }
 
   private topCard() {
     const list = this.cards.get(this.data[this.state.active].id)
@@ -1077,6 +1107,7 @@ export class CardStage {
     this.canvasEl.removeEventListener('pointerup', this.up)
     this.canvasEl.removeEventListener('pointercancel', this.cancel)
     this.canvasEl.removeEventListener('pointerleave', this.leave)
+    this.canvasEl.removeEventListener('click', this.click)
     this.scene.traverse(obj => {
       if (obj instanceof THREE.Mesh || obj instanceof THREE.Sprite) {
         obj.geometry.dispose()

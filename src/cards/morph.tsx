@@ -10,7 +10,7 @@ import styles from './cards.module.css'
 const counts = { works: works.length } as Record<string, number>
 
 // The pictures /play/ needs first: the art on the Built pack's cards. Asking for them the moment
-// 🎮 is tapped gives them the length of the morph as a head start.
+// the navbar's card icon is tapped gives them the length of the morph as a head start.
 function warmArt() {
   for (const work of works) if (work.image) void loadImage(work.image)
 }
@@ -39,8 +39,8 @@ function packCanvas(art: (canvas: HTMLCanvasElement) => void) {
   return canvas
 }
 
-// The Built pack's overlay is painted ahead of time, while the homepage is idle, so a tap on 🎮
-// starts the animation at once.
+// The Built pack's overlay is painted ahead of time, while the homepage is idle, so a tap on the
+// navbar's card icon starts the animation at once.
 let primed: { key: string; canvas: HTMLCanvasElement } | null = null
 const sizeKey = () => `${window.innerWidth}x${window.innerHeight}@${dpr()}`
 export function primeMorph() {

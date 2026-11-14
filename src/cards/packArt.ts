@@ -208,7 +208,9 @@ function drawBoxes(ctx: Ctx, boxes: Box[], view: V3, ox: number, oy: number, sca
 
 // ---------- Built: a golem put together out of blocks, building one more ----------
 
-function golem(ctx: Ctx, W: number, H: number) {
+// `bare` leaves out what floats around it (the blocks adrift and the sparks), for a card, where
+// they would land on the card's picture.
+function golem(ctx: Ctx, W: number, H: number, bare = false) {
   const u = W / 100, ox = W * 0.5, oy = H * 0.475, k = 1.3 * u, rand = seeded(977)
   const steel = '#dbe8f7', navy = '#27467c', dark = '#061433', yellow = '#ffc832', cyan = '#3ff2e2'
   const view: V3 = [0.2, -0.42, 0]
@@ -254,8 +256,24 @@ function golem(ctx: Ctx, W: number, H: number) {
   const vents = (ctx: Ctx) => { ctx.fillStyle = rgba(dark, 0.6); for (let y = -0.5; y < 0.6; y += 0.36) ctx.fillRect(-0.6, y, 1.2, 0.16) }
   // A lit strip down a limb.
   const strip = (ctx: Ctx) => { ctx.fillStyle = dark; ctx.fillRect(-0.3, -0.8, 0.6, 1.6); ctx.fillStyle = cyan; ctx.fillRect(-0.14, -0.7, 0.28, 1.4); ctx.fillStyle = '#fff'; ctx.fillRect(-0.05, -0.7, 0.1, 1.4) }
+  // The grooves between the fingers of a fist.
   const knuckles = (ctx: Ctx) => { panel(ctx); ctx.fillStyle = rgba(dark, 0.7); for (const x of [-0.36, 0, 0.36]) ctx.fillRect(x - 0.035, -0.2, 0.07, 0.98) }
-  const boxes: Box[] = [
+  // The bolt an elbow turns on.
+  const pivot = (ctx: Ctx) => {
+    ctx.fillStyle = dark; ctx.beginPath(); ctx.arc(0, 0, 0.62, 0, TAU); ctx.fill()
+    ctx.fillStyle = steel; ctx.beginPath(); ctx.arc(0, 0, 0.4, 0, TAU); ctx.fill()
+    ctx.fillStyle = cyan; ctx.beginPath(); ctx.arc(0, 0, 0.16, 0, TAU); ctx.fill()
+  }
+  // A limb from one joint to the next: a box that long, `thick` across, turned to point along it.
+  const limb = (a: V3, b: V3, thick: number): Box => {
+    const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2], flat = Math.hypot(dx, dy)
+    return { at: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2], half: [thick, Math.hypot(flat, dz) / 2, thick], turn: [Math.atan2(dz, flat), 0, Math.atan2(-dx, dy)], color: navy, on: { front: strip } }
+  }
+  const joint = (at: V3): Box => ({ at, half: [4.1, 4.1, 4.1], color: navy, on: { front: pivot } })
+  const fist = (at: V3, turn: V3): Box => ({ at, half: [4.9, 4.7, 4.9], turn, color: steel, on: { front: knuckles } })
+  const put = (...boxes: Box[]) => drawBoxes(ctx, boxes, view, ox, oy, k, dark, 0.55 * u)
+
+  const body: Box[] = [
     // Legs.
     { at: [-8, -27, 0], half: [4.2, 6.5, 4.2], turn: [0, 0, -0.1], color: navy, on: { front: strip } },
     { at: [8, -27, 0], half: [4.2, 6.5, 4.2], turn: [0, 0, 0.1], color: navy, on: { front: strip } },
@@ -267,39 +285,33 @@ function golem(ctx: Ctx, W: number, H: number) {
     // Head with its antenna.
     { at: [-0.5, 19.5, 1.5], half: [8.4, 6.6, 7], turn: [0.08, 0.26, 0.05], color: steel, on: { front: visor } },
     { at: [4.5, 29.5, 0], half: [0.7, 3.4, 0.7], turn: [0, 0, -0.12], color: navy },
-    // Shoulders.
-    { at: [-20.5, 9.5, 0], half: [6.4, 5.8, 6.8], turn: [0, 0, 0.34], color: yellow, on: { front: hazard, top: hazard } },
-    { at: [20.5, 8, 0], half: [6.4, 5.8, 6.8], turn: [0, 0, -0.2], color: yellow, on: { front: hazard, top: hazard } },
-    // The arm it holds up, and its hand.
-    { at: [-25.5, 17.5, 1], half: [3.4, 6, 3.4], turn: [0, 0, 0.5], color: navy, on: { front: strip } },
-    { at: [-28.5, 27.5, 3], half: [5.8, 5.4, 5.8], turn: [0, 0.2, 0.3], color: steel, on: { front: knuckles } },
-    // The other arm, fist toward us.
-    { at: [26, -3, 3], half: [3.4, 6, 3.4], turn: [0.5, 0, -0.3], color: navy },
-    { at: [29.5, -13.5, 11], half: [6.8, 6.8, 6.8], turn: [0.3, -0.3, -0.12], color: steel, on: { front: knuckles } },
   ]
+  const shoulder = (at: V3, tilt: number): Box => ({ at, half: [6.4, 5.8, 6.8], turn: [0, 0, tilt], color: yellow, on: { front: hazard, top: hazard } })
+  // One arm is bent up at the elbow, its fist under the block it's building.
+  const elbowUp: V3 = [-29.5, 0.5, 2], raised: V3 = [-29.5, 17.5, 4], block: V3 = [-29, 29, 4]
+  // The other rests its fist on its hip.
+  const elbowOut: V3 = [31, -6.5, 2], hip: V3 = [17, -15, 8]
+
   // Blocks adrift behind it.
-  const drift: Box[] = Array.from({ length: 9 }, (_, i) => {
+  if (!bare) drawBoxes(ctx, Array.from({ length: 9 }, (_, i): Box => {
     const a = i / 9 * TAU + 0.5 + rand() * 0.4, d = 36 + rand() * 10, size = 1.5 + rand() * 2.4
     return { at: [Math.cos(a) * d, Math.sin(a) * d * 0.8 - 2, -14], half: [size, size, size], turn: [rand() * 3, rand() * 3, rand() * 3], color: i % 3 ? navy : steel }
-  })
-  drawBoxes(ctx, drift, view, ox, oy, k, dark, 0.45 * u)
+  }), view, ox, oy, k, dark, 0.45 * u)
+  glow(block, (bare ? 13 : 22) * u, bare ? 0.6 : 0.9)
+  if (!bare) { zap([28, 30, -10], [48, 52, -10], 0.7); zap([-22, -6, -10], [-50, 6, -10], 0.7) }
 
-  // The block it's building, lit up over its hand.
-  const block: V3 = [-28.5, 39.5, 3], [bx, by] = at(block)
-  glow(block, 22 * u, 0.9)
-  zap([28, 30, -10], [48, 52, -10], 0.7)
-  zap([-22, -6, -10], [-50, 6, -10], 0.7)
-  const turn: V3 = [0.5, 0.7, 0.2]
-  drawBoxes(ctx, [{ at: [0, 0, 0], half: [5.2, 5.2, 5.2], turn, color: steel, glass: cyan }], [0, 0, 0], bx, by, k, dark, 0.4 * u)
-
-  drawBoxes(ctx, boxes, view, ox, oy, k, dark, 0.55 * u)
+  // The far arm goes down first, each piece over the one before it, then the body, then the near arm.
+  put(limb([-23.5, 7, 0], elbowUp, 3.7)); put(shoulder([-20.5, 9.5, 0], 0.3)); put(limb(elbowUp, raised, 3.7)); put(joint(elbowUp)); put(fist(raised, [0, 0.2, 0.06]))
+  const [bx, by] = at(block)
+  drawBoxes(ctx, [{ at: [0, 0, 0], half: [4.6, 4.6, 4.6], turn: [0.5, 0.7, 0.2], color: steel, glass: cyan }], [0, 0, 0], bx, by, k, dark, 0.4 * u)
+  put(...body)
+  put(limb([23.5, 5, 1], elbowOut, 3.7)); put(shoulder([20.5, 8.5, 1], -0.16)); put(limb(elbowOut, hip, 3.6)); put(joint(elbowOut)); put(fist(hip, [0, -0.3, 0.3]))
 
   // Light off the antenna, the eyes and the chest, and sparks jumping from it.
   glow([5, 33.5, 0], 8 * u, 1)
   glow([-0.5, 20, 9], 13 * u, 0.4)
   glow([0, 0, 9], 20 * u, 0.5)
-  zap([36, -8, 11], [50, 12, 0])
-  zap([-15, -20, 6], [-46, -30, 0])
+  if (!bare) { zap([36, -8, 11], [50, 12, 0]); zap([-15, -20, 6], [-46, -30, 0]) }
   sparkle(ctx, bx, by, 5 * u)
   sparkle(ctx, ...at([5, 33.5, 0]), 3 * u)
 }
@@ -321,7 +333,7 @@ function feather(ctx: Ctx, x: number, y: number, angle: number, len: number, wid
   ctx.restore()
 }
 
-function phoenix(ctx: Ctx, W: number, H: number) {
+function phoenix(ctx: Ctx, W: number, H: number, bare = false) {
   const u = W / 100, rad = Math.PI / 180
   const ink = '#1d1147', ink2 = '#3a1a6e', line = '#12062e', rose = '#e0307a', ember = '#ff8a2e', gold = '#ffd24a', hot = '#fff6c8'
   const fire = [ink, ink2, rose, ember, gold], flame = [rose, ember, gold, hot]
@@ -377,7 +389,7 @@ function phoenix(ctx: Ctx, W: number, H: number) {
     g.addColorStop(0, rgba(hot, a)); g.addColorStop(0.4, rgba(ember, a * 0.5)); g.addColorStop(1, rgba(ember, 0))
     ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2)
   }
-  for (let i = 0; i < 46; i++) {
+  for (let i = 0; i < (bare ? 0 : 46); i++) {
     const a = -Math.PI * (0.08 + rand() * 0.84), d = 26 + rand() * 34, x = Math.cos(a) * d * 1.05, y = Math.sin(a) * d - 8, r = 0.3 + rand() * 0.8
     // Each ember is a small flame: a drop with its tail blown upward.
     ctx.fillStyle = rgba(i % 3 ? gold : hot, 0.55 + rand() * 0.45)
@@ -498,11 +510,12 @@ function dragon(ctx: Ctx, W: number, H: number) {
 // Each pack's creature: how to paint it on the pack, where its head is on that painting (as shares
 // of it), and how it stands in a card's window: how wide its painting is drawn there (in card
 // widths), how far under the window's top edge its head sits (in hundredths of the card's width),
-// and how far across the window it is (as a share of the window).
-export type Hero = { paint: (ctx: Ctx, W: number, H: number) => void; head: Focus; card: { size: number; drop: number; at: number } }
+// and how far across the window it is (as a share of the window). Painted `bare`, it comes without
+// what floats around it (blocks, sparks, embers), which on a card would land on the card's picture.
+export type Hero = { paint: (ctx: Ctx, W: number, H: number, bare?: boolean) => void; head: Focus; card: { size: number; drop: number; at: number } }
 export const HERO: Record<PackId, Hero> = {
   blog: { paint: phoenix, head: { x: 0.5, y: 0.355 }, card: { size: 0.9, drop: 6, at: 0.68 } },
   works: { paint: golem, head: { x: 0.5, y: 0.385 }, card: { size: 0.74, drop: 2, at: 0.68 } },
   social: { paint: dragon, head: { x: 0.6, y: 0.335 }, card: { size: 0.82, drop: 6, at: 0.6 } },
 }
-export function paintHero(ctx: Ctx, id: PackId, W: number, H: number) { HERO[id].paint(ctx, W, H) }
+export function paintHero(ctx: Ctx, id: PackId, W: number, H: number, bare = false) { HERO[id].paint(ctx, W, H, bare) }
