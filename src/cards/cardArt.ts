@@ -6,7 +6,7 @@
 // Sizes are in hundredths of the card's width (`u`).
 import { PALETTE } from './palette.ts'
 import { PACK_META } from './packMeta.ts'
-import { HEAT, mix, paintBackdrop, paintHero, rays, raySeed, rgba, sparkle } from './packArt.ts'
+import { HEAT, HERO, mix, paintBackdrop, paintHero, rays, raySeed, rgba, sparkle } from './packArt.ts'
 import { MONO, SANS, TITLE, cover, icon, roundRect, spaced, wrap } from './paint.ts'
 import { seeded } from './shapes.ts'
 import type { CardData, CardLink, PackId } from './types.ts'
@@ -18,12 +18,6 @@ const DEG = Math.PI / 180, TAU = Math.PI * 2
 
 // The card's corner, the width of the foil ring around it and the corner of what's inside the ring.
 const CORNER = 4.5, RING = 2.2, INNER = 3
-// Where each pack's creature has its head on the pack's painting, as shares of that painting.
-const HEAD: Record<PackId, { x: number; y: number }> = { blog: { x: 0.5, y: 0.355 }, works: { x: 0.5, y: 0.385 }, social: { x: 0.6, y: 0.335 } }
-// How wide each creature's painting is drawn (in card widths), and how far under the window's top
-// edge its head sits.
-const SIZE: Record<PackId, number> = { blog: 0.9, works: 0.74, social: 0.82 }
-const DROP: Record<PackId, number> = { blog: 6, works: 2, social: 6 }
 // Where the burst behind the creature comes from, as shares of the window.
 const FOCUS = { x: 0.7, y: 0.42 }
 // The size of the card's number at the end of the line under the window.
@@ -41,8 +35,9 @@ function plan(ctx: Ctx, card: CardData, art: Pic | null, W: number, H: number) {
   const win = { x: 6 * u, y: 20 * u, w: 88 * u, h: 60 * u, r: 2 * u }
   // A wide picture (a screenshot) fills the window. A square one (a portrait) hangs in it as a print.
   const wide = !!art && art.width / art.height > 1.25
-  const pw = SIZE[id] * W, ph = pw / 0.55, head = HEAD[id]
-  const hx = win.x + win.w * (wide ? 0.74 : id === 'social' ? 0.6 : 0.68), hy = win.y + DROP[id] * u
+  // The creature, with its head a little under the window's top edge (further right over a screenshot).
+  const hero = HERO[id], pw = hero.card.size * W, ph = pw / 0.55, head = hero.head
+  const hx = win.x + win.w * (wide ? 0.74 : hero.card.at), hy = win.y + hero.card.drop * u
   const creature = { x: hx - head.x * pw, y: hy - head.y * ph, w: pw, h: ph }
   const glints = Array.from({ length: 4 }, () => ({ x: win.x + (0.4 + rand() * 0.55) * win.w, y: win.y + rand() * win.h * 0.8, r: (1.1 + rand() * 1.6) * u }))
   const print = art && !wide ? { x: win.x + 5 * u, y: win.y + win.h - 30 * u, w: 25 * u } : null

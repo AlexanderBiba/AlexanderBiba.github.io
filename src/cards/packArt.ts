@@ -495,9 +495,14 @@ function dragon(ctx: Ctx, W: number, H: number) {
   ctx.restore()
 }
 
-// The creature on the pack.
-export function paintHero(ctx: Ctx, id: PackId, W: number, H: number) {
-  if (id === 'works') golem(ctx, W, H)
-  else if (id === 'blog') phoenix(ctx, W, H)
-  else dragon(ctx, W, H)
+// Each pack's creature: how to paint it on the pack, where its head is on that painting (as shares
+// of it), and how it stands in a card's window: how wide its painting is drawn there (in card
+// widths), how far under the window's top edge its head sits (in hundredths of the card's width),
+// and how far across the window it is (as a share of the window).
+export type Hero = { paint: (ctx: Ctx, W: number, H: number) => void; head: Focus; card: { size: number; drop: number; at: number } }
+export const HERO: Record<PackId, Hero> = {
+  blog: { paint: phoenix, head: { x: 0.5, y: 0.355 }, card: { size: 0.9, drop: 6, at: 0.68 } },
+  works: { paint: golem, head: { x: 0.5, y: 0.385 }, card: { size: 0.74, drop: 2, at: 0.68 } },
+  social: { paint: dragon, head: { x: 0.6, y: 0.335 }, card: { size: 0.82, drop: 6, at: 0.6 } },
 }
+export function paintHero(ctx: Ctx, id: PackId, W: number, H: number) { HERO[id].paint(ctx, W, H) }
