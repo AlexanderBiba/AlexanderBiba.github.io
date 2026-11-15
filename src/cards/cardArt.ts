@@ -1,15 +1,14 @@
 // The front of a card, laid out like a classic trading card: a frame in the pack's color inside a
-// thin ring of holo foil, the name on a metal bar, the art in a window, a line that says what kind
-// of card it is, and the words in a box underneath. A picture made for the card or a screenshot
-// fills the window. Otherwise the window shows the pack's creature (the wide picture from
-// PACK_ART, or while that hasn't loaded the one drawn in code, with its head coming out over the
-// top edge), with a portrait hanging in it as a framed print or an icon on a badge. Nothing on the
-// card is tilted.
+// thin ring of holo foil, the name on a metal bar across the top, the art in a window, a line that
+// says what kind of card it is, and a box underneath with the card's links and two lines of text in
+// small, pale type that's easy to skip. A picture made for the card or a screenshot fills the
+// window. Otherwise the window shows the pack's creature (the wide picture from PACK_ART, or while
+// that hasn't loaded the one drawn in code), with a portrait hanging in it as a framed print or an
+// icon on a badge. Nothing on the card is tilted.
 // Sizes are in hundredths of the card's width (`u`).
 import { PALETTE } from './palette.ts'
-import { PACK_META } from './packMeta.ts'
 import { HEAT, HERO, mix, paintBackdrop, paintHero, rays, raySeed, rgba, sparkle } from './packArt.ts'
-import { MONO, SANS, TITLE, cover, icon, packPicture, roundRect, spaced, wrap } from './paint.ts'
+import { SANS, TITLE, cover, icon, packPicture, roundRect, spaced, wrap } from './paint.ts'
 import { seeded } from './shapes.ts'
 import type { CardData, CardLink, PackId } from './types.ts'
 
@@ -26,8 +25,12 @@ const FOCUS = { x: 0.7, y: 0.42 }
 const STAT = 6.4
 // How tall a link's row is in the box of words.
 const ROW = 8.6
+// How many lines of the card's text are printed. The box keeps room for all of them, so every card
+// in a pack has the same window however short its text is.
+const LINES = 2
 
 const nameFont = (size: number) => `italic 900 ${size}px ${SANS}`
+const textFont = (size: number) => `500 ${size}px ${SANS}`
 const titleCase = (word: string) => word[0] + word.slice(1).toLowerCase()
 function seedOf(id: string) { let h = 7; for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h }
 
@@ -36,14 +39,22 @@ function seedOf(id: string) { let h = 7; for (const ch of id) h = (h * 31 + ch.c
 type Plan = ReturnType<typeof plan>
 function plan(ctx: Ctx, card: CardData, art: Pic | null, W: number, H: number) {
   const u = W / 100, id = card.pack, rand = seeded(seedOf(card.id))
-  const win = { x: 6 * u, y: 20 * u, w: 88 * u, h: 60 * u, r: 2 * u }
+  // The name's bar runs across the top. The box with the words sits at the bottom, as tall as its
+  // rows and lines, and the window takes the room between them.
+  const bar = { x: 5 * u, y: 5.4 * u, w: 90 * u, h: 13.2 * u, slant: 2.6 * u }
+  const links: (CardLink | null)[] = card.links.length ? card.links.slice(0, 2) : [null]
+  const textSize = 3.5 * u, lh = textSize * 1.4
+  const boxH = (links.length * ROW + 5.6) * u + LINES * lh
+  const box = { x: 6 * u, y: H - 6.2 * u - boxH, w: 88 * u, h: boxH, r: 2 * u }
+  const top = bar.y + bar.h + 2.4 * u
+  const win = { x: 6 * u, y: top, w: 88 * u, h: box.y - 9.4 * u - top, r: 2 * u }
   // A wide picture (one made for the card, or a screenshot) fills the window. A square one (a
   // portrait) hangs in it as a print. Otherwise the pack's own picture of its creature fills it.
   const wide = !!art && art.width / art.height > 1.25
   const scene = wide ? null : packPicture(id)?.window ?? null
-  // The creature drawn in code, with its head a little under the window's top edge.
+  // The creature drawn in code, with its head well inside the window, under the name's bar.
   const hero = HERO[id], pw = hero.card.size * W, ph = pw / 0.55, head = hero.head
-  const hx = win.x + win.w * hero.card.at, hy = win.y + hero.card.drop * u
+  const hx = win.x + win.w * hero.card.at, hy = win.y + (hero.card.drop + 11) * u
   const creature = { x: hx - head.x * pw, y: hy - head.y * ph, w: pw, h: ph }
   // A few glints around the creature drawn in code. A picture brings its own.
   const glints = wide || scene ? [] : Array.from({ length: 4 }, () => ({ x: win.x + (0.4 + rand() * 0.55) * win.w, y: win.y + rand() * win.h * 0.8, r: (1.1 + rand() * 1.6) * u }))
@@ -51,14 +62,13 @@ function plan(ctx: Ctx, card: CardData, art: Pic | null, W: number, H: number) {
   const iconName = art ? undefined : card.art.kind === 'icon' || card.art.kind === 'picture' ? card.art.icon : undefined
   const badge = iconName && iconName !== 'quote' ? { icon: iconName, cx: win.x + 17 * u, cy: win.y + win.h - 16 * u, r: 11 * u } : null
   // The name on its bar, as big as fits: on one line if it's short, on two if it isn't.
-  const bar = { x: 5 * u, y: 6.6 * u, w: (id === 'social' ? 56 : 60) * u, h: 10.4 * u, slant: 2.6 * u }
   let size = 0, lines: string[] = []
-  for (const [s, max] of [[6.6, 1], [5.6, 1], [4.4, 2], [3.9, 2]] as const) {
+  for (const [s, max] of [[7.4, 1], [6.6, 1], [5.6, 2], [5, 2]] as const) {
     size = s * u; ctx.font = nameFont(size); lines = wrap(ctx, card.name, bar.w - 8 * u, max)
     if (!lines[lines.length - 1].endsWith('…')) break
   }
   // The line under the window starts with a small plate that says what kind of card this is.
-  const lineY = 84.8 * u
+  const lineY = win.y + win.h + 4.8 * u
   ctx.font = `italic 900 ${2.9 * u}px ${SANS}`; ctx.letterSpacing = `${0.35 * u}px`
   const tag = { x: win.x - 0.4 * u, y: lineY - 2.6 * u, w: ctx.measureText(card.tag).width + 5.4 * u, h: 5.2 * u, slant: 1.3 * u }
   ctx.letterSpacing = '0px'
@@ -70,11 +80,9 @@ function plan(ctx: Ctx, card: CardData, art: Pic | null, W: number, H: number) {
   }
   // The box with the words: what the card does (a row for each link, two at most), then what it's
   // about, placed so the words sit in the middle of the box however few there are.
-  const box = { x: 6 * u, y: 89.4 * u, w: 88 * u, h: 38.8 * u, r: 2 * u }
-  const links: (CardLink | null)[] = card.links.length ? card.links.slice(0, 2) : [null]
-  const textSize = 3.75 * u, lh = textSize * 1.34, across = box.w - 8 * u
-  ctx.font = `italic 500 ${textSize}px ${SANS}`
-  const text = wrap(ctx, card.text, across, links.length > 1 ? 3 : 4)
+  const across = box.w - 8 * u
+  ctx.font = textFont(textSize)
+  const text = card.text ? wrap(ctx, card.text, across, LINES) : []
   const first = box.y + Math.max(5.6 * u, (box.h - links.length * ROW * u - text.length * lh) / 2 + 3.3 * u)
   const words = { x: box.x + 4 * u, w: across, rows: links.map((link, i) => ({ link, y: first + i * ROW * u })), text, size: textSize, lh, y: first + links.length * ROW * u - 2.2 * u }
   return { u, W, H, salt: card.no, win, wide, scene, creature, glints, print, badge, bar, name: { size, lines }, lineY, tag, room, box, words }
@@ -92,12 +100,9 @@ function windowPath(p: Plan, grow = 0) {
   return path
 }
 
-// Where the creature may show: in the window, and above it as far as the foil ring, so the head
-// comes out over the top edge (the name bar is drawn over whatever ends up behind it).
+// Where the creature may show: in the window.
 function stagePath(p: Plan) {
-  const path = windowPath(p), { x, y, w } = p.win, top = 2.6 * p.u
-  path.rect(x, top, w, y + 2 * p.u - top)
-  return path
+  return windowPath(p)
 }
 
 // The ring of foil around the card, with the pack's own shape in an even row along it. `base`
@@ -199,7 +204,7 @@ function gem(ctx: Ctx, id: PackId, x: number, y: number, r: number, rim: string)
 
 // One thing the card does, as a row in the box: the pack's mark, the label of a link and an arrow
 // as on the page's buttons. A card without links says what it is instead.
-function action(ctx: Ctx, card: CardData, link: CardLink | null, x: number, w: number, y: number, u: number, ink: string) {
+function action(ctx: Ctx, card: CardData, link: CardLink | null, x: number, w: number, y: number, u: number, ink: string, line = true) {
   gem(ctx, card.pack, x + 2.6 * u, y, 2.5 * u, ink)
   const label = link?.label ?? card.meta.map(titleCase).join(' · '), room = w - 7.4 * u - (link ? 8.5 * u : 0)
   let size = 5.2 * u
@@ -212,7 +217,7 @@ function action(ctx: Ctx, card: CardData, link: CardLink | null, x: number, w: n
     ctx.save(); ctx.strokeStyle = ink; ctx.lineWidth = 1.05 * u; ctx.lineCap = 'round'; ctx.lineJoin = 'round'
     ctx.beginPath(); ctx.moveTo(ax - 6.4 * u, y); ctx.lineTo(ax, y); ctx.moveTo(ax - 2.7 * u, y - 2.7 * u); ctx.lineTo(ax, y); ctx.lineTo(ax - 2.7 * u, y + 2.7 * u); ctx.stroke(); ctx.restore()
   }
-  ctx.fillStyle = rgba(ink, 0.22); ctx.fillRect(x, y + 4.1 * u, w, 0.3 * u)
+  if (line) { ctx.fillStyle = rgba(ink, 0.22); ctx.fillRect(x, y + 4.1 * u, w, 0.3 * u) }
 }
 
 // A picture drawn to fill a box. A screenshot keeps its top edge, where a page starts, and any
@@ -225,7 +230,7 @@ function fill(ctx: Ctx, img: Pic, x: number, y: number, w: number, h: number, to
 // ---------- The painting ----------
 
 // Paints the card and says where its links ended up on it.
-export function paintCardFront(canvas: HTMLCanvasElement, card: CardData, total: number, art: Pic | null): CardSpot[] {
+export function paintCardFront(canvas: HTMLCanvasElement, card: CardData, art: Pic | null): CardSpot[] {
   const ctx = canvas.getContext('2d')!, W = canvas.width, H = canvas.height, id = card.pack
   const c = PALETTE[id], title = TITLE[id], heat = HEAT[id], p = plan(ctx, card, art, W, H), { u, win, box } = p
   ctx.clearRect(0, 0, W, H)
@@ -304,22 +309,16 @@ export function paintCardFront(canvas: HTMLCanvasElement, card: CardData, total:
   spaced(ctx, what, win.x + p.tag.w + 1.6 * u, lineY + 0.15 * u, 0.3 * u, 'left')
   stat(ctx, card, p, '#fff', title.rim)
 
-  // The box with the words: what the card does, then what it's about.
+  // The box with the words: what the card does, then what it's about, small and pale.
   const ink = title.rim, paper = ctx.createLinearGradient(0, box.y, 0, box.y + box.h)
   paper.addColorStop(0, mix('#ffffff', c.c1, 0.1)); paper.addColorStop(1, mix('#ffffff', c.c1, 0.34))
   ctx.save(); ctx.shadowColor = rgba(title.depth, 0.5); ctx.shadowBlur = 2.4 * u; ctx.shadowOffsetY = 1 * u
   roundRect(ctx, box.x, box.y, box.w, box.h, box.r); ctx.fillStyle = paper; ctx.fill(); ctx.restore()
   roundRect(ctx, box.x, box.y, box.w, box.h, box.r); ctx.strokeStyle = ink; ctx.lineWidth = 0.5 * u; ctx.stroke()
   const words = p.words
-  for (const row of words.rows) action(ctx, card, row.link, words.x, words.w, row.y, u, ink)
-  ctx.font = `italic 500 ${words.size}px ${SANS}`; ctx.fillStyle = rgba(ink, 0.86); ctx.textAlign = 'left'; ctx.textBaseline = 'top'
+  words.rows.forEach((row, i) => action(ctx, card, row.link, words.x, words.w, row.y, u, ink, words.text.length > 0 || i < words.rows.length - 1))
+  ctx.font = textFont(words.size); ctx.fillStyle = rgba(ink, 0.6); ctx.textAlign = 'left'; ctx.textBaseline = 'top'
   words.text.forEach((line, i) => ctx.fillText(line, words.x, words.y + i * words.lh))
-
-  // Fine print along the bottom.
-  const number = `${String(card.no).padStart(2, '0')}/${String(total).padStart(2, '0')}`
-  ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.textBaseline = 'middle'
-  ctx.font = `800 ${2.2 * u}px ${SANS}`; spaced(ctx, `${PACK_META[id].title}  ✦  SERIES 01  ✦  ${number}`, box.x, 133 * u, 0.45 * u, 'left')
-  if (info !== card.foot) { ctx.font = `700 ${2.3 * u}px ${MONO}`; ctx.textAlign = 'right'; ctx.fillText(card.foot, box.x + box.w, 133 * u) }
   ctx.restore()
 
   // A link's row runs across the box, from the line above it (the box's top edge for the first
