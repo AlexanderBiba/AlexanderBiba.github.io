@@ -20,7 +20,6 @@ export interface Work {
 export interface SiteSettings {
   name: string
   aboutBlurb: string
-  email?: string
   github?: string
   linkedin?: string
   twitter?: string
