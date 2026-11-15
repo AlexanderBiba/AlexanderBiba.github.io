@@ -533,7 +533,7 @@ export class CardStage {
     const backTex = texture(back); this.renderer.initTexture(backTex)
     const backMat = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.5, metalness: 0.2 })
     const edgeMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(PALETTE[data.id].c2).lerp(new THREE.Color(0xf6f1e4), 0.55), roughness: 0.75 })
-    const arts = await Promise.all(data.cards.map(card => card.art.kind === 'image' ? loadImage(card.art.src) : Promise.resolve(null)))
+    const arts = await Promise.all(data.cards.map(card => card.art.kind !== 'icon' ? loadImage(card.art.src) : Promise.resolve(null)))
     const holder = new THREE.Group()
     // The page was left while this was still painting: nothing made so far is kept.
     const drop = () => { this.free(holder); geo.dispose(); backTex.dispose(); backMat.dispose(); edgeMat.dispose(); return [] }

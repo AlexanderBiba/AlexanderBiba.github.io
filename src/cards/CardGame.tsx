@@ -10,6 +10,7 @@ import { showReturnPack } from './morph'
 import { returnPack } from './returnMorph'
 import { disableMotion, enableMotion } from './motion'
 import { CENTER_PACK, PACK_ORDER } from './packMeta'
+import { loadPackArt } from './paint'
 import type { CardData, PackData } from './types'
 import styles from './cards.module.css'
 
@@ -107,16 +108,23 @@ export default function CardGame({ packs }: { packs: PackData[] }) {
     window.addEventListener('resize', resize)
     const morphed = wasMorphed()
     setIntro(morphed)
-    try {
-      if (canvas.current) stage.current = new CardStage(canvas.current, packs, setState, {
-        active: PACK_ORDER.indexOf(CENTER_PACK), intro: morphed,
-        onLink: k => controls.current?.querySelectorAll<HTMLAnchorElement>('a[href]')[k]?.click(),
-      })
-    } catch { setFailed(true) }
+    // The packs' pictures are usually loaded already (the homepage asks for them while it's idle).
+    // The scene waits for them, but not for long: past that it starts with the creatures drawn in code.
+    let gone = false
+    Promise.race([loadPackArt(), new Promise(resolve => setTimeout(resolve, 4000))]).then(() => {
+      if (gone) return
+      try {
+        if (canvas.current) stage.current = new CardStage(canvas.current, packs, setState, {
+          active: PACK_ORDER.indexOf(CENTER_PACK), intro: morphed,
+          onLink: k => controls.current?.querySelectorAll<HTMLAnchorElement>('a[href]')[k]?.click(),
+        })
+      } catch { setFailed(true) }
+    })
     // Phones only share their tilt after a tap (iOS asks for permission), so ask on the first one.
     const gesture = () => enableMotion()
     window.addEventListener('touchend', gesture); window.addEventListener('click', gesture)
     return () => {
+      gone = true
       window.removeEventListener('resize', resize); window.removeEventListener('touchend', gesture); window.removeEventListener('click', gesture)
       stage.current?.dispose(); stage.current = null
       // On the way back to the homepage its pack stays up until the homepage has grown out of it.

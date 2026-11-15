@@ -1,7 +1,7 @@
 // Draws the pack wrappers and cards onto canvases. The same pictures become the 3D textures,
 // the homepage morph's stand-in pack and the recap grid, so all three always match.
 import { PALETTE } from './palette.ts'
-import { PACK_META } from './packMeta.ts'
+import { PACK_ART, PACK_META, PACK_ORDER } from './packMeta.ts'
 import { paintBackdrop, paintHero, rays, raySeed, rgba } from './packArt.ts'
 import { CRIMP, FIN, RIP_Y, finLift, rip, teeth } from './shapes.ts'
 import type { IconName, PackId } from './types.ts'
@@ -94,6 +94,20 @@ export function loadImage(src: string): Promise<HTMLImageElement | null> {
 
 // ---------- Packs ----------
 
+// Each pack's pictures (PACK_ART), once they've loaded. The painters below are synchronous, so
+// whoever paints a pack first waits for `loadPackArt`; until then a pack falls back to the
+// creature drawn in code.
+type PackPictures = { front: HTMLImageElement; mask: HTMLImageElement | null; window: HTMLImageElement | null }
+const packPictures: Partial<Record<PackId, PackPictures>> = {}
+export const packPicture = (id: PackId) => packPictures[id]
+export function loadPackArt(ids: PackId[] = PACK_ORDER): Promise<void> {
+  return Promise.all(ids.map(async id => {
+    const art = PACK_ART[id]
+    const [front, mask, window] = await Promise.all([loadImage(art.front), loadImage(art.mask), loadImage(art.window)])
+    if (front) packPictures[id] = { front, mask, window }
+  })).then(() => {})
+}
+
 // The sealed ends: bare foil with fine ridges pressed into it, tinted by the pack's color.
 function crimps(ctx: Ctx, id: PackId, W: number, H: number) {
   const h = H * (CRIMP + 0.015), c = PALETTE[id]
@@ -160,12 +174,16 @@ export function paintPackFront(canvas: HTMLCanvasElement, opts: { id: PackId; co
   const ctx = canvas.getContext('2d')!, W = canvas.width, H = canvas.height, u = W / 100, c = PALETTE[opts.id]
   const meta = PACK_META[opts.id], title = TITLE[opts.id]
   ctx.clearRect(0, 0, W, H)
-  paintBackdrop(ctx, opts.id, W, H)
-  // A little darker at the top, behind the fine print.
-  const head = ctx.createLinearGradient(0, 0.08 * H, 0, 0.22 * H)
-  head.addColorStop(0, rgba(c.p1, 0.6)); head.addColorStop(1, rgba(c.p1, 0))
-  ctx.fillStyle = head; ctx.fillRect(0, 0.08 * H, W, 0.14 * H)
-  paintHero(ctx, opts.id, W, H)
+  const art = packPictures[opts.id]
+  if (art) cover(ctx, art.front, 0, 0, W, H)
+  else {
+    paintBackdrop(ctx, opts.id, W, H)
+    // A little darker at the top, behind the fine print.
+    const head = ctx.createLinearGradient(0, 0.08 * H, 0, 0.22 * H)
+    head.addColorStop(0, rgba(c.p1, 0.6)); head.addColorStop(1, rgba(c.p1, 0))
+    ctx.fillStyle = head; ctx.fillRect(0, 0.08 * H, W, 0.14 * H)
+    paintHero(ctx, opts.id, W, H)
+  }
   // A shadow under the lettering at the bottom, so it reads over the art.
   const foot = ctx.createLinearGradient(0, 0.62 * H, 0, 0.93 * H)
   foot.addColorStop(0, rgba(c.p1, 0)); foot.addColorStop(0.55, rgba(c.p1, 0.72)); foot.addColorStop(1, rgba(c.p1, 0.92))
@@ -226,12 +244,15 @@ const FOIL = sheen(0.7, 0.44, 0.4), RAY = sheen(1, 0.32, 0.6), INK = sheen(0.05,
 
 export function paintPackSheen(canvas: HTMLCanvasElement, id: PackId) {
   const ctx = canvas.getContext('2d')!, W = canvas.width, H = canvas.height, u = W / 100, meta = PACK_META[id]
+  const art = packPictures[id]
   ctx.fillStyle = FOIL; ctx.fillRect(0, 0, W, H)
-  ctx.fillStyle = RAY; rays(ctx, id, W, H, raySeed(id))
-  // The creature is printed in ink over the foil: paint it, then keep only its shape.
+  if (!art) { ctx.fillStyle = RAY; rays(ctx, id, W, H, raySeed(id)) }
+  // The creature is printed in ink over the foil: paint it (or lay its cutout where the picture
+  // puts it), then keep only its shape.
   const layer = document.createElement('canvas'); layer.width = W; layer.height = H
   const ink = layer.getContext('2d')!
-  paintHero(ink, id, W, H)
+  if (art) { if (art.mask) cover(ink, art.mask, 0, 0, W, H) }
+  else paintHero(ink, id, W, H)
   ink.globalCompositeOperation = 'source-in'; ink.fillStyle = INK; ink.fillRect(0, 0, W, H)
   ctx.drawImage(layer, 0, 0)
   // The lettering is stamped in smooth foil, with an ink rim.

@@ -71,3 +71,19 @@ test('the pack wrapper is flat at its sealed ends and side folds and puffed in t
   assert.equal(teeth(0, 1).length, TEETH * 2 + 1)
   assert.equal(rip[0][0], 0); assert.equal(rip.at(-1)[0], 1)
 })
+
+test('cards listed in card-art.json get their picture, and every picture and pack picture exists', async () => {
+  const art = JSON.parse(readFileSync('content/card-art.json', 'utf8'))
+  const { existsSync } = await import('node:fs')
+  const { PACK_ART } = await import('../src/cards/packMeta.ts')
+  const withArt = buildPacks({ posts, works, settings, art }).flatMap(pack => pack.cards)
+  for (const [id, src] of Object.entries(art)) {
+    assert.ok(existsSync(`public${src}`), `Missing ${src}`)
+    const card = withArt.find(card => card.id === id)
+    assert.ok(card, `card-art.json names a card that doesn't exist: ${id}`)
+    assert.deepEqual({ kind: card.art.kind, src: card.art.src }, { kind: 'picture', src })
+  }
+  // A card that isn't listed keeps what it had.
+  for (const card of withArt.filter(card => !art[card.id])) assert.notEqual(card.art.kind, 'picture', card.id)
+  for (const pictures of Object.values(PACK_ART)) for (const src of Object.values(pictures)) assert.ok(existsSync(`public${src}`), `Missing ${src}`)
+})
