@@ -25,7 +25,7 @@ test('every post and every work gets exactly one card, newest first', () => {
 test('the social pack links every profile in site.json', () => {
   const hrefs = packs.find(pack => pack.id === 'social').cards.flatMap(card => card.links.map(link => link.href))
   for (const key of ['github', 'linkedin', 'twitter', 'chess', 'youtube3dPrinting']) assert.ok(hrefs.includes(settings[key]), key)
-  assert.ok(!hrefs.some(href => href.startsWith('mailto:')))
+  assert.ok(hrefs.includes(`mailto:${settings.email}`))
 })
 
 test('cards are numbered from 1 and have unique ids', () => {

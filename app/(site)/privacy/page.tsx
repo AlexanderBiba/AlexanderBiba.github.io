@@ -31,11 +31,11 @@ export default async function PrivacyPage() {
         If your browser sends a Do Not Track or Global Privacy Control signal, neither of them is loaded
         at all.
       </p>
-      {settings.linkedin && (
+      {settings.email && (
         <>
           <h2>Contact</h2>
           <p>
-            Questions or requests about your data: send me a message on <a href={settings.linkedin}>LinkedIn</a>.
+            Questions or requests about your data: <a href={`mailto:${settings.email}`}>{settings.email}</a>.
           </p>
         </>
       )}

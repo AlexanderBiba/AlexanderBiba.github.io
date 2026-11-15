@@ -1,5 +1,5 @@
 export type PackId = 'blog' | 'works' | 'social'
-export type IconName = 'quote' | 'github' | 'linkedin' | 'x' | 'chess' | 'printer'
+export type IconName = 'quote' | 'github' | 'linkedin' | 'x' | 'mail' | 'chess' | 'printer'
 // `image`: a screenshot or portrait. `picture`: art made for the card, with the icon it falls back
 // to if the picture can't load.
 export type CardArt = { kind: 'image'; src: string } | { kind: 'picture'; src: string; icon?: IconName } | { kind: 'icon'; icon: IconName }
